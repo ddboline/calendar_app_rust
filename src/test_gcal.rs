@@ -10,6 +10,13 @@ fn main() {
     );
     let result = gcal_inst.list_gcal_calendars().unwrap();
     for cal in result {
-        println!("{:?}", cal.summary);
+        println!(
+            "{:?}\n{:?}\n{:?}\n{:?}\n{:?}\n\n",
+            cal.id.unwrap(),
+            cal.summary.unwrap(),
+            cal.description.as_ref().map_or("", String::as_str),
+            cal.time_zone.as_ref().map_or("", String::as_str),
+            cal.location.as_ref().map_or("", String::as_str),
+        );
     }
 }

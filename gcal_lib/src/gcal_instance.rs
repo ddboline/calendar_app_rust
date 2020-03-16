@@ -78,7 +78,7 @@ impl GCalendarInstance {
             .calendar_list()
             .list()
             .show_deleted(false)
-            .show_hidden(false);
+            .show_hidden(true);
         let req = if let Some(next_page_token) = next_page_token {
             req.page_token(next_page_token)
         } else {

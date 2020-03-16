@@ -4,12 +4,161 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use tokio::task::spawn_blocking;
 
 use crate::pgpool::PgPool;
-use crate::schema::calendar_cache;
+use crate::schema::{calendar_cache, calendar_list};
+
+#[derive(Queryable, Clone, Debug)]
+pub struct CalendarList {
+    pub id: i32,
+    pub calendar_name: String,
+    pub gcal_id: String,
+    pub gcal_name: Option<String>,
+    pub gcal_description: Option<String>,
+    pub gcal_location: Option<String>,
+    pub gcal_timezone: Option<String>,
+}
+
+impl CalendarList {
+    fn get_calendars_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::calendar_list::dsl::calendar_list;
+        let conn = pool.get()?;
+        calendar_list.load(&conn).map_err(Into::into)
+    }
+
+    pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_calendars_sync(&pool)).await?
+    }
+
+    fn get_by_id_sync(id_: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::calendar_list::dsl::{calendar_list, id};
+        let conn = pool.get()?;
+        calendar_list
+            .filter(id.eq(id_))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_id(id: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_by_id_sync(id, &pool)).await?
+    }
+
+    fn get_by_gcal_id_sync(gcal_id_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::calendar_list::dsl::{calendar_list, gcal_id};
+        let conn = pool.get()?;
+        calendar_list
+            .filter(gcal_id.eq(gcal_id_))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        let gcal_id = gcal_id.to_string();
+        spawn_blocking(move || Self::get_by_gcal_id_sync(&gcal_id, &pool)).await?
+    }
+
+    fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::calendar_list::dsl::{
+            calendar_list, calendar_name, gcal_description, gcal_id, gcal_location, gcal_name,
+            gcal_timezone, id,
+        };
+        let conn = pool.get()?;
+        diesel::update(calendar_list.filter(id.eq(&self.id)))
+            .set((
+                calendar_name.eq(&self.calendar_name),
+                gcal_id.eq(&self.gcal_id),
+                gcal_name.eq(&self.gcal_name),
+                gcal_description.eq(&self.gcal_description),
+                gcal_location.eq(&self.gcal_location),
+                gcal_timezone.eq(&self.gcal_timezone),
+            ))
+            .execute(&conn)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
+    }
+}
+
+#[derive(Insertable, Debug, Clone)]
+#[table_name = "calendar_list"]
+pub struct InsertCalendarList {
+    pub calendar_name: String,
+    pub gcal_id: String,
+    pub gcal_name: Option<String>,
+    pub gcal_description: Option<String>,
+    pub gcal_location: Option<String>,
+    pub gcal_timezone: Option<String>,
+}
+
+impl From<CalendarList> for InsertCalendarList {
+    fn from(item: CalendarList) -> Self {
+        Self {
+            calendar_name: item.calendar_name,
+            gcal_id: item.gcal_id,
+            gcal_name: item.gcal_name,
+            gcal_description: item.gcal_description,
+            gcal_location: item.gcal_location,
+            gcal_timezone: item.gcal_timezone,
+        }
+    }
+}
+
+impl InsertCalendarList {
+    pub fn into_calendar_list(self, id: i32) -> CalendarList {
+        CalendarList {
+            id,
+            calendar_name: self.calendar_name,
+            gcal_id: self.gcal_id,
+            gcal_name: self.gcal_name,
+            gcal_description: self.gcal_description,
+            gcal_location: self.gcal_location,
+            gcal_timezone: self.gcal_timezone,
+        }
+    }
+
+    fn insert_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::calendar_list::dsl::calendar_list;
+        let conn = pool.get()?;
+        diesel::insert_into(calendar_list)
+            .values(self)
+            .execute(&conn)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    pub async fn insert(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.insert_sync(&pool).map(|_| self)).await?
+    }
+
+    pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
+        let existing = CalendarList::get_by_gcal_id(&self.gcal_id, &pool).await?;
+        if existing.len() > 1 {
+            panic!(
+                "this shouldn't be possible... {} must be unique",
+                self.gcal_id
+            );
+        } else if existing.len() == 1 {
+            let id = existing[0].id;
+            self.into_calendar_list(id)
+                .update(&pool)
+                .await
+                .map(Into::into)
+        } else {
+            let insertable: InsertCalendarList = self.into();
+            insertable.insert(&pool).await
+        }
+    }
+}
 
 #[derive(Queryable, Clone, Debug)]
 pub struct CalendarCache {
     pub id: i32,
-    pub calendar_name: String,
     pub gcal_id: String,
     pub event_id: String,
     pub event_start_time: DateTime<Utc>,
@@ -20,12 +169,6 @@ pub struct CalendarCache {
     pub event_location_name: Option<String>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-}
-
-#[derive(Clone, Debug)]
-pub struct Calendar {
-    pub gcal_id: String,
-    pub calendar_name: String,
 }
 
 impl CalendarCache {
@@ -112,36 +255,11 @@ impl CalendarCache {
         let pool = pool.clone();
         spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
     }
-
-    fn get_calendars_sync(pool: &PgPool) -> Result<Vec<(String, String)>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, calendar_name, gcal_id};
-        let conn = pool.get()?;
-        calendar_cache
-            .select((gcal_id, calendar_name))
-            .distinct()
-            .load(&conn)
-            .map_err(Into::into)
-    }
-
-    pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Calendar>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_calendars_sync(&pool))
-            .await?
-            .map(|x| {
-                x.into_iter()
-                    .map(|(gcal_id, calendar_name)| Calendar {
-                        gcal_id,
-                        calendar_name,
-                    })
-                    .collect()
-            })
-    }
 }
 
 #[derive(Insertable, Debug, Clone)]
 #[table_name = "calendar_cache"]
 pub struct InsertCalendarCache {
-    pub calendar_name: String,
     pub gcal_id: String,
     pub event_id: String,
     pub event_start_time: DateTime<Utc>,
@@ -157,7 +275,6 @@ pub struct InsertCalendarCache {
 impl From<CalendarCache> for InsertCalendarCache {
     fn from(item: CalendarCache) -> Self {
         Self {
-            calendar_name: item.calendar_name,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
             event_start_time: item.event_start_time,
@@ -176,7 +293,6 @@ impl InsertCalendarCache {
     pub fn into_calendar_cache(self, id: i32) -> CalendarCache {
         CalendarCache {
             id,
-            calendar_name: self.calendar_name,
             gcal_id: self.gcal_id,
             event_id: self.event_id,
             event_start_time: self.event_start_time,
