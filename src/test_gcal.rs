@@ -1,3 +1,4 @@
+use calendar_app_lib::calendar::Event;
 use calendar_app_lib::config::Config;
 use gcal_lib::gcal_instance::GCalendarInstance;
 
@@ -18,5 +19,14 @@ fn main() {
             cal.time_zone.as_ref().map_or("", String::as_str),
             cal.location.as_ref().map_or("", String::as_str),
         );
+    }
+    for event in gcal_inst.get_gcal_events("ddboline@gmail.com").unwrap() {
+        if event.start.is_none() {
+            continue;
+        }
+        match Event::from_gcal_event(&event, "ddboline@gmail.com") {
+            Ok(event) => println!("{:#?}", event),
+            Err(e) => panic!("{:?} {:#?}", e, event),
+        }
     }
 }

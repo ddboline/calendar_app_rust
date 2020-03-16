@@ -1,5 +1,6 @@
 use anyhow::{format_err, Error};
-use google_calendar3::{CalendarHub, CalendarList, CalendarListEntry};
+use google_calendar3::{CalendarHub, CalendarList, Events};
+pub use google_calendar3::{CalendarListEntry, Event, EventDateTime};
 use hyper::{net::HttpsConnector, Client};
 use hyper_native_tls::NativeTlsClient;
 use oauth2::{
@@ -93,6 +94,36 @@ impl GCalendarInstance {
         let mut next_page_token: Option<String> = None;
         loop {
             let cal_list = self.gcal_calendars(next_page_token.as_ref().map(|x| x.as_str()))?;
+            if let Some(cal_list) = cal_list.items {
+                output.extend_from_slice(&cal_list);
+            }
+            if let Some(token) = cal_list.next_page_token {
+                next_page_token.replace(token);
+            } else {
+                break;
+            }
+        }
+        Ok(output)
+    }
+
+    fn gcal_events(&self, gcal_id: &str, next_page_token: Option<&str>) -> Result<Events, Error> {
+        let gcal = self.gcal.lock();
+        let req = gcal.events().list(gcal_id);
+        let req = if let Some(next_page_token) = next_page_token {
+            req.page_token(next_page_token)
+        } else {
+            req
+        };
+        let (_, result) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
+        Ok(result)
+    }
+
+    pub fn get_gcal_events(&self, gcal_id: &str) -> Result<Vec<Event>, Error> {
+        let mut output = Vec::new();
+        let mut next_page_token: Option<String> = None;
+        loop {
+            let cal_list =
+                self.gcal_events(gcal_id, next_page_token.as_ref().map(|x| x.as_str()))?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
