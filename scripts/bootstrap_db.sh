@@ -15,4 +15,6 @@ sudo -u postgres createdb $DB
 mkdir -p ${HOME}/.config/sync_app_rust
 cat > ${HOME}/.config/sync_app_rust/config.env <<EOL
 DATABASE_URL=postgresql://$USER:$PASSWORD@localhost:5432/$DB
+GCAL_SECRET_FILE=${HOME}/.config/calendar_app_rust/client_secrets.json
+GCAL_TOKEN_PATH=${HOME}/.gcal
 EOL

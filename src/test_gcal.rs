@@ -9,5 +9,7 @@ fn main() {
         "ddboline@gmail.com",
     );
     let result = gcal_inst.list_gcal_calendars().unwrap();
-    println!("{:?}", result);
+    for cal in result {
+        println!("{:?}", cal.summary);
+    }
 }
