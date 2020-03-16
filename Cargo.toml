@@ -7,3 +7,16 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
+gcal_lib = {path="gcal_lib"}
+calendar_app_lib = {path="calendar_app_lib"}
+
+[workspace]
+members = [
+    "gcal_lib",
+    "calendar_app_lib",
+]
+
+[[bin]]
+name = "test-gcal"
+path = "src/test_gcal.rs"
+doc = false
