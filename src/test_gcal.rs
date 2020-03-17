@@ -3,10 +3,20 @@ use anyhow::Error;
 use calendar_app_lib::calendar_sync::CalendarSync;
 use calendar_app_lib::config::Config;
 use calendar_app_lib::models::CalendarList;
+use calendar_app_lib::parse_hashnyc::parse_hashnyc;
 use calendar_app_lib::pgpool::PgPool;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    let config = Config::init_config().unwrap();
+    let pool = PgPool::new(&config.database_url);
+    let events = parse_hashnyc(&pool).await?;
+    println!("events {:#?}", events);
+    println!("events {}", events.len());
+    Ok(())
+}
+
+async fn run_syncing() -> Result<(), Error> {
     let config = Config::init_config().unwrap();
     let pool = PgPool::new(&config.database_url);
     let cal_sync = CalendarSync::new(config, pool);

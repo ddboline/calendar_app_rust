@@ -11,7 +11,7 @@ use crate::longitude::Longitude;
 use crate::models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList};
 use crate::timezone::TimeZone;
 
-#[derive(Default, Debug)]
+#[derive(Default, Debug, PartialEq)]
 pub struct Location {
     pub name: String,
     pub lat_lon: Option<(Latitude, Longitude)>,
