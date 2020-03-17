@@ -6,5 +6,6 @@ CREATE TABLE calendar_list (
     gcal_name TEXT,
     gcal_description TEXT,
     gcal_location TEXT,
-    gcal_timezone TEXT
+    gcal_timezone TEXT,
+    sync BOOL NOT NULL
 )

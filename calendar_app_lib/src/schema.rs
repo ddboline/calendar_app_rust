@@ -23,6 +23,7 @@ table! {
         gcal_description -> Nullable<Text>,
         gcal_location -> Nullable<Text>,
         gcal_timezone -> Nullable<Text>,
+        sync -> Bool,
     }
 }
 

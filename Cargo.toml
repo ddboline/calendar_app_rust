@@ -9,6 +9,9 @@ edition = "2018"
 [dependencies]
 gcal_lib = {path="gcal_lib"}
 calendar_app_lib = {path="calendar_app_lib"}
+chrono = "0.4"
+tokio = {version="0.2", features=["full"]}
+anyhow = "1.0"
 
 [workspace]
 members = [

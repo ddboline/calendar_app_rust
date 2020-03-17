@@ -1,4 +1,5 @@
 use anyhow::{format_err, Error};
+use chrono::{DateTime, Utc};
 use google_calendar3::{CalendarHub, CalendarList, Events};
 pub use google_calendar3::{CalendarListEntry, Event, EventDateTime};
 use hyper::{net::HttpsConnector, Client};
@@ -13,10 +14,13 @@ use std::path::Path;
 use std::sync::Arc;
 use yup_oauth2 as oauth2;
 
+use crate::exponential_retry;
+
 type GCClient = Client;
 type GCAuthenticator = Authenticator<DefaultAuthenticatorDelegate, DiskTokenStorage, Client>;
 type GCCalendar = CalendarHub<GCClient, GCAuthenticator>;
 
+#[derive(Clone)]
 pub struct GCalendarInstance {
     pub gcal: Arc<Mutex<GCCalendar>>,
 }
@@ -74,19 +78,21 @@ impl GCalendarInstance {
     }
 
     fn gcal_calendars(&self, next_page_token: Option<&str>) -> Result<CalendarList, Error> {
-        let gcal = self.gcal.lock();
-        let req = gcal
-            .calendar_list()
-            .list()
-            .show_deleted(false)
-            .show_hidden(true);
-        let req = if let Some(next_page_token) = next_page_token {
-            req.page_token(next_page_token)
-        } else {
-            req
-        };
-        let (_, cal_list) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
-        Ok(cal_list)
+        exponential_retry(|| {
+            let gcal = self.gcal.lock();
+            let req = gcal
+                .calendar_list()
+                .list()
+                .show_deleted(false)
+                .show_hidden(true);
+            let req = if let Some(next_page_token) = next_page_token {
+                req.page_token(next_page_token)
+            } else {
+                req
+            };
+            let (_, cal_list) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
+            Ok(cal_list)
+        })
     }
 
     pub fn list_gcal_calendars(&self) -> Result<Vec<CalendarListEntry>, Error> {
@@ -106,24 +112,51 @@ impl GCalendarInstance {
         Ok(output)
     }
 
-    fn gcal_events(&self, gcal_id: &str, next_page_token: Option<&str>) -> Result<Events, Error> {
-        let gcal = self.gcal.lock();
-        let req = gcal.events().list(gcal_id);
-        let req = if let Some(next_page_token) = next_page_token {
-            req.page_token(next_page_token)
-        } else {
-            req
-        };
-        let (_, result) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
-        Ok(result)
+    fn gcal_events(
+        &self,
+        gcal_id: &str,
+        min_time: Option<DateTime<Utc>>,
+        max_time: Option<DateTime<Utc>>,
+        next_page_token: Option<&str>,
+    ) -> Result<Events, Error> {
+        exponential_retry(|| {
+            let gcal = self.gcal.lock();
+            let req = gcal.events().list(gcal_id);
+            let req = if let Some(min_time) = min_time {
+                req.time_min(&min_time.to_rfc3339())
+            } else {
+                req
+            };
+            let req = if let Some(max_time) = max_time {
+                req.time_min(&max_time.to_rfc3339())
+            } else {
+                req
+            };
+            let req = if let Some(next_page_token) = next_page_token {
+                req.page_token(next_page_token)
+            } else {
+                req
+            };
+            let (_, result) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
+            Ok(result)
+        })
     }
 
-    pub fn get_gcal_events(&self, gcal_id: &str) -> Result<Vec<Event>, Error> {
+    pub fn get_gcal_events(
+        &self,
+        gcal_id: &str,
+        min_time: Option<DateTime<Utc>>,
+        max_time: Option<DateTime<Utc>>,
+    ) -> Result<Vec<Event>, Error> {
         let mut output = Vec::new();
         let mut next_page_token: Option<String> = None;
         loop {
-            let cal_list =
-                self.gcal_events(gcal_id, next_page_token.as_ref().map(|x| x.as_str()))?;
+            let cal_list = self.gcal_events(
+                gcal_id,
+                min_time,
+                max_time,
+                next_page_token.as_ref().map(|x| x.as_str()),
+            )?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
@@ -134,5 +167,39 @@ impl GCalendarInstance {
             }
         }
         Ok(output)
+    }
+
+    pub fn insert_gcal_event(&self, gcal_id: &str, gcal_event: Event) -> Result<Event, Error> {
+        let gcal = self.gcal.lock();
+        let (_, result) = gcal
+            .events()
+            .insert(gcal_event, gcal_id)
+            .supports_attachments(true)
+            .doit()
+            .map_err(|e| format_err!("{:#?}", e))?;
+        Ok(result)
+    }
+
+    pub fn update_gcal_event(&self, gcal_id: &str, gcal_event: Event) -> Result<Event, Error> {
+        let event_id = gcal_event
+            .id
+            .clone()
+            .ok_or_else(|| format_err!("No event id"))?;
+        let gcal = self.gcal.lock();
+        let (_, result) = gcal
+            .events()
+            .update(gcal_event, gcal_id, &event_id)
+            .doit()
+            .map_err(|e| format_err!("{:#?}", e))?;
+        Ok(result)
+    }
+
+    pub fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
+        let gcal = self.gcal.lock();
+        gcal.events()
+            .delete(gcal_id, gcal_event_id)
+            .doit()
+            .map_err(|e| format_err!("{:#?}", e))?;
+        Ok(())
     }
 }

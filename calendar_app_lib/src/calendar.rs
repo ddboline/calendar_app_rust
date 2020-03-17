@@ -2,6 +2,7 @@ use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use std::convert::TryInto;
 use url::Url;
+use uuid::Uuid;
 
 use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
 
@@ -23,6 +24,7 @@ pub struct Calendar {
     pub description: Option<String>,
     pub location: Option<Location>,
     pub timezone: Option<TimeZone>,
+    pub sync: bool,
 }
 
 impl From<CalendarList> for Calendar {
@@ -37,6 +39,7 @@ impl From<CalendarList> for Calendar {
                 ..Default::default()
             }),
             timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
+            sync: item.sync,
         }
     }
 }
@@ -50,22 +53,28 @@ impl Into<InsertCalendarList> for Calendar {
             gcal_description: self.description,
             gcal_location: self.location.map(|l| l.name),
             gcal_timezone: self.timezone.map(|z| z.into()),
+            sync: true,
         }
     }
 }
 
-impl From<CalendarListEntry> for Calendar {
-    fn from(item: CalendarListEntry) -> Self {
-        Self {
-            name: item.summary.clone().unwrap_or_else(|| "".to_string()),
-            gcal_id: item.id.expect("No gcal_id"),
-            gcal_name: item.summary,
-            description: item.description,
-            location: item.location.map(|l| Location {
-                name: l,
-                ..Default::default()
-            }),
-            timezone: item.time_zone.and_then(|z| z.parse().ok()),
+impl Calendar {
+    pub fn from_gcal_entry(item: &CalendarListEntry) -> Option<Self> {
+        if item.deleted.unwrap_or(false) {
+            None
+        } else {
+            Some(Self {
+                name: item.summary.clone().unwrap_or_else(|| "".to_string()),
+                gcal_id: item.id.clone().expect("No gcal_id"),
+                gcal_name: item.summary.clone(),
+                description: item.description.clone(),
+                location: item.location.as_ref().map(|l| Location {
+                    name: l.to_string(),
+                    ..Default::default()
+                }),
+                timezone: item.time_zone.as_ref().and_then(|z| z.parse().ok()),
+                sync: true,
+            })
         }
     }
 }
@@ -161,6 +170,24 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
 }
 
 impl Event {
+    pub fn new(
+        gcal_id: &str,
+        name: &str,
+        start_time: DateTime<Utc>,
+        end_time: DateTime<Utc>,
+    ) -> Self {
+        Self {
+            gcal_id: gcal_id.to_string(),
+            event_id: Uuid::new_v4().to_string().replace("-", ""),
+            start_time,
+            end_time,
+            url: None,
+            name: name.to_string(),
+            description: None,
+            location: None,
+        }
+    }
+
     pub fn from_gcal_event(item: &GCalEvent, gcal_id: &str) -> Result<Self, Error> {
         let mut loc = None;
         if let Some(name) = &item.location {
@@ -191,5 +218,42 @@ impl Event {
             description: item.description.clone(),
             location: loc,
         })
+    }
+
+    pub fn to_gcal_event(&self) -> Result<(String, GCalEvent), Error> {
+        let event = GCalEvent {
+            id: Some(self.event_id.to_string()),
+            start: Some(EventDateTime {
+                date_time: Some(self.start_time.to_rfc3339()),
+                ..EventDateTime::default()
+            }),
+            end: Some(EventDateTime {
+                date_time: Some(self.end_time.to_rfc3339()),
+                ..EventDateTime::default()
+            }),
+            summary: Some(self.name.to_string()),
+            description: self.description.clone(),
+            location: self.location.as_ref().map(|l| l.name.to_string()),
+            ..GCalEvent::default()
+        };
+        Ok((self.gcal_id.to_string(), event))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::calendar::Event;
+    use chrono::{Duration, Utc};
+
+    #[test]
+    fn test_new_evet() {
+        let event = Event::new(
+            "ddboline@gmail.com",
+            "Test event",
+            Utc::now(),
+            Utc::now() + Duration::hours(1),
+        );
+        println!("{:#?}", event);
+        assert_eq!(event.name, "Test event");
     }
 }
