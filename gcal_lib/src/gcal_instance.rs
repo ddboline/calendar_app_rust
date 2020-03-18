@@ -99,7 +99,7 @@ impl GCalendarInstance {
         let mut output = Vec::new();
         let mut next_page_token: Option<String> = None;
         loop {
-            let cal_list = self.gcal_calendars(next_page_token.as_ref().map(|x| x.as_str()))?;
+            let cal_list = self.gcal_calendars(next_page_token.as_deref())?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
@@ -151,12 +151,8 @@ impl GCalendarInstance {
         let mut output = Vec::new();
         let mut next_page_token: Option<String> = None;
         loop {
-            let cal_list = self.gcal_events(
-                gcal_id,
-                min_time,
-                max_time,
-                next_page_token.as_ref().map(|x| x.as_str()),
-            )?;
+            let cal_list =
+                self.gcal_events(gcal_id, min_time, max_time, next_page_token.as_deref())?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }

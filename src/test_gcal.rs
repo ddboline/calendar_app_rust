@@ -9,15 +9,16 @@ use calendar_app_lib::pgpool::PgPool;
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {
-    let config = Config::init_config().unwrap();
+    let config = Config::init_config()?;
     let pool = PgPool::new(&config.database_url);
     let nycruns = ParseNycRuns::new(pool);
-    nycruns.parse_nycruns().await?;
+    let results = nycruns.parse_nycruns().await?;
+    println!("{:#?}", results);
     Ok(())
 }
 
 async fn run_syncing() -> Result<(), Error> {
-    let config = Config::init_config().unwrap();
+    let config = Config::init_config()?;
     let pool = PgPool::new(&config.database_url);
     let cal_sync = CalendarSync::new(config, pool);
     let inserted = cal_sync.sync_calendar_list().await?;

@@ -99,12 +99,12 @@ impl From<CalendarCache> for Event {
                 name,
                 ..Default::default()
             };
-            let lat = item.event_location_lat.and_then(|l| l.try_into().ok());
-            let lon = item.event_location_lon.and_then(|l| l.try_into().ok());
-            if lat.is_some() && lon.is_some() {
-                let lat = lat.unwrap();
-                let lon = lon.unwrap();
-                location.lat_lon.replace((lat, lon));
+            let latitude = item.event_location_lat.and_then(|l| l.try_into().ok());
+            let longitude = item.event_location_lon.and_then(|l| l.try_into().ok());
+            if latitude.is_some() && longitude.is_some() {
+                let latitude = latitude.unwrap();
+                let longitude = longitude.unwrap();
+                location.lat_lon.replace((latitude, longitude));
             }
             loc.replace(location);
         }
