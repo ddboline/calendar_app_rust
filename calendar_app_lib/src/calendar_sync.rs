@@ -7,7 +7,9 @@ use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
 
 use crate::calendar::{Calendar, Event};
 use crate::config::Config;
-use crate::models::{CalendarCache, InsertCalendarCache, InsertCalendarList};
+use crate::models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList};
+use crate::parse_hashnyc::parse_hashnyc;
+use crate::parse_nycruns::ParseNycRuns;
 use crate::pgpool::PgPool;
 
 pub struct CalendarSync {
@@ -104,5 +106,31 @@ impl CalendarSync {
         }?;
         self.sync_calendar_events(gcal_id, &calendar_events, true)
             .await
+    }
+
+    pub async fn run_syncing(&self) -> Result<(), Error> {
+        let inserted = self.sync_calendar_list().await?;
+        println!("inserted {} caledars", inserted.len());
+        let calendar_list = CalendarList::get_calendars(&self.pool).await?;
+        for calendar in calendar_list {
+            if !calendar.sync {
+                continue;
+            }
+            println!("starting calendar {}", calendar.calendar_name);
+            let inserted = self.sync_future_events(&calendar.gcal_id).await?;
+            println!("{} {}", calendar.calendar_name, inserted.len());
+        }
+
+        let pool = self.pool.clone();
+        let events = parse_hashnyc(&pool).await?;
+        println!("events {:#?}", events);
+        println!("events {}", events.len());
+
+        let pool = self.pool.clone();
+        let nycruns = ParseNycRuns::new(pool);
+        let results = nycruns.parse_nycruns().await?;
+        println!("{:#?}", results);
+
+        Ok(())
     }
 }

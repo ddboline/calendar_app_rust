@@ -24,3 +24,4 @@ gcal_lib = {path="../gcal_lib"}
 uuid = {version="0.8", features=["v4"]}
 futures = "0.3"
 select = "0.4"
+structopt = "0.3"

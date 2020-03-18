@@ -13,6 +13,7 @@
 extern crate diesel;
 
 pub mod calendar;
+pub mod calendar_cli_opts;
 pub mod calendar_sync;
 pub mod config;
 pub mod latitude;

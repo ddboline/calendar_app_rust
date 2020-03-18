@@ -1,6 +1,7 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use std::convert::TryInto;
+use std::fmt;
 use url::Url;
 use uuid::Uuid;
 
@@ -25,6 +26,21 @@ pub struct Calendar {
     pub location: Option<Location>,
     pub timezone: Option<TimeZone>,
     pub sync: bool,
+}
+
+impl fmt::Display for Calendar {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "name: {}\tid: {}\n{}{}{}{}\n",
+            self.name,
+            self.gcal_id,
+            self.gcal_name.as_ref().map_or("", String::as_str),
+            self.description.as_ref().map_or("", String::as_str),
+            self.location.as_ref().map_or("", |l| l.name.as_str()),
+            self.timezone.as_ref().map_or("", |t| t.name()),
+        )
+    }
 }
 
 impl From<CalendarList> for Calendar {
@@ -89,6 +105,31 @@ pub struct Event {
     pub name: String,
     pub description: Option<String>,
     pub location: Option<Location>,
+}
+
+impl fmt::Display for Event {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        writeln!(f, "\t{}:", self.name)?;
+        if let Some(description) = &self.description {
+            let description: Vec<_> = description.split('\n').map(|x| format!("\t\t{}", x)).collect();
+            writeln!(f, "{}", description.join("\n"))?;
+        }
+        if let Some(url) = &self.url {
+            writeln!(f, "\t\t{}", url.as_str())?;
+        }
+        if let Some(location) = &self.location {
+            writeln!(f, "\t\t{}", location.name)?;
+            if let Some((lat, lon)) = &location.lat_lon {
+                writeln!(f, "\t\t{} {}", lat, lon)?;
+            }
+        }
+        writeln!(
+            f,
+            "\t\t{} - {}\n",
+            self.start_time.with_timezone(&Local),
+            self.end_time.with_timezone(&Local)
+        )
+    }
 }
 
 impl From<CalendarCache> for Event {

@@ -227,6 +227,63 @@ impl CalendarCache {
             .await?
     }
 
+    fn get_by_datetime_sync(
+        min_time: DateTime<Utc>,
+        max_time: DateTime<Utc>,
+        pool: &PgPool,
+    ) -> Result<Vec<CalendarCache>, Error> {
+        use crate::schema::calendar_cache::dsl::{
+            calendar_cache, event_end_time, event_start_time,
+        };
+        let conn = pool.get()?;
+        calendar_cache
+            .filter(event_end_time.gt(min_time))
+            .filter(event_start_time.lt(max_time))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_datetime(
+        min_time: DateTime<Utc>,
+        max_time: DateTime<Utc>,
+        pool: &PgPool,
+    ) -> Result<Vec<CalendarCache>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_by_datetime_sync(min_time, max_time, &pool)).await?
+    }
+
+    fn get_by_gcal_id_datetime_sync(
+        gcal_id_: &str,
+        min_time: DateTime<Utc>,
+        max_time: DateTime<Utc>,
+        pool: &PgPool,
+    ) -> Result<Vec<CalendarCache>, Error> {
+        use crate::schema::calendar_cache::dsl::{
+            calendar_cache, event_end_time, event_start_time, gcal_id,
+        };
+        let conn = pool.get()?;
+        calendar_cache
+            .filter(gcal_id.eq(gcal_id_))
+            .filter(event_end_time.gt(min_time))
+            .filter(event_start_time.lt(max_time))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_gcal_id_datetime(
+        gcal_id: &str,
+        min_time: DateTime<Utc>,
+        max_time: DateTime<Utc>,
+        pool: &PgPool,
+    ) -> Result<Vec<CalendarCache>, Error> {
+        let pool = pool.clone();
+        let gcal_id = gcal_id.to_string();
+        spawn_blocking(move || {
+            Self::get_by_gcal_id_datetime_sync(&gcal_id, min_time, max_time, &pool)
+        })
+        .await?
+    }
+
     fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
         use crate::schema::calendar_cache::dsl::{
             calendar_cache, event_description, event_end_time, event_id, event_location_lat,
