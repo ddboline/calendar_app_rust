@@ -36,7 +36,7 @@ impl From<CalendarList> for Calendar {
             description: item.gcal_description.map(Into::into),
             location: item.gcal_location.map(|l| Location {
                 name: l,
-                ..Default::default()
+                ..Location::default()
             }),
             timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
             sync: item.sync,
@@ -70,7 +70,7 @@ impl Calendar {
                 description: item.description.clone(),
                 location: item.location.as_ref().map(|l| Location {
                     name: l.to_string(),
-                    ..Default::default()
+                    ..Location::default()
                 }),
                 timezone: item.time_zone.as_ref().and_then(|z| z.parse().ok()),
                 sync: true,
@@ -97,7 +97,7 @@ impl From<CalendarCache> for Event {
         if let Some(name) = item.event_location_name {
             let mut location = Location {
                 name,
-                ..Default::default()
+                ..Location::default()
             };
             let latitude = item.event_location_lat.and_then(|l| l.try_into().ok());
             let longitude = item.event_location_lon.and_then(|l| l.try_into().ok());
@@ -128,7 +128,7 @@ impl Into<InsertCalendarCache> for Event {
             event_id: self.event_id,
             event_start_time: self.start_time,
             event_end_time: self.end_time,
-            event_url: self.url.map(|u| u.into_string()),
+            event_url: self.url.map(Url::into_string),
             event_name: self.name,
             event_description: self.description,
             event_location_lat: self
@@ -193,7 +193,7 @@ impl Event {
         if let Some(name) = &item.location {
             let location = Location {
                 name: name.to_string(),
-                ..Default::default()
+                ..Location::default()
             };
             loc.replace(location);
         }

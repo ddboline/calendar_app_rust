@@ -44,7 +44,7 @@ impl ParseNycRuns {
                         event_url.replace(url);
                     }
                 }
-                if let Some(text) = a.text().trim().split("\n").nth(0) {
+                if let Some(text) = a.text().trim().split('\n').next() {
                     name.replace(text.trim().to_string());
                 }
             }
