@@ -101,10 +101,10 @@ impl From<CalendarCache> for Event {
             };
             let latitude = item.event_location_lat.and_then(|l| l.try_into().ok());
             let longitude = item.event_location_lon.and_then(|l| l.try_into().ok());
-            if latitude.is_some() && longitude.is_some() {
-                let latitude = latitude.unwrap();
-                let longitude = longitude.unwrap();
-                location.lat_lon.replace((latitude, longitude));
+            if let Some(latitude) = latitude {
+                if let Some(longitude) = longitude {
+                    location.lat_lon.replace((latitude, longitude));
+                }
             }
             loc.replace(location);
         }

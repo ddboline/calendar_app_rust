@@ -71,26 +71,27 @@ impl ParseNycRuns {
                     }
                 }
             }
-            if name.is_some() && current_date.is_some() && current_time.is_some() {
-                let current_date = current_date.unwrap();
-                let current_time = current_time.unwrap();
-                let current_datetime = NaiveDateTime::new(current_date, current_time);
-                let start_time = New_York
-                    .from_local_datetime(&current_datetime)
-                    .single()
-                    .unwrap()
-                    .with_timezone(&Utc);
-                let end_time = start_time + Duration::hours(1);
-                let name = name.unwrap();
-                let mut event = Event::new(CALID, &name, start_time, end_time);
-                if let Some(location) = location {
-                    event.location.replace(Location {
-                        name: location,
-                        ..Location::default()
-                    });
+            if let Some(name) = name {
+                if let Some(current_date) = current_date {
+                    if let Some(current_time) = current_time {
+                        let current_datetime = NaiveDateTime::new(current_date, current_time);
+                        let start_time = New_York
+                            .from_local_datetime(&current_datetime)
+                            .single()
+                            .unwrap()
+                            .with_timezone(&Utc);
+                        let end_time = start_time + Duration::hours(1);
+                        let mut event = Event::new(CALID, &name, start_time, end_time);
+                        if let Some(location) = location {
+                            event.location.replace(Location {
+                                name: location,
+                                ..Location::default()
+                            });
+                        }
+                        event.url = event_url;
+                        events.push(event);
+                    }
                 }
-                event.url = event_url;
-                events.push(event);
             }
         }
         Ok(events)
