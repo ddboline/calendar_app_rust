@@ -140,20 +140,21 @@ impl InsertCalendarList {
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
         let existing = CalendarList::get_by_gcal_id(&self.gcal_id, &pool).await?;
-        if existing.len() > 1 {
-            panic!(
-                "this shouldn't be possible... {} must be unique",
-                self.gcal_id
-            );
-        } else if existing.len() == 1 {
-            let id = existing[0].id;
-            self.into_calendar_list(id)
-                .update(&pool)
-                .await
-                .map(Into::into)
-        } else {
-            let insertable: InsertCalendarList = self.into();
-            insertable.insert(&pool).await
+        match existing.len() {
+            0 => self.insert(&pool).await,
+            1 => {
+                let id = existing[0].id;
+                self.into_calendar_list(id)
+                    .update(&pool)
+                    .await
+                    .map(Into::into)
+            }
+            _ => {
+                panic!(
+                    "this shouldn't be possible... {} must be unique",
+                    self.gcal_id
+                );
+            }
         }
     }
 }
@@ -326,21 +327,20 @@ impl InsertCalendarCache {
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
         let existing =
             CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, &pool).await?;
-        if existing.len() > 1 {
-            Err(format_err!(
+        match existing.len() {
+            0 => self.insert(&pool).await,
+            1 => {
+                let id = existing[0].id;
+                self.into_calendar_cache(id)
+                    .update(&pool)
+                    .await
+                    .map(Into::into)
+            }
+            _ => Err(format_err!(
                 "gcal_id {}, event_id {} is not unique",
                 self.gcal_id,
                 self.event_id
-            ))
-        } else if existing.len() == 1 {
-            let id = existing[0].id;
-            self.into_calendar_cache(id)
-                .update(&pool)
-                .await
-                .map(Into::into)
-        } else {
-            let insertable: InsertCalendarCache = self.into();
-            insertable.insert(&pool).await
+            )),
         }
     }
 }
