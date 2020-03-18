@@ -8,6 +8,7 @@ pub mod latitude;
 pub mod longitude;
 pub mod models;
 pub mod parse_hashnyc;
+pub mod parse_nycruns;
 pub mod pgpool;
 pub mod schema;
 pub mod timezone;
