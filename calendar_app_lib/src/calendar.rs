@@ -111,7 +111,10 @@ impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "\t{}:", self.name)?;
         if let Some(description) = &self.description {
-            let description: Vec<_> = description.split('\n').map(|x| format!("\t\t{}", x)).collect();
+            let description: Vec<_> = description
+                .split('\n')
+                .map(|x| format!("\t\t{}", x))
+                .collect();
             writeln!(f, "{}", description.join("\n"))?;
         }
         if let Some(url) = &self.url {

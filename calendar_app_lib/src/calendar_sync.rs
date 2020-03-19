@@ -12,6 +12,7 @@ use crate::parse_hashnyc::parse_hashnyc;
 use crate::parse_nycruns::ParseNycRuns;
 use crate::pgpool::PgPool;
 
+#[derive(Clone)]
 pub struct CalendarSync {
     pub config: Config,
     pub gcal: GCalendarInstance,

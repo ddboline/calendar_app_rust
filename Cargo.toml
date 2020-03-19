@@ -9,6 +9,7 @@ edition = "2018"
 [dependencies]
 gcal_lib = {path="gcal_lib"}
 calendar_app_lib = {path="calendar_app_lib"}
+calendar_app_http = {path="calendar_app_http"}
 chrono = "0.4"
 tokio = {version="0.2", features=["full"]}
 anyhow = "1.0"
@@ -17,6 +18,7 @@ anyhow = "1.0"
 members = [
     "gcal_lib",
     "calendar_app_lib",
+    "calendar_app_http",
 ]
 
 [[bin]]

@@ -1,4 +1,10 @@
 table! {
+    authorized_users (email) {
+        email -> Varchar,
+    }
+}
+
+table! {
     calendar_cache (id) {
         id -> Int4,
         gcal_id -> Text,
@@ -27,4 +33,4 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(calendar_cache, calendar_list,);
+allow_tables_to_appear_in_same_query!(authorized_users, calendar_cache, calendar_list,);

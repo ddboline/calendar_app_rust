@@ -4,7 +4,7 @@ use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
 use tokio::task::spawn_blocking;
 
 use crate::pgpool::PgPool;
-use crate::schema::{calendar_cache, calendar_list};
+use crate::schema::{authorized_users, calendar_cache, calendar_list};
 
 #[derive(Queryable, Clone, Debug)]
 pub struct CalendarList {
@@ -399,5 +399,24 @@ impl InsertCalendarCache {
                 self.event_id
             )),
         }
+    }
+}
+
+#[derive(Queryable, Insertable, Clone, Debug)]
+#[table_name = "authorized_users"]
+pub struct AuthorizedUsers {
+    pub email: String,
+}
+
+impl AuthorizedUsers {
+    fn get_authorized_users_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::authorized_users::dsl::authorized_users;
+        let conn = pool.get()?;
+        authorized_users.load(&conn).map_err(Into::into)
+    }
+
+    pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_authorized_users_sync(&pool)).await?
     }
 }
