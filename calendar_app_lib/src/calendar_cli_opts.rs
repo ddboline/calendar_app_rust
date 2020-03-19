@@ -61,26 +61,30 @@ impl CalendarCliOpts {
 
         match action {
             CalendarActions::PrintAgenda => {
-                list_agenda(&cal_sync.pool).await?;
+                for event in cal_sync.list_agenda().await? {
+                    println!("{}", event);
+                }
             }
             CalendarActions::SyncCalendars => {
-                cal_sync.run_syncing().await?;
+                for line in cal_sync.run_syncing().await? {
+                    println!("{}", line);
+                }
             }
             CalendarActions::SyncCalendarsFull => {
                 for calendar in cal_sync.sync_calendar_list().await? {
-                    cal_sync.sync_full_calendar(&calendar.gcal_id).await?;
+                    let events = cal_sync.sync_full_calendar(&calendar.gcal_id).await?;
+                    println!("{} {}", calendar.calendar_name, events.len());
                 }
             }
             CalendarActions::Delete { gcal_id, event_id } => {
                 {
+                    println!("delete {} {}", gcal_id, event_id);
                     spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
                         .await?
                 }?;
             }
             CalendarActions::ListCalendars => {
-                let calendar_list = CalendarList::get_calendars(&cal_sync.pool).await?;
-                for calendar in calendar_list {
-                    let calendar: Calendar = calendar.into();
+                for calendar in cal_sync.list_calendars().await? {
                     println!("{}", calendar);
                 }
             }
@@ -89,35 +93,7 @@ impl CalendarCliOpts {
                 min_date,
                 max_date,
             } => {
-                let min_date = min_date.map_or_else(
-                    || (Utc::now() - Duration::weeks(1)),
-                    |d| {
-                        Local
-                            .from_local_datetime(&d.and_hms(0, 0, 0))
-                            .single()
-                            .unwrap()
-                            .with_timezone(&Utc)
-                    },
-                );
-                let max_date = max_date.map_or_else(
-                    || (Utc::now() + Duration::weeks(1)),
-                    |d| {
-                        Local
-                            .from_local_datetime(&d.and_hms(0, 0, 0))
-                            .single()
-                            .unwrap()
-                            .with_timezone(&Utc)
-                    },
-                );
-                let events = CalendarCache::get_by_gcal_id_datetime(
-                    &gcal_id,
-                    min_date,
-                    max_date,
-                    &cal_sync.pool,
-                )
-                .await?;
-                for event in events {
-                    let event: Event = event.into();
+                for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
                     println!("{}", event);
                 }
             }
@@ -125,15 +101,4 @@ impl CalendarCliOpts {
 
         Ok(())
     }
-}
-
-async fn list_agenda(pool: &PgPool) -> Result<(), Error> {
-    let min_time = Utc::now() - Duration::days(1);
-    let max_time = Utc::now() + Duration::days(1);
-    let events = CalendarCache::get_by_datetime(min_time, max_time, &pool).await?;
-    for event in events {
-        let event: Event = event.into();
-        println!("{}", event);
-    }
-    Ok(())
 }

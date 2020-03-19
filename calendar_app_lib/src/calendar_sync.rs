@@ -1,5 +1,5 @@
 use anyhow::Error;
-use chrono::Utc;
+use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use tokio::task::spawn_blocking;
 
@@ -109,29 +109,88 @@ impl CalendarSync {
             .await
     }
 
-    pub async fn run_syncing(&self) -> Result<(), Error> {
+    pub async fn run_syncing(&self) -> Result<Vec<String>, Error> {
+        let mut output = Vec::new();
         let inserted = self.sync_calendar_list().await?;
-        println!("inserted {} caledars", inserted.len());
+        output.push(format!("inserted {} caledars", inserted.len()));
         let calendar_list = CalendarList::get_calendars(&self.pool).await?;
         for calendar in calendar_list {
             if !calendar.sync {
                 continue;
             }
-            println!("starting calendar {}", calendar.calendar_name);
+            output.push(format!("starting calendar {}", calendar.calendar_name));
             let inserted = self.sync_future_events(&calendar.gcal_id).await?;
-            println!("{} {}", calendar.calendar_name, inserted.len());
+            output.push(format!(
+                "future events {} {}",
+                calendar.calendar_name,
+                inserted.len()
+            ));
         }
 
         let pool = self.pool.clone();
         let events = parse_hashnyc(&pool).await?;
-        println!("events {:#?}", events);
-        println!("events {}", events.len());
+        output.push(format!("parse_hashnyc {}", events.len()));
 
         let pool = self.pool.clone();
         let nycruns = ParseNycRuns::new(pool);
         let results = nycruns.parse_nycruns().await?;
-        println!("{:#?}", results);
+        output.push(format!("parse_nycruns {}", results.len()));
 
-        Ok(())
+        Ok(output)
+    }
+
+    pub async fn list_agenda(&self) -> Result<Vec<Event>, Error> {
+        let min_time = Utc::now() - Duration::days(1);
+        let max_time = Utc::now() + Duration::days(1);
+        let events: Vec<_> = CalendarCache::get_by_datetime(min_time, max_time, &self.pool)
+            .await?
+            .into_iter()
+            .map(Into::into)
+            .collect();
+        Ok(events)
+    }
+
+    pub async fn list_calendars(&self) -> Result<Vec<Calendar>, Error> {
+        let calendars: Vec<_> = CalendarList::get_calendars(&self.pool)
+            .await?
+            .into_iter()
+            .map(|c| c.into())
+            .collect();
+        Ok(calendars)
+    }
+
+    pub async fn list_events(
+        &self,
+        gcal_id: &str,
+        min_date: Option<NaiveDate>,
+        max_date: Option<NaiveDate>,
+    ) -> Result<Vec<Event>, Error> {
+        let min_date = min_date.map_or_else(
+            || (Utc::now() - Duration::weeks(1)),
+            |d| {
+                Local
+                    .from_local_datetime(&d.and_hms(0, 0, 0))
+                    .single()
+                    .unwrap()
+                    .with_timezone(&Utc)
+            },
+        );
+        let max_date = max_date.map_or_else(
+            || (Utc::now() + Duration::weeks(1)),
+            |d| {
+                Local
+                    .from_local_datetime(&d.and_hms(0, 0, 0))
+                    .single()
+                    .unwrap()
+                    .with_timezone(&Utc)
+            },
+        );
+        let events: Vec<_> =
+            CalendarCache::get_by_gcal_id_datetime(&gcal_id, min_date, max_date, &self.pool)
+                .await?
+                .into_iter()
+                .map(|c| c.into())
+                .collect();
+        Ok(events)
     }
 }
