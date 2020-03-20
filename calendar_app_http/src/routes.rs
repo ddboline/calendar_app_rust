@@ -73,8 +73,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
 }
 
 pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
-    let lines = data.cal_sync.run_syncing(false).await?.join("<br>");
-    let body = lines.to_string();
+    let body = data.cal_sync.run_syncing(false).await?.join("<br>");
     form_http_response(body)
 }
 
@@ -82,8 +81,7 @@ pub async fn sync_calendars_full(
     _: LoggedUser,
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let lines = data.cal_sync.run_syncing(true).await?.join("<br>");
-    let body = lines.to_string();
+    let body = data.cal_sync.run_syncing(true).await?.join("<br>");
     form_http_response(body)
 }
 
