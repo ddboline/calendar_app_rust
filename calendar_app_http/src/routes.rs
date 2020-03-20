@@ -4,9 +4,11 @@ use actix_web::{
     HttpResponse,
 };
 use chrono::{Local, NaiveDate};
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::task::spawn_blocking;
+use url::Url;
 
 use calendar_app_lib::calendar::Event;
 use calendar_app_lib::models::CalendarCache;
@@ -40,6 +42,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
         .list_agenda()
         .await?
         .into_iter()
+        .sorted_by_key(|event| event.start_time)
         .filter_map(|event| {
             let calendar_name = match calendar_map.get(&event.gcal_id) {
                 Some(cal) => cal.gcal_name.as_ref().unwrap_or_else(|| &cal.name),
@@ -51,6 +54,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
                     <td>{calendar_name}</td>
                     <td><input type="button" name="event_detail" value="{event_name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start_time}</td>
+                    <td><input type="button" name="delete_event" value="Delete" onclick="deleteEvent('{gcal_id}', '{event_id}')"></td>
                     </tr>
                 "#,
                 calendar_name=calendar_name,
@@ -67,7 +71,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
         <thead><th>Calendar</th><th>Event</th><th>Start Time</th></thead>
         <tbody>{}</tbody>
         </table>"#,
-        events.join("<br>")
+        events.join("")
     );
     form_http_response(body)
 }
@@ -97,13 +101,24 @@ pub async fn delete_event(
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     let payload = payload.into_inner();
-    let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
-    spawn_blocking(move || {
-        data.cal_sync
-            .gcal
-            .delete_gcal_event(&payload.gcal_id, &payload.event_id)
-    })
-    .await??;
+
+    let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
+        &payload.gcal_id,
+        &payload.event_id,
+        &data.cal_sync.pool,
+    )
+    .await?
+    .pop()
+    {
+        let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
+        event.delete(&data.cal_sync.pool).await?;
+        let gcal = data.cal_sync.gcal.clone();
+        spawn_blocking(move || gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id))
+            .await??;
+        body
+    } else {
+        "Event not deleted".to_string()
+    };
     form_http_response(body)
 }
 
@@ -162,21 +177,25 @@ pub async fn list_events(
         Some(cal) => &cal.gcal_id,
         None => return form_http_response("".to_string()),
     };
-    let events: Vec<_> = data.cal_sync.list_events(&gcal_id, query.min_time, query.max_time).await?.into_iter().map(|event| {
-        format!(r#"
-                <tr text-style="center">
-                <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
-                <td>{start}</td>
-                <td>{end}</td>
-                </tr>
-            "#,
-            name=event.name,
-            start=event.start_time.with_timezone(&Local),
-            end=event.end_time.with_timezone(&Local),
-            gcal_id=event.gcal_id,
-            event_id=event.event_id,
-        )
-    }).collect();
+    let events: Vec<_> = data.cal_sync.list_events(&gcal_id, query.min_time, query.max_time).await?
+        .into_iter()
+        .sorted_by_key(|event| event.start_time)
+        .map(|event| {
+            format!(r#"
+                    <tr text-style="center">
+                    <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
+                    <td>{start}</td>
+                    <td>{end}</td>
+                    <td><input type="button" name="delete_event" value="Delete" onclick="deleteEvent('{gcal_id}', '{event_id}')"></td>
+                    </tr>
+                "#,
+                name=event.name,
+                start=event.start_time.with_timezone(&Local),
+                end=event.end_time.with_timezone(&Local),
+                gcal_id=event.gcal_id,
+                event_id=event.event_id,
+            )
+        }).collect();
     let body = format!(
         r#"
         <table border="1" class="dataframe">
@@ -204,26 +223,73 @@ pub async fn event_detail(
     {
         let event: Event = event.into();
         let mut output = Vec::new();
-        output.push(event.name);
+        output.push(format!(
+            r#"<tr text-style="center"><td>Name</td><td>{}</td></tr>"#,
+            &event.name
+        ));
         if let Some(description) = &event.description {
             let description: Vec<_> = description
                 .split('\n')
-                .map(|x| format!("\t\t{}", x))
+                .map(|line| {
+                    let mut line_length = 0;
+                    let words: Vec<_> = line
+                        .split_whitespace()
+                        .map(|word| {
+                            let mut output_word = word.to_string();
+                            if let Ok(url) = word.parse::<Url>() {
+                                if url.scheme() == "https" {
+                                    output_word = format!(r#"<a href="{url}">Link</a>"#, url = url);
+                                }
+                            }
+                            line_length += output_word.len();
+                            if line_length > 60 {
+                                output_word = format!("<br>{}", output_word);
+                                line_length = 0;
+                            }
+                            output_word
+                        })
+                        .collect();
+                    format!("\t\t{}", words.join(" "))
+                })
                 .collect();
-            output.push(description.join("\n"));
+            output.push(format!(
+                r#"<tr text-style="center"><td>Description</td><td>{}</td></tr>"#,
+                &description.join("")
+            ));
         }
         if let Some(url) = &event.url {
-            output.push(url.as_str().to_string());
+            output.push(format!(
+                r#"<tr text-style="center"><td>Url</td><td><a href={url}>Link</a></td></tr>"#,
+                url = url.as_str()
+            ));
         }
         if let Some(location) = &event.location {
-            output.push(location.name.to_string());
+            output.push(format!(
+                r#"<tr text-style="center"><td>Location</td><td>{}</td></tr>"#,
+                location.name
+            ));
             if let Some((lat, lon)) = &location.lat_lon {
-                output.push(format!("{},{}", lat, lon));
+                output.push(format!(
+                    r#"<tr text-style="center"><td>Lat,Lon:</td><td>{},{}</td></tr>"#,
+                    lat, lon
+                ));
             }
         }
-        output.push(event.start_time.with_timezone(&Local).to_string());
-        output.push(event.end_time.with_timezone(&Local).to_string());
-        output.join("<br>")
+        output.push(format!(
+            r#"<tr text-style="center"><td>Start Time</td><td>{}</td></tr>"#,
+            event.start_time.with_timezone(&Local)
+        ));
+        output.push(format!(
+            r#"<tr text-style="center"><td>End Time</td><td>{}</td></tr>"#,
+            event.end_time.with_timezone(&Local)
+        ));
+        format!(
+            r#"
+            <table border="1" class="dataframe">
+            <tbody>{}</tbody>
+            </table>"#,
+            output.join("")
+        )
     } else {
         "".to_string()
     };

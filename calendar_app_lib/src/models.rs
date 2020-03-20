@@ -315,6 +315,20 @@ impl CalendarCache {
         let pool = pool.clone();
         spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
     }
+
+    fn delete_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::calendar_cache::dsl::{calendar_cache, id};
+        let conn = pool.get()?;
+        diesel::delete(calendar_cache.filter(id.eq(&self.id)))
+            .execute(&conn)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    pub async fn delete(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.delete_sync(&pool).map(|_| self)).await?
+    }
 }
 
 #[derive(Insertable, Debug, Clone)]

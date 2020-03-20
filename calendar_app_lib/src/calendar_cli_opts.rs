@@ -61,7 +61,6 @@ impl CalendarCliOpts {
     pub async fn parse_opts() -> Result<(), Error> {
         let opts = Self::from_args();
         let action = opts.action.unwrap_or(CalendarActions::PrintAgenda);
-        println!("{:?}", action);
 
         let config = Config::init_config()?;
         let pool = PgPool::new(&config.database_url);
@@ -70,7 +69,7 @@ impl CalendarCliOpts {
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda().await? {
-                    println!("{}", event);
+                    println!("{}", event.get_summary());
                 }
             }
             CalendarActions::SyncCalendars => {

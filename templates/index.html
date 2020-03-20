@@ -116,8 +116,8 @@ DISPLAY_TEXT
             document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
             document.getElementById("garminconnectoutput").innerHTML = "done";
         }
-        xmlhttp.setRequestHeader('Content-Type', 'application/json');
         xmlhttp.open("DELETE", url, true);
+        xmlhttp.setRequestHeader('Content-Type', 'application/json');
         xmlhttp.send(data);
         document.getElementById("garminconnectoutput").innerHTML = "running";
     }

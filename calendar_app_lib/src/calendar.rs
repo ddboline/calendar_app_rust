@@ -286,10 +286,10 @@ impl Event {
     pub fn get_summary(&self) -> String {
         format!(
             "{} {} {} {}",
-            self.name,
             self.start_time.with_timezone(&Local),
+            self.name,
             self.gcal_id,
-            self.event_id
+            self.url.as_ref().map_or_else(|| self.event_id.as_str(), Url::as_str)
         )
     }
 }

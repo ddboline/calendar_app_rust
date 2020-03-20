@@ -1,6 +1,7 @@
 use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
+use itertools::Itertools;
 use tokio::task::spawn_blocking;
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
@@ -149,6 +150,7 @@ impl CalendarSync {
         let events: Vec<_> = CalendarCache::get_by_datetime(min_time, max_time, &self.pool)
             .await?
             .into_iter()
+            .sorted_by_key(|event| event.event_start_time)
             .map(Into::into)
             .collect();
         Ok(events)
@@ -193,6 +195,7 @@ impl CalendarSync {
             CalendarCache::get_by_gcal_id_datetime(&gcal_id, min_date, max_date, &self.pool)
                 .await?
                 .into_iter()
+                .sorted_by_key(|event| event.event_start_time)
                 .map(|c| c.into())
                 .collect();
         Ok(events)
