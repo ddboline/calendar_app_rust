@@ -1,18 +1,11 @@
 use actix_web::{
     http::StatusCode,
-    web::{Data, Json, Path, Query},
+    web::{Data, Json, Query},
     HttpResponse,
 };
 use chrono::{Local, NaiveDate};
-use futures::future::try_join_all;
-use maplit::hashmap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::{
-    fs::File,
-    io::{Read, Write},
-    sync::Arc,
-};
 use tokio::task::spawn_blocking;
 
 use calendar_app_lib::calendar::Event;
@@ -81,7 +74,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
 
 pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
     let lines = data.cal_sync.run_syncing(false).await?.join("<br>");
-    let body = format!("{}", lines);
+    let body = lines.to_string();
     form_http_response(body)
 }
 
@@ -90,7 +83,7 @@ pub async fn sync_calendars_full(
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
     let lines = data.cal_sync.run_syncing(true).await?.join("<br>");
-    let body = format!("{}", lines);
+    let body = lines.to_string();
     form_http_response(body)
 }
 
@@ -117,17 +110,24 @@ pub async fn delete_event(
 }
 
 pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
-    let calendars: Vec<_> = data.cal_sync.list_calendars().await?.into_iter().filter(|calendar| calendar.sync).map(|calendar| {
-        format!(r#"
-            <tr text-style="center">
-            <td><input type="button" name="list_events" value="{gcal_name}" onclick="listEvents('{calendar_name}')"></td>
-            <td>{description}</td>
-            </tr>"#,
-            gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), String::as_str),
-            calendar_name=calendar.name,
-            description=calendar.description.as_ref().map_or_else(|| "", String::as_str),
-        )
-    }).collect();
+    let calendars = data
+        .cal_sync
+        .list_calendars()
+        .await?
+        .into_iter()
+        .filter(|calendar| calendar.sync);
+    let calendars: Vec<_> = calendars
+        .map(|calendar| {
+            format!(r#"
+                <tr text-style="center">
+                <td><input type="button" name="list_events" value="{gcal_name}" onclick="listEvents('{calendar_name}')"></td>
+                <td>{description}</td>
+                </tr>"#,
+                gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), String::as_str),
+                calendar_name=calendar.name,
+                description=calendar.description.as_ref().map_or_else(|| "", String::as_str),
+            )
+        }).collect();
 
     let body = format!(
         r#"
