@@ -7,5 +7,6 @@ CREATE TABLE calendar_list (
     gcal_description TEXT,
     gcal_location TEXT,
     gcal_timezone TEXT,
-    sync BOOL NOT NULL
+    sync BOOL NOT NULL,
+    last_modified TIMESTAMP WITH TIME ZONE NOT NULL
 )

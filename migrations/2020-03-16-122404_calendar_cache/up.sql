@@ -10,5 +10,6 @@ CREATE TABLE calendar_cache (
     event_description TEXT,
     event_location_name TEXT,
     event_location_lat DOUBLE PRECISION,
-    event_location_lon DOUBLE PRECISION
+    event_location_lon DOUBLE PRECISION,
+    last_modified TIMESTAMP WITH TIME ZONE NOT NULL
 )

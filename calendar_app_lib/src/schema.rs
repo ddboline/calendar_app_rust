@@ -17,6 +17,7 @@ table! {
         event_location_name -> Nullable<Text>,
         event_location_lat -> Nullable<Float8>,
         event_location_lon -> Nullable<Float8>,
+        last_modified -> Timestamptz,
     }
 }
 
@@ -30,6 +31,7 @@ table! {
         gcal_location -> Nullable<Text>,
         gcal_timezone -> Nullable<Text>,
         sync -> Bool,
+        last_modified -> Timestamptz,
     }
 }
 

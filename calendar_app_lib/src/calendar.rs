@@ -70,6 +70,7 @@ impl Into<InsertCalendarList> for Calendar {
             gcal_location: self.location.map(|l| l.name),
             gcal_timezone: self.timezone.map(|z| z.into()),
             sync: true,
+            last_modified: Utc::now(),
         }
     }
 }
@@ -184,6 +185,7 @@ impl Into<InsertCalendarCache> for Event {
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(_, lon)| lon.into())),
             event_location_name: self.location.map(|l| l.name),
+            last_modified: Utc::now(),
         }
     }
 }
@@ -289,7 +291,9 @@ impl Event {
             self.start_time.with_timezone(&Local),
             self.name,
             self.gcal_id,
-            self.url.as_ref().map_or_else(|| self.event_id.as_str(), Url::as_str)
+            self.url
+                .as_ref()
+                .map_or_else(|| self.event_id.as_str(), Url::as_str)
         )
     }
 }

@@ -16,6 +16,7 @@ pub struct CalendarList {
     pub gcal_location: Option<String>,
     pub gcal_timezone: Option<String>,
     pub sync: bool,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl CalendarList {
@@ -62,6 +63,7 @@ impl CalendarList {
     fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
         use crate::schema::calendar_list::dsl::{
             calendar_list, gcal_description, gcal_id, gcal_location, gcal_name, gcal_timezone, id,
+            last_modified,
         };
         let conn = pool.get()?;
         diesel::update(calendar_list.filter(id.eq(&self.id)))
@@ -71,6 +73,7 @@ impl CalendarList {
                 gcal_description.eq(&self.gcal_description),
                 gcal_location.eq(&self.gcal_location),
                 gcal_timezone.eq(&self.gcal_timezone),
+                last_modified.eq(Utc::now()),
             ))
             .execute(&conn)
             .map(|_| ())
@@ -93,6 +96,7 @@ pub struct InsertCalendarList {
     pub gcal_location: Option<String>,
     pub gcal_timezone: Option<String>,
     pub sync: bool,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<CalendarList> for InsertCalendarList {
@@ -105,6 +109,7 @@ impl From<CalendarList> for InsertCalendarList {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: true,
+            last_modified: Utc::now(),
         }
     }
 }
@@ -120,6 +125,7 @@ impl InsertCalendarList {
             gcal_location: self.gcal_location,
             gcal_timezone: self.gcal_timezone,
             sync: true,
+            last_modified: Utc::now(),
         }
     }
 
@@ -172,6 +178,7 @@ pub struct CalendarCache {
     pub event_location_name: Option<String>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl CalendarCache {
@@ -288,7 +295,7 @@ impl CalendarCache {
         use crate::schema::calendar_cache::dsl::{
             calendar_cache, event_description, event_end_time, event_id, event_location_lat,
             event_location_lon, event_location_name, event_name, event_start_time, event_url,
-            gcal_id,
+            gcal_id, last_modified,
         };
         let conn = pool.get()?;
         diesel::update(
@@ -305,6 +312,7 @@ impl CalendarCache {
             event_location_name.eq(&self.event_location_name),
             event_location_lat.eq(&self.event_location_lat),
             event_location_lon.eq(&self.event_location_lon),
+            last_modified.eq(Utc::now()),
         ))
         .execute(&conn)
         .map(|_| ())
@@ -344,6 +352,7 @@ pub struct InsertCalendarCache {
     pub event_location_name: Option<String>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<CalendarCache> for InsertCalendarCache {
@@ -359,6 +368,7 @@ impl From<CalendarCache> for InsertCalendarCache {
             event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
+            last_modified: Utc::now(),
         }
     }
 }
@@ -377,6 +387,7 @@ impl InsertCalendarCache {
             event_location_name: self.event_location_name,
             event_location_lat: self.event_location_lat,
             event_location_lon: self.event_location_lon,
+            last_modified: Utc::now(),
         }
     }
 
