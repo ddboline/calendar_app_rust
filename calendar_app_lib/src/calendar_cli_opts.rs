@@ -1,13 +1,12 @@
 use anyhow::Error;
 use chrono::NaiveDate;
-use chrono::{Duration, Local, TimeZone, Utc};
 use structopt::StructOpt;
 use tokio::task::spawn_blocking;
 
-use crate::calendar::{Calendar, Event};
+use crate::calendar::Event;
 use crate::calendar_sync::CalendarSync;
 use crate::config::Config;
-use crate::models::{CalendarCache, CalendarList};
+use crate::models::CalendarCache;
 use crate::pgpool::PgPool;
 
 #[derive(StructOpt, Debug)]
@@ -41,6 +40,15 @@ pub enum CalendarActions {
         /// Latest date to consider (default to 1 week from today)
         max_date: Option<NaiveDate>,
     },
+    /// Display full details of an event
+    Detail {
+        #[structopt(short, long)]
+        /// Google Calendar Id
+        gcal_id: String,
+        #[structopt(short, long)]
+        /// Google Event Id
+        event_id: String,
+    },
 }
 
 #[derive(StructOpt, Debug)]
@@ -66,14 +74,13 @@ impl CalendarCliOpts {
                 }
             }
             CalendarActions::SyncCalendars => {
-                for line in cal_sync.run_syncing().await? {
+                for line in cal_sync.run_syncing(false).await? {
                     println!("{}", line);
                 }
             }
             CalendarActions::SyncCalendarsFull => {
-                for calendar in cal_sync.sync_calendar_list().await? {
-                    let events = cal_sync.sync_full_calendar(&calendar.gcal_id).await?;
-                    println!("{} {}", calendar.calendar_name, events.len());
+                for line in cal_sync.run_syncing(true).await? {
+                    println!("{}", line);
                 }
             }
             CalendarActions::Delete { gcal_id, event_id } => {
@@ -94,6 +101,16 @@ impl CalendarCliOpts {
                 max_date,
             } => {
                 for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
+                    println!("{}", event.get_summary());
+                }
+            }
+            CalendarActions::Detail { gcal_id, event_id } => {
+                if let Some(event) =
+                    CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
+                        .await?
+                        .pop()
+                {
+                    let event: Event = event.into();
                     println!("{}", event);
                 }
             }

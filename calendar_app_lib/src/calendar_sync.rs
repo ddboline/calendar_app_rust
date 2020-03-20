@@ -109,7 +109,7 @@ impl CalendarSync {
             .await
     }
 
-    pub async fn run_syncing(&self) -> Result<Vec<String>, Error> {
+    pub async fn run_syncing(&self, full: bool) -> Result<Vec<String>, Error> {
         let mut output = Vec::new();
         let inserted = self.sync_calendar_list().await?;
         output.push(format!("inserted {} caledars", inserted.len()));
@@ -119,7 +119,11 @@ impl CalendarSync {
                 continue;
             }
             output.push(format!("starting calendar {}", calendar.calendar_name));
-            let inserted = self.sync_future_events(&calendar.gcal_id).await?;
+            let inserted = if full {
+                self.sync_full_calendar(&calendar.gcal_id).await?
+            } else {
+                self.sync_future_events(&calendar.gcal_id).await?
+            };
             output.push(format!(
                 "future events {} {}",
                 calendar.calendar_name,

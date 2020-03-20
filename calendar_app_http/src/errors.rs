@@ -4,6 +4,7 @@ use anyhow::Error as AnyhowError;
 use rust_auth_server::static_files;
 use std::fmt::Debug;
 use thiserror::Error;
+use tokio::task::JoinError;
 
 #[derive(Error, Debug)]
 pub enum ServiceError {
@@ -17,6 +18,8 @@ pub enum ServiceError {
     AnyhowError(#[from] AnyhowError),
     #[error("io Error {0}")]
     IoError(#[from] std::io::Error),
+    #[error("tokio join error {0}")]
+    JoinError(#[from] JoinError),
 }
 
 // impl ResponseError trait allows to convert our errors into http responses with appropriate data

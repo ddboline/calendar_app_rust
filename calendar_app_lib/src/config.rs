@@ -80,7 +80,7 @@ impl Config {
         );
         set_config_default!(conf, secret_key, "0123".repeat(8));
         set_config_default!(conf, domain, "localhost".to_string());
-        set_config_parse!(conf, port, 3084);
+        set_config_parse!(conf, port, 4042);
         set_config_parse!(conf, n_db_workers, 2);
 
         Ok(Self(Arc::new(conf)))

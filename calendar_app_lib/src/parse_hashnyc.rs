@@ -111,7 +111,6 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
                         || event.event_location_name != existing_event.event_location_name
                     {
                         event.event_id = existing_event.event_id.to_string();
-                        println!("modifying event {:#?} {:#?}", event, existing_event);
                         Ok(Some(event.upsert(&pool).await?))
                     } else {
                         Ok(None)

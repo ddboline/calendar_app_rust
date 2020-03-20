@@ -282,6 +282,16 @@ impl Event {
         };
         Ok((self.gcal_id.to_string(), event))
     }
+
+    pub fn get_summary(&self) -> String {
+        format!(
+            "{} {} {} {}",
+            self.name,
+            self.start_time.with_timezone(&Local),
+            self.gcal_id,
+            self.event_id
+        )
+    }
 }
 
 #[cfg(test)]

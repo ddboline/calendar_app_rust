@@ -55,7 +55,12 @@ footer {
 <body>
 
 <input type="button" name="display_agenda" value="Agenda" onclick="displayAgenda();"/>
+<input type="button" name="sync" value="Sync" onclick="syncCalendars();"/>
+<input type="button" name="sync_all" value="Full Sync" onclick="syncCalendarsFull();"/>
+<input type="button" name="list_calendars" value="List Calendars" onclick="listCalendars();"/>
 <button name="garminconnectoutput" id="garminconnectoutput"> &nbsp; </button>
+
+<br>
 
 <article id="main_article">
 DISPLAY_TEXT
@@ -66,12 +71,87 @@ DISPLAY_TEXT
 </article>
 
 <script language="JavaScript" type="text/javascript">
+    !function() {
+        displayAgenda();
+    }()
     function displayAgenda() {
-        let url = "/calendar/index.html";
+        let url = "/calendar/agenda";
         let xmlhttp = new XMLHttpRequest();
         xmlhttp.onload = function f() {
             document.getElementById("sub_article").innerHTML = "&nbsp;";
             document.getElementById("main_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send(null);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function syncCalendars() {
+        let url = "/calendar/sync_calendars";
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send(null);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function syncCalendarsFull() {
+        let url = "/calendar/sync_calendars_full";
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send(null);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function deleteEvent(gcal_id, event_id) {
+        let url = "/calendar/delete_event";
+        let data = JSON.stringify({'gcal_id': gcal_id, 'event_id': event_id});
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.setRequestHeader('Content-Type', 'application/json');
+        xmlhttp.open("DELETE", url, true);
+        xmlhttp.send(data);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function eventDetail(gcal_id, event_id) {
+        let url = "/calendar/event_detail";
+        let data = JSON.stringify({'gcal_id': gcal_id, 'event_id': event_id});
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("POST", url, true);
+        xmlhttp.setRequestHeader('Content-Type', 'application/json');
+        xmlhttp.send(data);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function listCalendars() {
+        let url = "/calendar/list_calendars";
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("main_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("sub_article").innerHTML = "&nbsp;";
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send(null);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function listEvents(calendar_name) {
+        let url = "/calendar/list_events?calendar_name=" + calendar_name;
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function f() {
+            document.getElementById("main_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("sub_article").innerHTML = "&nbsp;";
             document.getElementById("garminconnectoutput").innerHTML = "done";
         }
         xmlhttp.open("GET", url, true);
