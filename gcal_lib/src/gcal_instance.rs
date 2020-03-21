@@ -9,9 +9,11 @@ use oauth2::{
     FlowType,
 };
 use parking_lot::Mutex;
-use std::fs::{create_dir_all, File};
-use std::path::Path;
-use std::sync::Arc;
+use std::{
+    fs::{create_dir_all, File},
+    path::Path,
+    sync::Arc,
+};
 use yup_oauth2 as oauth2;
 
 use crate::exponential_retry;

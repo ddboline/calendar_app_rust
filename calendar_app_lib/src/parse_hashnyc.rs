@@ -2,14 +2,14 @@ use anyhow::Error;
 use chrono::{Duration, TimeZone, Utc};
 use chrono_tz::America::New_York;
 use futures::future::try_join_all;
-use select::document::Document;
-use select::predicate::Name;
-use std::collections::HashMap;
-use std::sync::Arc;
+use select::{document::Document, predicate::Name};
+use std::{collections::HashMap, sync::Arc};
 
-use crate::calendar::{Event, Location};
-use crate::models::{CalendarCache, InsertCalendarCache};
-use crate::pgpool::PgPool;
+use crate::{
+    calendar::{Event, Location},
+    models::{CalendarCache, InsertCalendarCache},
+    pgpool::PgPool,
+};
 
 const CALID: &str = "8hfjg0d8ls2od3s9bd1k1v9jtc@group.calendar.google.com";
 const URL: &str = "https://hashnyc.com/?days=all";

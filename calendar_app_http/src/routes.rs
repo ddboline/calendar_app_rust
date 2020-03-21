@@ -11,14 +11,12 @@ use std::collections::HashMap;
 use tokio::task::spawn_blocking;
 use url::Url;
 
-use calendar_app_lib::calendar::Event;
-use calendar_app_lib::models::{
-    CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList,
+use calendar_app_lib::{
+    calendar::Event,
+    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
 };
 
-use crate::app::AppState;
-use crate::errors::ServiceError as Error;
-use crate::logged_user::LoggedUser;
+use crate::{app::AppState, errors::ServiceError as Error, logged_user::LoggedUser};
 
 fn form_http_response(body: String) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::build(StatusCode::OK)

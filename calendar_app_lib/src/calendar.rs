@@ -1,17 +1,18 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
-use std::convert::TryInto;
-use std::fmt;
+use std::{convert::TryInto, fmt};
 use url::Url;
 use uuid::Uuid;
 
 use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
 
-use crate::latitude::Latitude;
-use crate::longitude::Longitude;
-use crate::models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList};
-use crate::timezone::TimeZone;
+use crate::{
+    latitude::Latitude,
+    longitude::Longitude,
+    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    timezone::TimeZone,
+};
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {

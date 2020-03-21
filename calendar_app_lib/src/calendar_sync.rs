@@ -2,17 +2,18 @@ use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
-use tokio::task::spawn_blocking;
-use tokio::try_join;
+use tokio::{task::spawn_blocking, try_join};
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
 
-use crate::calendar::{Calendar, Event};
-use crate::config::Config;
-use crate::models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList};
-use crate::parse_hashnyc::parse_hashnyc;
-use crate::parse_nycruns::ParseNycRuns;
-use crate::pgpool::PgPool;
+use crate::{
+    calendar::{Calendar, Event},
+    config::Config,
+    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    parse_hashnyc::parse_hashnyc,
+    parse_nycruns::ParseNycRuns,
+    pgpool::PgPool,
+};
 
 #[derive(Clone)]
 pub struct CalendarSync {

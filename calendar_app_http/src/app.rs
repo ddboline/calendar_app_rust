@@ -4,15 +4,15 @@ use chrono::Duration;
 use std::time;
 use tokio::time::interval;
 
-use calendar_app_lib::calendar_sync::CalendarSync;
-use calendar_app_lib::config::Config;
-use calendar_app_lib::pgpool::PgPool;
+use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
 
-use crate::logged_user::{fill_from_db, TRIGGER_DB_UPDATE};
-use crate::routes::{
-    agenda, calendar_cache, calendar_cache_update, calendar_index, calendar_list,
-    calendar_list_update, delete_event, event_detail, list_calendars, list_events, sync_calendars,
-    sync_calendars_full, user,
+use crate::{
+    logged_user::{fill_from_db, TRIGGER_DB_UPDATE},
+    routes::{
+        agenda, calendar_cache, calendar_cache_update, calendar_index, calendar_list,
+        calendar_list_update, delete_event, event_detail, list_calendars, list_events,
+        sync_calendars, sync_calendars_full, user,
+    },
 };
 
 pub struct AppState {

@@ -3,11 +3,10 @@ use chrono::NaiveDate;
 use structopt::StructOpt;
 use tokio::task::spawn_blocking;
 
-use crate::calendar::Event;
-use crate::calendar_sync::CalendarSync;
-use crate::config::Config;
-use crate::models::CalendarCache;
-use crate::pgpool::PgPool;
+use crate::{
+    calendar::Event, calendar_sync::CalendarSync, config::Config, models::CalendarCache,
+    pgpool::PgPool,
+};
 
 #[derive(StructOpt, Debug)]
 pub enum CalendarActions {

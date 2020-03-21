@@ -1,12 +1,13 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
-use diesel::dsl::max;
-use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{dsl::max, ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use tokio::task::spawn_blocking;
 
-use crate::pgpool::PgPool;
-use crate::schema::{authorized_users, calendar_cache, calendar_list};
+use crate::{
+    pgpool::PgPool,
+    schema::{authorized_users, calendar_cache, calendar_list},
+};
 
 #[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {

@@ -3,15 +3,15 @@ use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use reqwest::Client;
-use select::document::Document;
-use select::predicate::Class;
-use std::collections::HashMap;
-use std::sync::Arc;
+use select::{document::Document, predicate::Class};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
-use crate::calendar::{Event, Location};
-use crate::models::{CalendarCache, InsertCalendarCache};
-use crate::pgpool::PgPool;
+use crate::{
+    calendar::{Event, Location},
+    models::{CalendarCache, InsertCalendarCache},
+    pgpool::PgPool,
+};
 
 const CALID: &str = "ufdpqtvophgg2qn643rducu1a4@group.calendar.google.com";
 const BASE_URL: &str = "https://nycruns.com";
@@ -145,9 +145,7 @@ impl ParseNycRuns {
 mod tests {
     use anyhow::Error;
 
-    use crate::config::Config;
-    use crate::parse_nycruns::ParseNycRuns;
-    use crate::pgpool::PgPool;
+    use crate::{config::Config, parse_nycruns::ParseNycRuns, pgpool::PgPool};
 
     #[tokio::test]
     async fn test_parse_nycruns_text() -> Result<(), Error> {
