@@ -367,3 +367,7 @@ pub async fn calendar_cache_update(
     let events = results?;
     to_json(events)
 }
+
+pub async fn user(user: LoggedUser) -> Result<HttpResponse, Error> {
+    to_json(user)
+}

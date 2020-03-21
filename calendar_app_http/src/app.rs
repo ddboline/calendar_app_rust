@@ -12,7 +12,7 @@ use crate::logged_user::{fill_from_db, TRIGGER_DB_UPDATE};
 use crate::routes::{
     agenda, calendar_cache, calendar_cache_update, calendar_index, calendar_list,
     calendar_list_update, delete_event, event_detail, list_calendars, list_events, sync_calendars,
-    sync_calendars_full,
+    sync_calendars_full, user,
 };
 
 pub struct AppState {
@@ -69,6 +69,7 @@ pub async fn start_app() {
                     .route(web::get().to(calendar_cache))
                     .route(web::post().to(calendar_cache_update)),
             )
+            .service(web::resource("/calendar/user").route(web::get().to(user)))
     })
     .bind(&format!("127.0.0.1:{}", port))
     .unwrap_or_else(|_| panic!("Failed to bind to port {}", port))
