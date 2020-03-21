@@ -26,11 +26,11 @@ fn form_http_response(body: String) -> Result<HttpResponse, Error> {
         .body(body))
 }
 
-fn to_json<T>(js: &T) -> Result<HttpResponse, Error>
+fn to_json<T>(js: T) -> Result<HttpResponse, Error>
 where
     T: Serialize,
 {
-    Ok(HttpResponse::Ok().json2(js))
+    Ok(HttpResponse::Ok().json(js))
 }
 
 pub async fn calendar_index(_: LoggedUser, _: Data<AppState>) -> Result<HttpResponse, Error> {
@@ -313,7 +313,7 @@ pub async fn calendar_list(_: LoggedUser, data: Data<AppState>) -> Result<HttpRe
         } else {
             Vec::new()
         };
-    to_json(&calendars)
+    to_json(calendars)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -334,7 +334,7 @@ pub async fn calendar_list_update(
     });
     let results: Result<Vec<_>, Error> = try_join_all(futures).await;
     let calendars = results?;
-    to_json(&calendars)
+    to_json(calendars)
 }
 
 pub async fn calendar_cache(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
@@ -344,7 +344,7 @@ pub async fn calendar_cache(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
         } else {
             Vec::new()
         };
-    to_json(&events)
+    to_json(events)
 }
 
 #[derive(Serialize, Deserialize)]
@@ -365,5 +365,5 @@ pub async fn calendar_cache_update(
     });
     let results: Result<Vec<_>, Error> = try_join_all(futures).await;
     let events = results?;
-    to_json(&events)
+    to_json(events)
 }
