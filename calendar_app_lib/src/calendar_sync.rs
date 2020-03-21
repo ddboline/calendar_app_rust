@@ -3,6 +3,7 @@ use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use tokio::task::spawn_blocking;
+use tokio::try_join;
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
 
@@ -112,34 +113,44 @@ impl CalendarSync {
 
     pub async fn run_syncing(&self, full: bool) -> Result<Vec<String>, Error> {
         let mut output = Vec::new();
+
+        let nycruns = ParseNycRuns::new(self.pool.clone());
+        let hashnyc_future = parse_hashnyc(&self.pool);
+        let nycruns_future = nycruns.parse_nycruns();
+
+        let (hashnyc_events, nycruns_events) = try_join!(hashnyc_future, nycruns_future)?;
+
+        output.push(format!("parse_hashnyc {}", hashnyc_events.len()));
+        output.push(format!("parse_nycruns {}", nycruns_events.len()));
+
         let inserted = self.sync_calendar_list().await?;
         output.push(format!("inserted {} caledars", inserted.len()));
-        let calendar_list = CalendarList::get_calendars(&self.pool).await?;
-        for calendar in calendar_list {
-            if !calendar.sync {
-                continue;
+
+        let calendar_list = CalendarList::get_calendars(&self.pool)
+            .await?
+            .into_iter()
+            .filter(|calendar| calendar.sync);
+
+        let futures = calendar_list.map(|calendar| {
+            let mut output = Vec::new();
+            async move {
+                output.push(format!("starting calendar {}", calendar.calendar_name));
+                let inserted = if full {
+                    self.sync_full_calendar(&calendar.gcal_id).await?
+                } else {
+                    self.sync_future_events(&calendar.gcal_id).await?
+                };
+                output.push(format!(
+                    "future events {} {}",
+                    calendar.calendar_name,
+                    inserted.len()
+                ));
+                Ok(output)
             }
-            output.push(format!("starting calendar {}", calendar.calendar_name));
-            let inserted = if full {
-                self.sync_full_calendar(&calendar.gcal_id).await?
-            } else {
-                self.sync_future_events(&calendar.gcal_id).await?
-            };
-            output.push(format!(
-                "future events {} {}",
-                calendar.calendar_name,
-                inserted.len()
-            ));
-        }
-
-        let pool = self.pool.clone();
-        let events = parse_hashnyc(&pool).await?;
-        output.push(format!("parse_hashnyc {}", events.len()));
-
-        let pool = self.pool.clone();
-        let nycruns = ParseNycRuns::new(pool);
-        let results = nycruns.parse_nycruns().await?;
-        output.push(format!("parse_nycruns {}", results.len()));
+        });
+        let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+        let results: Vec<_> = results?.into_iter().flatten().collect();
+        output.extend_from_slice(&results);
 
         Ok(output)
     }

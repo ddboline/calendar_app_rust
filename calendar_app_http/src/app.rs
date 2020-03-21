@@ -10,8 +10,9 @@ use calendar_app_lib::pgpool::PgPool;
 
 use crate::logged_user::{fill_from_db, TRIGGER_DB_UPDATE};
 use crate::routes::{
-    agenda, calendar_index, delete_event, event_detail, list_calendars, list_events,
-    sync_calendars, sync_calendars_full,
+    agenda, calendar_cache, calendar_cache_update, calendar_index, calendar_list,
+    calendar_list_update, delete_event, event_detail, list_calendars, list_events, sync_calendars,
+    sync_calendars_full,
 };
 
 pub struct AppState {
@@ -58,6 +59,16 @@ pub async fn start_app() {
             .service(web::resource("/calendar/list_calendars").route(web::get().to(list_calendars)))
             .service(web::resource("/calendar/list_events").route(web::get().to(list_events)))
             .service(web::resource("/calendar/event_detail").route(web::post().to(event_detail)))
+            .service(
+                web::resource("/calendar/calendar_list")
+                    .route(web::get().to(calendar_list))
+                    .route(web::post().to(calendar_list_update)),
+            )
+            .service(
+                web::resource("/calendar/calendar_cache")
+                    .route(web::get().to(calendar_cache))
+                    .route(web::post().to(calendar_cache_update)),
+            )
     })
     .bind(&format!("127.0.0.1:{}", port))
     .unwrap_or_else(|_| panic!("Failed to bind to port {}", port))

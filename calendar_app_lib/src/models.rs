@@ -1,12 +1,14 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
+use diesel::dsl::max;
 use diesel::{ExpressionMethods, QueryDsl, RunQueryDsl};
+use serde::{Deserialize, Serialize};
 use tokio::task::spawn_blocking;
 
 use crate::pgpool::PgPool;
 use crate::schema::{authorized_users, calendar_cache, calendar_list};
 
-#[derive(Queryable, Clone, Debug)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {
     pub id: i32,
     pub calendar_name: String,
@@ -84,9 +86,37 @@ impl CalendarList {
         let pool = pool.clone();
         spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
     }
+
+    fn get_max_modified_sync(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
+        let conn = pool.get()?;
+        calendar_list
+            .select(max(last_modified))
+            .first(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_max_modified_sync(&pool)).await?
+    }
+
+    fn get_recent_sync(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
+        let conn = pool.get()?;
+        calendar_list
+            .filter(last_modified.gt(modified))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_recent_sync(modified, &pool)).await?
+    }
 }
 
-#[derive(Insertable, Debug, Clone)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_list"]
 pub struct InsertCalendarList {
     pub calendar_name: String,
@@ -165,7 +195,7 @@ impl InsertCalendarList {
     }
 }
 
-#[derive(Queryable, Clone, Debug)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCache {
     pub id: i32,
     pub gcal_id: String,
@@ -337,9 +367,37 @@ impl CalendarCache {
         let pool = pool.clone();
         spawn_blocking(move || self.delete_sync(&pool).map(|_| self)).await?
     }
+
+    fn get_max_modified_sync(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
+        let conn = pool.get()?;
+        calendar_cache
+            .select(max(last_modified))
+            .first(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_max_modified_sync(&pool)).await?
+    }
+
+    fn get_recent_sync(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
+        let conn = pool.get()?;
+        calendar_cache
+            .filter(last_modified.gt(modified))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_recent_sync(modified, &pool)).await?
+    }
 }
 
-#[derive(Insertable, Debug, Clone)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_cache"]
 pub struct InsertCalendarCache {
     pub gcal_id: String,

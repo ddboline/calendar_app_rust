@@ -1,5 +1,6 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
+use serde::{Deserialize, Serialize};
 use std::convert::TryInto;
 use std::fmt;
 use url::Url;
@@ -12,12 +13,13 @@ use crate::longitude::Longitude;
 use crate::models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList};
 use crate::timezone::TimeZone;
 
-#[derive(Default, Debug, PartialEq)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
 pub struct Location {
     pub name: String,
     pub lat_lon: Option<(Latitude, Longitude)>,
 }
 
+#[derive(Serialize, Deserialize)]
 pub struct Calendar {
     pub name: String,
     pub gcal_id: String,

@@ -4,6 +4,7 @@ use actix_web::{
     HttpResponse,
 };
 use chrono::{Local, NaiveDate};
+use futures::future::try_join_all;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -11,7 +12,9 @@ use tokio::task::spawn_blocking;
 use url::Url;
 
 use calendar_app_lib::calendar::Event;
-use calendar_app_lib::models::CalendarCache;
+use calendar_app_lib::models::{
+    CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList,
+};
 
 use crate::app::AppState;
 use crate::errors::ServiceError as Error;
@@ -21,6 +24,13 @@ fn form_http_response(body: String) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(body))
+}
+
+fn to_json<T>(js: &T) -> Result<HttpResponse, Error>
+where
+    T: Serialize,
+{
+    Ok(HttpResponse::Ok().json2(js))
 }
 
 pub async fn calendar_index(_: LoggedUser, _: Data<AppState>) -> Result<HttpResponse, Error> {
@@ -294,4 +304,66 @@ pub async fn event_detail(
         "".to_string()
     };
     form_http_response(body)
+}
+
+pub async fn calendar_list(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+    let calendars =
+        if let Some(max_modified) = CalendarList::get_max_modified(&data.cal_sync.pool).await? {
+            CalendarList::get_recent(max_modified, &data.cal_sync.pool).await?
+        } else {
+            Vec::new()
+        };
+    to_json(&calendars)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CalendarUpdateRequest {
+    pub updates: Vec<CalendarList>,
+}
+
+pub async fn calendar_list_update(
+    payload: Json<CalendarUpdateRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let payload = payload.into_inner();
+    let futures = payload.updates.into_iter().map(|calendar| {
+        let pool = data.cal_sync.pool.clone();
+        let calendar: InsertCalendarList = calendar.into();
+        async move { calendar.upsert(&pool).await.map_err(Into::into) }
+    });
+    let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+    let calendars = results?;
+    to_json(&calendars)
+}
+
+pub async fn calendar_cache(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+    let events =
+        if let Some(max_modified) = CalendarCache::get_max_modified(&data.cal_sync.pool).await? {
+            CalendarCache::get_recent(max_modified, &data.cal_sync.pool).await?
+        } else {
+            Vec::new()
+        };
+    to_json(&events)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CalendarCacheUpdateRequest {
+    pub updates: Vec<CalendarCache>,
+}
+
+pub async fn calendar_cache_update(
+    payload: Json<CalendarCacheUpdateRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let payload = payload.into_inner();
+    let futures = payload.updates.into_iter().map(|event| {
+        let pool = data.cal_sync.pool.clone();
+        let event: InsertCalendarCache = event.into();
+        async move { event.upsert(&pool).await.map_err(Into::into) }
+    });
+    let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+    let events = results?;
+    to_json(&events)
 }
