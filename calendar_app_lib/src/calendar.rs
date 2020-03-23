@@ -330,10 +330,11 @@ impl Event {
         };
 
         format!(
-            "{} {} {} {}",
+            "{} {} {} {} {}",
             self.start_time.with_timezone(&Local),
             self.name,
             self.gcal_id,
+            self.event_id,
             url,
         )
     }
