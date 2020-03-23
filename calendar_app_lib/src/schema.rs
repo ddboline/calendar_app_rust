@@ -35,4 +35,18 @@ table! {
     }
 }
 
-allow_tables_to_appear_in_same_query!(authorized_users, calendar_cache, calendar_list,);
+table! {
+    shortened_links (id) {
+        id -> Int4,
+        original_url -> Text,
+        shortened_url -> Text,
+        last_modified -> Timestamptz,
+    }
+}
+
+allow_tables_to_appear_in_same_query!(
+    authorized_users,
+    calendar_cache,
+    calendar_list,
+    shortened_links,
+);

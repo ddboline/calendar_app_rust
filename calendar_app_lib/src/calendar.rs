@@ -10,7 +10,11 @@ use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTi
 use crate::{
     latitude::Latitude,
     longitude::Longitude,
-    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    models::{
+        CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, InsertShortenedLinks,
+        ShortenedLinks,
+    },
+    pgpool::PgPool,
     timezone::TimeZone,
 };
 
@@ -288,15 +292,49 @@ impl Event {
         Ok((self.gcal_id.to_string(), event))
     }
 
-    pub fn get_summary(&self) -> String {
+    pub async fn get_summary(&self, domain: &str, pool: &PgPool) -> String {
+        let mut short_url = None;
+        let original_url = self.url.as_ref();
+
+        if let Some(original_url) = original_url {
+            if let Ok(mut result) =
+                ShortenedLinks::get_by_original_url(original_url.as_str(), pool).await
+            {
+                if let Some(result) = result.pop() {
+                    short_url.replace(format!(
+                        "https://{}/calendar/link/{}",
+                        domain, &result.shortened_url
+                    ));
+                }
+            }
+            if short_url.is_none() {
+                if let Ok(result) =
+                    InsertShortenedLinks::get_or_create(original_url.as_str(), pool).await
+                {
+                    if let Ok(result) = result.insert_shortened_link(pool).await {
+                        short_url.replace(format!(
+                            "https://{}/calendar/link/{}",
+                            domain, &result.shortened_url
+                        ));
+                    }
+                }
+            }
+        }
+
+        let url = if let Some(short_url) = &short_url {
+            short_url.as_str()
+        } else if let Some(original_url) = original_url {
+            original_url.as_str()
+        } else {
+            self.event_id.as_str()
+        };
+
         format!(
             "{} {} {} {}",
             self.start_time.with_timezone(&Local),
             self.name,
             self.gcal_id,
-            self.url
-                .as_ref()
-                .map_or_else(|| self.event_id.as_str(), Url::as_str)
+            url,
         )
     }
 }

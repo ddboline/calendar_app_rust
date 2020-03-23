@@ -2,11 +2,13 @@ use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
 use diesel::{dsl::max, ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
+use std::cmp;
+use std::io;
 use tokio::task::spawn_blocking;
 
 use crate::{
     pgpool::PgPool,
-    schema::{authorized_users, calendar_cache, calendar_list},
+    schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
 };
 
 #[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
@@ -503,4 +505,170 @@ impl AuthorizedUsers {
         let pool = pool.clone();
         spawn_blocking(move || Self::get_authorized_users_sync(&pool)).await?
     }
+}
+
+#[derive(Queryable, Clone, Debug)]
+pub struct ShortenedLinks {
+    pub id: i32,
+    pub original_url: String,
+    pub shortened_url: String,
+    pub last_modified: DateTime<Utc>,
+}
+
+impl ShortenedLinks {
+    fn get_by_original_url_sync(original_url_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::shortened_links::dsl::{original_url, shortened_links};
+        let conn = pool.get()?;
+        shortened_links
+            .filter(original_url.eq(original_url_))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_original_url(
+        original_url: &str,
+        pool: &PgPool,
+    ) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        let original_url = original_url.to_string();
+        spawn_blocking(move || Self::get_by_original_url_sync(&original_url, &pool)).await?
+    }
+
+    fn get_by_shortened_url_sync(shortened_url_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::shortened_links::dsl::{shortened_links, shortened_url};
+        let conn = pool.get()?;
+        shortened_links
+            .filter(shortened_url.eq(shortened_url_))
+            .load(&conn)
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_shortened_url(
+        shortened_url: &str,
+        pool: &PgPool,
+    ) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        let shortened_url = shortened_url.to_string();
+        spawn_blocking(move || Self::get_by_shortened_url_sync(&shortened_url, &pool)).await?
+    }
+
+    fn get_shortened_links_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        use crate::schema::shortened_links::dsl::shortened_links;
+        let conn = pool.get()?;
+        shortened_links.load(&conn).map_err(Into::into)
+    }
+
+    pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || Self::get_shortened_links_sync(&pool)).await?
+    }
+}
+
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
+#[table_name = "shortened_links"]
+pub struct InsertShortenedLinks {
+    pub original_url: String,
+    pub shortened_url: String,
+    pub last_modified: DateTime<Utc>,
+}
+
+impl From<ShortenedLinks> for InsertShortenedLinks {
+    fn from(item: ShortenedLinks) -> Self {
+        Self {
+            original_url: item.original_url,
+            shortened_url: item.shortened_url,
+            last_modified: Utc::now(),
+        }
+    }
+}
+
+impl InsertShortenedLinks {
+    pub async fn get_or_create(original_url: &str, pool: &PgPool) -> Result<Self, Error> {
+        let existing = ShortenedLinks::get_by_original_url(original_url, pool)
+            .await?
+            .pop();
+        if let Some(existing) = existing {
+            Ok(existing.into())
+        } else {
+            let mut base_hasher = blake3::Hasher::new();
+            let output = hash_reader(&mut base_hasher, original_url.as_bytes())?;
+            let len = blake3::OUT_LEN as u64;
+            let output = write_hex_output(output, len)?;
+
+            let mut short_chars = 4;
+
+            while short_chars < output.len() {
+                let shortened =
+                    ShortenedLinks::get_by_shortened_url(&output[..short_chars], pool).await?;
+                if shortened.is_empty() {
+                    break;
+                } else {
+                    short_chars += 1;
+                }
+            }
+
+            let shortened_url = &output[..short_chars];
+
+            Ok(Self {
+                original_url: original_url.to_string(),
+                shortened_url: shortened_url.to_string(),
+                last_modified: Utc::now(),
+            })
+        }
+    }
+
+    fn insert_shortened_link_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::shortened_links::dsl::shortened_links;
+        let conn = pool.get()?;
+        diesel::insert_into(shortened_links)
+            .values(self)
+            .execute(&conn)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    pub async fn insert_shortened_link(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.insert_shortened_link_sync(&pool).map(|_| self)).await?
+    }
+}
+
+fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<String, Error> {
+    // Encoding multiples of the block size is most efficient.
+    let mut block = [0; blake3::BLOCK_LEN];
+    let mut result = Vec::new();
+    while len > 0 {
+        output.fill(&mut block);
+        let hex_str = hex::encode(&block[..]);
+        let take_bytes = cmp::min(len, block.len() as u64);
+        let hex_str = &hex_str[..2 * take_bytes as usize];
+        result.push(hex_str.to_string());
+        len -= take_bytes;
+    }
+    Ok(result.join(""))
+}
+
+fn copy_wide(mut reader: impl io::Read, hasher: &mut blake3::Hasher) -> Result<u64, Error> {
+    let mut buffer = [0; 65536];
+    let mut total = 0;
+    loop {
+        match reader.read(&mut buffer) {
+            Ok(0) => return Ok(total),
+            Ok(n) => {
+                hasher.update(&buffer[..n]);
+                total += n as u64;
+            }
+            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
+            Err(e) => return Err(e.into()),
+        }
+    }
+}
+
+fn hash_reader(
+    base_hasher: &blake3::Hasher,
+    reader: impl io::Read,
+) -> Result<blake3::OutputReader, Error> {
+    let mut hasher = base_hasher.clone();
+    copy_wide(reader, &mut hasher)?;
+    Ok(hasher.finalize_xof())
 }

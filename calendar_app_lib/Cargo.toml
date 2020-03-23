@@ -26,3 +26,5 @@ futures = "0.3"
 select = "0.4"
 structopt = "0.3"
 itertools = "0.9"
+blake3 = {version="0.2", features=["rayon"]}
+hex = "0.4"

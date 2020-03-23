@@ -1,22 +1,30 @@
 use actix_web::{
     http::StatusCode,
-    web::{Data, Json, Query},
+    web::{Data, Json, Path, Query},
     HttpResponse,
 };
 use chrono::{Local, NaiveDate};
 use futures::future::try_join_all;
 use itertools::Itertools;
+use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use tokio::sync::RwLock;
 use tokio::task::spawn_blocking;
-use url::Url;
+use url::{form_urlencoded, Url};
 
 use calendar_app_lib::{
     calendar::Event,
-    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    models::{
+        CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, ShortenedLinks,
+    },
 };
 
 use crate::{app::AppState, errors::ServiceError as Error, logged_user::LoggedUser};
+
+lazy_static! {
+    static ref SHORTENED_URLS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::new());
+}
 
 fn form_http_response(body: String) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::build(StatusCode::OK)
@@ -368,4 +376,111 @@ pub async fn calendar_cache_update(
 
 pub async fn user(user: LoggedUser) -> Result<HttpResponse, Error> {
     to_json(user)
+}
+
+pub async fn meetup_auth(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+    let config = &data.cal_sync.config;
+    let params = &[
+        ("client_id", &config.meetup_consumer_key),
+        (
+            "redirect_uri",
+            &format!("https://{}/calendar/meetup_callback", config.domain),
+        ),
+    ];
+    let auth_url = if let Ok(auth_url) =
+        Url::parse_with_params("https://secure.meetup.com/oauth2/authorize", params)
+    {
+        auth_url.into_string()
+    } else {
+        "".to_string()
+    };
+    form_http_response(auth_url)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct MeetupCallback {
+    pub code: String,
+    pub state: String,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct MeetupResponse {
+    pub access_token: String,
+    pub token_type: String,
+    pub expires_in: usize,
+    pub refresh_token: String,
+}
+
+pub async fn meetup_callback(
+    query: Query<MeetupCallback>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let query = query.into_inner();
+    println!("state {}", query.state);
+    let config = &data.cal_sync.config;
+    let url = format!("https://{}/calendar/meetup_callback", config.domain);
+    let params = &[
+        ("client_id", config.meetup_consumer_key.as_str()),
+        ("client_secret", config.meetup_consumer_secret.as_str()),
+        ("grant_type", "authorization_code"),
+        ("redirect_uri", url.as_str()),
+        ("code", query.code.as_str()),
+    ];
+    let client = reqwest::Client::new();
+    if let Ok(req) = client
+        .post("https://secure.meetup.com/oauth2/access")
+        .form(params)
+        .send()
+        .await
+    {
+        if let Ok(js) = req.json::<MeetupResponse>().await {
+            println!("{:?}", js);
+        }
+    }
+    form_http_response("".to_string())
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct LinkRequest {
+    pub link: String,
+}
+
+pub async fn link_shortener(
+    link: Path<LinkRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let link = &link.into_inner().link;
+    let config = &data.cal_sync.config;
+
+    if let Some(link) = SHORTENED_URLS.read().await.get(link) {
+        let body = format_short_link(&config.domain, &link);
+        return form_http_response(body);
+    }
+
+    let pool = &data.cal_sync.pool;
+    if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool)
+        .await?
+        .pop()
+    {
+        let body = format!(
+            r#"<script>window.location.replace("{}")</script>"#,
+            link.original_url
+        );
+        SHORTENED_URLS
+            .write()
+            .await
+            .insert(link.original_url, link.shortened_url);
+        form_http_response(body)
+    } else {
+        form_http_response("No url found".to_string())
+    }
+}
+
+fn format_short_link(domain: &str, link: &str) -> String {
+    format!(
+        r#"<script>window.location.replace("https://{}/calendar/link/{}")</script>"#,
+        domain, link
+    )
 }

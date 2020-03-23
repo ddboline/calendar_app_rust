@@ -10,6 +10,8 @@ pub struct ConfigInner {
     pub domain: String,
     pub port: u32,
     pub n_db_workers: usize,
+    pub meetup_consumer_key: String,
+    pub meetup_consumer_secret: String,
 }
 
 #[derive(Default, Debug, Clone)]
@@ -82,6 +84,8 @@ impl Config {
         set_config_default!(conf, domain, "localhost".to_string());
         set_config_parse!(conf, port, 4042);
         set_config_parse!(conf, n_db_workers, 2);
+        set_config_must!(conf, meetup_consumer_key);
+        set_config_must!(conf, meetup_consumer_secret);
 
         Ok(Self(Arc::new(conf)))
     }

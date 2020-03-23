@@ -68,7 +68,12 @@ impl CalendarCliOpts {
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda().await? {
-                    println!("{}", event.get_summary());
+                    println!(
+                        "{}",
+                        event
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool)
+                            .await
+                    );
                 }
             }
             CalendarActions::SyncCalendars => {
@@ -99,7 +104,12 @@ impl CalendarCliOpts {
                 max_date,
             } => {
                 for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
-                    println!("{}", event.get_summary());
+                    println!(
+                        "{}",
+                        event
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool)
+                            .await
+                    );
                 }
             }
             CalendarActions::Detail { gcal_id, event_id } => {
