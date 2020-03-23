@@ -590,8 +590,8 @@ impl InsertShortenedLinks {
         if let Some(existing) = existing {
             Ok(existing.into())
         } else {
-            let mut base_hasher = blake3::Hasher::new();
-            let output = hash_reader(&mut base_hasher, original_url.as_bytes())?;
+            let base_hasher = blake3::Hasher::new();
+            let output = hash_reader(&base_hasher, original_url.as_bytes())?;
             let len = blake3::OUT_LEN as u64;
             let output = write_hex_output(output, len)?;
 
