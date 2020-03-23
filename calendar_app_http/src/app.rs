@@ -11,7 +11,7 @@ use crate::{
     routes::{
         agenda, calendar_cache, calendar_cache_update, calendar_index, calendar_list,
         calendar_list_update, delete_event, event_detail, link_shortener, list_calendars,
-        list_events, meetup_auth, meetup_callback, sync_calendars, sync_calendars_full, user,
+        list_events, sync_calendars, sync_calendars_full, user,
     },
 };
 
@@ -70,10 +70,6 @@ pub async fn start_app() {
                     .route(web::post().to(calendar_cache_update)),
             )
             .service(web::resource("/calendar/user").route(web::get().to(user)))
-            .service(web::resource("/calendar/meetup_auth").route(web::get().to(meetup_auth)))
-            .service(
-                web::resource("/calendar/meetup_callback").route(web::get().to(meetup_callback)),
-            )
             .service(web::resource("/calendar/link/{link}").route(web::get().to(link_shortener)))
     })
     .bind(&format!("127.0.0.1:{}", port))

@@ -9,9 +9,8 @@ use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use tokio::sync::RwLock;
-use tokio::task::spawn_blocking;
-use url::{form_urlencoded, Url};
+use tokio::{sync::RwLock, task::spawn_blocking};
+use url::Url;
 
 use calendar_app_lib::{
     calendar::Event,
@@ -376,69 +375,6 @@ pub async fn calendar_cache_update(
 
 pub async fn user(user: LoggedUser) -> Result<HttpResponse, Error> {
     to_json(user)
-}
-
-pub async fn meetup_auth(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
-    let config = &data.cal_sync.config;
-    let params = &[
-        ("client_id", &config.meetup_consumer_key),
-        (
-            "redirect_uri",
-            &format!("https://{}/calendar/meetup_callback", config.domain),
-        ),
-    ];
-    let auth_url = if let Ok(auth_url) =
-        Url::parse_with_params("https://secure.meetup.com/oauth2/authorize", params)
-    {
-        auth_url.into_string()
-    } else {
-        "".to_string()
-    };
-    form_http_response(auth_url)
-}
-
-#[derive(Serialize, Deserialize)]
-pub struct MeetupCallback {
-    pub code: String,
-    pub state: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct MeetupResponse {
-    pub access_token: String,
-    pub token_type: String,
-    pub expires_in: usize,
-    pub refresh_token: String,
-}
-
-pub async fn meetup_callback(
-    query: Query<MeetupCallback>,
-    _: LoggedUser,
-    data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
-    let query = query.into_inner();
-    println!("state {}", query.state);
-    let config = &data.cal_sync.config;
-    let url = format!("https://{}/calendar/meetup_callback", config.domain);
-    let params = &[
-        ("client_id", config.meetup_consumer_key.as_str()),
-        ("client_secret", config.meetup_consumer_secret.as_str()),
-        ("grant_type", "authorization_code"),
-        ("redirect_uri", url.as_str()),
-        ("code", query.code.as_str()),
-    ];
-    let client = reqwest::Client::new();
-    if let Ok(req) = client
-        .post("https://secure.meetup.com/oauth2/access")
-        .form(params)
-        .send()
-        .await
-    {
-        if let Ok(js) = req.json::<MeetupResponse>().await {
-            println!("{:?}", js);
-        }
-    }
-    form_http_response("".to_string())
 }
 
 #[derive(Serialize, Deserialize)]
