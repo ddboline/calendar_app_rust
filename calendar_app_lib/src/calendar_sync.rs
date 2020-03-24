@@ -158,7 +158,7 @@ impl CalendarSync {
 
     pub async fn list_agenda(&self) -> Result<Vec<Event>, Error> {
         let min_time = Utc::now() - Duration::days(1);
-        let max_time = Utc::now() + Duration::days(1);
+        let max_time = Utc::now() + Duration::days(2);
         let events: Vec<_> = CalendarCache::get_by_datetime(min_time, max_time, &self.pool)
             .await?
             .into_iter()
