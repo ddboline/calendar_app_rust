@@ -13,6 +13,7 @@ use crate::{
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::ParseNycRuns,
     pgpool::PgPool,
+    stdout_channel::StdoutChannel,
 };
 
 #[derive(Clone)]
@@ -20,6 +21,7 @@ pub struct CalendarSync {
     pub config: Config,
     pub gcal: GCalendarInstance,
     pub pool: PgPool,
+    pub stdout: StdoutChannel,
 }
 
 impl CalendarSync {
@@ -29,7 +31,12 @@ impl CalendarSync {
             &config.gcal_secret_file,
             "ddboline@gmail.com",
         );
-        Self { config, gcal, pool }
+        Self {
+            config,
+            gcal,
+            pool,
+            stdout: StdoutChannel::new(),
+        }
     }
 
     pub async fn sync_calendar_list(&self) -> Result<Vec<InsertCalendarList>, Error> {
@@ -64,7 +71,8 @@ impl CalendarSync {
             if item.start.is_none() {
                 return Ok(None);
             } else if item.summary.is_none() {
-                println!("{:?} {:?}", item.start, item.description);
+                self.stdout
+                    .send(format!("{:?} {:?}", item.start, item.description))?;
                 return Ok(None);
             }
             let event: InsertCalendarCache = Event::from_gcal_event(&item, &gcal_id)?.into();

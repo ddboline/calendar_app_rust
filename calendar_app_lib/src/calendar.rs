@@ -342,8 +342,10 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
-    use crate::calendar::Event;
     use chrono::{Duration, Utc};
+    use log::debug;
+
+    use crate::calendar::Event;
 
     #[test]
     fn test_new_evet() {
@@ -353,7 +355,7 @@ mod tests {
             Utc::now(),
             Utc::now() + Duration::hours(1),
         );
-        println!("{:#?}", event);
+        debug!("{:#?}", event);
         assert_eq!(event.name, "Test event");
     }
 }

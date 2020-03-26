@@ -2,6 +2,7 @@ use anyhow::Error;
 use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use chrono_tz::America::New_York;
 use futures::future::try_join_all;
+use log::debug;
 use reqwest::Client;
 use select::{document::Document, predicate::Class};
 use std::{collections::HashMap, sync::Arc};
@@ -64,7 +65,7 @@ impl ParseNycRuns {
                         } else if let Ok(time) = NaiveTime::parse_from_str(&last_one, "%l:%M%p") {
                             current_time.replace(time);
                         } else {
-                            println!("{:?}", items);
+                            debug!("{:?}", items);
                         }
                     } else {
                         location.replace(text);
@@ -125,7 +126,7 @@ impl ParseNycRuns {
                                 || event.event_location_name != existing_event.event_location_name
                             {
                                 event.event_id = existing_event.event_id.to_string();
-                                println!("modifying event {:#?} {:#?}", event, existing_event);
+                                debug!("modifying event {:#?} {:#?}", event, existing_event);
                                 Ok(Some(event.upsert(&self.pool).await?))
                             } else {
                                 Ok(None)
