@@ -65,37 +65,40 @@ impl CalendarCliOpts {
         let pool = PgPool::new(&config.database_url);
         let cal_sync = CalendarSync::new(config, pool);
 
+        let stdout = cal_sync.stdout.clone();
+        stdout.spawn_stdout_task();
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda().await? {
-                    println!(
-                        "{}",
+                    cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)
-                            .await
-                    );
+                            .await,
+                    )?;
                 }
             }
             CalendarActions::SyncCalendars => {
                 for line in cal_sync.run_syncing(false).await? {
-                    println!("{}", line);
+                    cal_sync.stdout.send(line)?;
                 }
             }
             CalendarActions::SyncCalendarsFull => {
                 for line in cal_sync.run_syncing(true).await? {
-                    println!("{}", line);
+                    cal_sync.stdout.send(line)?;
                 }
             }
             CalendarActions::Delete { gcal_id, event_id } => {
                 {
-                    println!("delete {} {}", gcal_id, event_id);
+                    cal_sync
+                        .stdout
+                        .send(format!("delete {} {}", gcal_id, event_id))?;
                     spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
                         .await?
                 }?;
             }
             CalendarActions::ListCalendars => {
                 for calendar in cal_sync.list_calendars().await? {
-                    println!("{}", calendar);
+                    cal_sync.stdout.send(format!("{}", calendar))?;
                 }
             }
             CalendarActions::List {
@@ -104,12 +107,11 @@ impl CalendarCliOpts {
                 max_date,
             } => {
                 for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
-                    println!(
-                        "{}",
+                    cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)
-                            .await
-                    );
+                            .await,
+                    )?;
                 }
             }
             CalendarActions::Detail { gcal_id, event_id } => {
@@ -119,7 +121,7 @@ impl CalendarCliOpts {
                         .pop()
                 {
                     let event: Event = event.into();
-                    println!("{}", event);
+                    cal_sync.stdout.send(event.to_string())?;
                 }
             }
         }
