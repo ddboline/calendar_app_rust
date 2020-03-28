@@ -79,13 +79,14 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
             Some(format!(
                 r#"
                     <tr text-style="center">
-                    <td>{calendar_name}</td>
+                    <td><input type=button" name="list_events" value="{calendar_name}" onclick="listEvents('{cal_name}')"></td>
                     <td><input type="button" name="event_detail" value="{event_name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start_time}</td>
                     <td>{delete}</td>
                     </tr>
                 "#,
                 calendar_name=calendar_name,
+                cal_name=cal.name,
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
                 event_name=event.name,
@@ -157,7 +158,13 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
         .list_calendars()
         .await?
         .into_iter()
-        .filter(|calendar| calendar.sync);
+        .filter(|calendar| calendar.sync)
+        .sorted_by_key(|calendar| {
+            calendar
+                .gcal_name
+                .as_ref()
+                .map_or_else(|| calendar.name.to_string(), ToString::to_string)
+        });
     let calendars: Vec<_> = calendars
         .map(|calendar| {
             let create_event = if calendar.edit {
