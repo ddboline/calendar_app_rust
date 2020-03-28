@@ -79,7 +79,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
             Some(format!(
                 r#"
                     <tr text-style="center">
-                    <td><input type=button" name="list_events" value="{calendar_name}" onclick="listEvents('{cal_name}')"></td>
+                    <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{cal_name}')"></td>
                     <td><input type="button" name="event_detail" value="{event_name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start_time}</td>
                     <td>{delete}</td>
