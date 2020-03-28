@@ -32,6 +32,7 @@ table! {
         gcal_timezone -> Nullable<Text>,
         sync -> Bool,
         last_modified -> Timestamptz,
+        edit -> Bool,
     }
 }
 

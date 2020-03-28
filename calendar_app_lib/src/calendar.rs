@@ -18,13 +18,13 @@ use crate::{
     timezone::TimeZone,
 };
 
-#[derive(Default, Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Location {
     pub name: String,
     pub lat_lon: Option<(Latitude, Longitude)>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Clone)]
 pub struct Calendar {
     pub name: String,
     pub gcal_id: String,
@@ -33,6 +33,7 @@ pub struct Calendar {
     pub location: Option<Location>,
     pub timezone: Option<TimeZone>,
     pub sync: bool,
+    pub edit: bool,
 }
 
 impl fmt::Display for Calendar {
@@ -63,6 +64,7 @@ impl From<CalendarList> for Calendar {
             }),
             timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
             sync: item.sync,
+            edit: item.edit,
         }
     }
 }
@@ -76,8 +78,9 @@ impl Into<InsertCalendarList> for Calendar {
             gcal_description: self.description,
             gcal_location: self.location.map(|l| l.name),
             gcal_timezone: self.timezone.map(|z| z.into()),
-            sync: true,
+            sync: false,
             last_modified: Utc::now(),
+            edit: false,
         }
     }
 }
@@ -97,7 +100,8 @@ impl Calendar {
                     ..Location::default()
                 }),
                 timezone: item.time_zone.as_ref().and_then(|z| z.parse().ok()),
-                sync: true,
+                sync: false,
+                edit: false,
             })
         }
     }

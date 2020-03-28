@@ -3,7 +3,8 @@ use actix_web::{
     web::{Data, Json, Path, Query},
     HttpResponse,
 };
-use chrono::{Local, NaiveDate};
+use chrono::Utc;
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -19,7 +20,9 @@ use calendar_app_lib::{
     },
 };
 
-use crate::{app::AppState, errors::ServiceError as Error, logged_user::LoggedUser};
+use crate::{
+    app::AppState, errors::ServiceError as Error, errors::ServiceError, logged_user::LoggedUser,
+};
 
 lazy_static! {
     static ref SHORTENED_URLS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::new());
@@ -59,9 +62,19 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
         .into_iter()
         .sorted_by_key(|event| event.start_time)
         .filter_map(|event| {
-            let calendar_name = match calendar_map.get(&event.gcal_id) {
-                Some(cal) => cal.gcal_name.as_ref().unwrap_or_else(|| &cal.name),
+            let cal = match calendar_map.get(&event.gcal_id) {
+                Some(cal) => cal,
                 None => return None,
+            };
+            let calendar_name = cal.gcal_name.as_ref().unwrap_or_else(|| &cal.name);
+            let delete = if cal.edit {
+                format!(
+                    r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventAgenda('{gcal_id}', '{event_id}')">"#,
+                    gcal_id=event.gcal_id,
+                    event_id=event.event_id,
+                )
+            } else {
+                "".to_string()
             };
             Some(format!(
                 r#"
@@ -69,7 +82,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
                     <td>{calendar_name}</td>
                     <td><input type="button" name="event_detail" value="{event_name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start_time}</td>
-                    <td><input type="button" name="delete_event" value="Delete" onclick="deleteEvent('{gcal_id}', '{event_id}')"></td>
+                    <td>{delete}</td>
                     </tr>
                 "#,
                 calendar_name=calendar_name,
@@ -77,6 +90,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
                 event_id=event.event_id,
                 event_name=event.name,
                 start_time=event.start_time.with_timezone(&Local),
+                delete=delete,
             ))
         })
         .collect();
@@ -146,14 +160,23 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
         .filter(|calendar| calendar.sync);
     let calendars: Vec<_> = calendars
         .map(|calendar| {
+            let create_event = if calendar.edit {
+                format!(r#"
+                    <input type="button" name="create_event" value="Create Event" onclick="buildEvent('{}')">
+                "#, calendar.gcal_id)
+            } else {
+                "".to_string()
+            };
             format!(r#"
                 <tr text-style="center">
                 <td><input type="button" name="list_events" value="{gcal_name}" onclick="listEvents('{calendar_name}')"></td>
                 <td>{description}</td>
+                <td>{create_event}</td>
                 </tr>"#,
                 gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), String::as_str),
                 calendar_name=calendar.name,
                 description=calendar.description.as_ref().map_or_else(|| "", String::as_str),
+                create_event=create_event,
             )
         }).collect();
 
@@ -188,20 +211,30 @@ pub async fn list_events(
         .into_iter()
         .map(|cal| (cal.name.to_string(), cal))
         .collect();
-    let gcal_id = match calendar_map.get(&query.calendar_name) {
-        Some(cal) => &cal.gcal_id,
+    let cal = match calendar_map.get(&query.calendar_name) {
+        Some(cal) => cal,
         None => return form_http_response("".to_string()),
     };
-    let events: Vec<_> = data.cal_sync.list_events(&gcal_id, query.min_time, query.max_time).await?
+    let events: Vec<_> = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
         .into_iter()
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
+            let delete = if cal.edit {
+                format!(
+                    r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventList('{gcal_id}', '{event_id}', '{calendar_name}')">"#,
+                    gcal_id=event.gcal_id,
+                    event_id=event.event_id,
+                    calendar_name=query.calendar_name,
+                )
+            } else {
+                "".to_string()
+            };
             format!(r#"
                     <tr text-style="center">
                     <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start}</td>
                     <td>{end}</td>
-                    <td><input type="button" name="delete_event" value="Delete" onclick="deleteEvent('{gcal_id}', '{event_id}')"></td>
+                    <td>{delete}</td>
                     </tr>
                 "#,
                 name=event.name,
@@ -209,6 +242,7 @@ pub async fn list_events(
                 end=event.end_time.with_timezone(&Local),
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
+                delete=delete
             )
         }).collect();
     let body = format!(
@@ -419,4 +453,125 @@ fn format_short_link(domain: &str, link: &str) -> String {
         r#"<script>window.location.replace("https://{}/calendar/link/{}")</script>"#,
         domain, link
     )
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+pub struct BuildEventRequest {
+    pub gcal_id: String,
+    pub event_id: Option<String>,
+}
+
+pub async fn build_calendar_event(
+    query: Query<BuildEventRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let query = query.into_inner();
+    let mut events = if let Some(event_id) = &query.event_id {
+        CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, event_id, &data.cal_sync.pool)
+            .await?
+    } else {
+        Vec::new()
+    };
+    let event = events.pop().map_or_else(
+        || Event::new(&query.gcal_id, "", Utc::now(), Utc::now()),
+        |event| event.into(),
+    );
+    let body = format!(
+        r#"
+        <form action="javascript:createCalendarEvent();">
+            Calendar ID: <input type="text" name="gcal_id" id="gcal_id" value="{gcal_id}"/><br>
+            Event ID: <input type="text" name="event_id" id="event_id" value="{event_id}"/><br>
+            Start Date: <input type="date" name="start_date" id="start_date" value="{start_date}"/><br>
+            Start Time: <input type="time" name="start_time" id="start_time" value="{start_time}"/><br>
+            End Date: <input type="date" name="end_date" id="end_date" value="{end_date}"/><br>
+            End Time: <input type="time" name="end_time" id="end_time" value="{end_time}"/><br>
+            Event Name: <input type="text" name="event_name" id="event_name" value="{event_name}"/><br>
+            Event Url: <input type="url" name="event_url" id="event_url" value="https://localhost"/><br>
+            Event Location Name: <input type="text" name="event_location_name" id="event_location_name" value="{event_location_name}"/><br>
+            Event Description: <br><textarea cols=40 rows=20 name="event_description" id="event_description">{event_description}</textarea><br>
+            <input type="button" name="create_event" value="Create Event" onclick="createCalendarEvent();"/><br>
+        </form>
+    "#,
+        gcal_id = event.gcal_id,
+        event_id = event.event_id,
+        start_date = event.start_time.naive_local().date(),
+        start_time = event.start_time.naive_local().time().format("%H:%M"),
+        end_date = event.end_time.naive_local().date(),
+        end_time = event.end_time.naive_local().time().format("%H:%M"),
+        event_name = event.name,
+        event_location_name = event.location.as_ref().map_or("", |l| l.name.as_str()),
+        event_description = event.description.as_ref().map_or("", String::as_str),
+    );
+    form_http_response(body)
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct CreateCalendarEventRequest {
+    pub gcal_id: String,
+    pub event_id: String,
+    pub event_start_date: NaiveDate,
+    pub event_start_time: NaiveTime,
+    pub event_end_date: NaiveDate,
+    pub event_end_time: NaiveTime,
+    pub event_url: Option<String>,
+    pub event_name: String,
+    pub event_description: Option<String>,
+    pub event_location_name: Option<String>,
+}
+
+pub async fn create_calendar_event(
+    payload: Json<CreateCalendarEventRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let payload = payload.into_inner();
+    let start_datetime = NaiveDateTime::new(payload.event_start_date, payload.event_start_time);
+    let start_datetime = Local
+        .from_local_datetime(&start_datetime)
+        .single()
+        .unwrap()
+        .with_timezone(&Utc);
+    let end_datetime = NaiveDateTime::new(payload.event_end_date, payload.event_end_time);
+    let end_datetime = Local
+        .from_local_datetime(&end_datetime)
+        .single()
+        .unwrap()
+        .with_timezone(&Utc);
+
+    let event = InsertCalendarCache {
+        gcal_id: payload.gcal_id,
+        event_id: payload.event_id,
+        event_start_time: start_datetime,
+        event_end_time: end_datetime,
+        event_url: payload.event_url,
+        event_name: payload.event_name,
+        event_description: payload.event_description,
+        event_location_name: payload.event_location_name,
+        event_location_lat: None,
+        event_location_lon: None,
+        last_modified: Utc::now(),
+    };
+
+    let event = event.upsert(&data.cal_sync.pool).await?;
+    let event = match CalendarCache::get_by_gcal_id_event_id(
+        &event.gcal_id,
+        &event.event_id,
+        &data.cal_sync.pool,
+    )
+    .await?
+    .pop()
+    {
+        Some(event) => event,
+        None => {
+            return Err(ServiceError::BadRequest(format!(
+                "Failed to store event in db"
+            )))
+        }
+    };
+    let event: Event = event.into();
+    let (gcal_id, event) = event.to_gcal_event()?;
+    spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(&gcal_id, event)).await??;
+
+    form_http_response("Event Inserted".to_string())
 }

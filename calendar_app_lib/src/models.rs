@@ -21,6 +21,7 @@ pub struct CalendarList {
     pub gcal_timezone: Option<String>,
     pub sync: bool,
     pub last_modified: DateTime<Utc>,
+    pub edit: bool,
 }
 
 impl CalendarList {
@@ -129,6 +130,7 @@ pub struct InsertCalendarList {
     pub gcal_timezone: Option<String>,
     pub sync: bool,
     pub last_modified: DateTime<Utc>,
+    pub edit: bool,
 }
 
 impl From<CalendarList> for InsertCalendarList {
@@ -140,8 +142,9 @@ impl From<CalendarList> for InsertCalendarList {
             gcal_description: item.gcal_description,
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
-            sync: true,
+            sync: false,
             last_modified: Utc::now(),
+            edit: false,
         }
     }
 }
@@ -156,8 +159,9 @@ impl InsertCalendarList {
             gcal_description: self.gcal_description,
             gcal_location: self.gcal_location,
             gcal_timezone: self.gcal_timezone,
-            sync: true,
+            sync: false,
             last_modified: Utc::now(),
+            edit: false,
         }
     }
 
