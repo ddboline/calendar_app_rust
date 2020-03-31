@@ -190,7 +190,11 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
     let body = format!(
         r#"
         <table border="1" class="dataframe">
-        <thead><th>Calendar</th><th>Description</th></thead>
+        <thead>
+        <th>Calendar</th>
+        <th>Description</th>
+        <th><input type="button" name="sync_all" value="Full Sync" onclick="syncCalendarsFull();"/></th>
+        </thead>
         <tbody>{}</tbody>
         </table>"#,
         calendars.join("")
