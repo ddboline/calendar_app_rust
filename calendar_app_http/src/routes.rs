@@ -259,9 +259,13 @@ pub async fn list_events(
     let body = format!(
         r#"
         <table border="1" class="dataframe">
-        <thead><th>Event</th><th>Start Time</th><th>End Time</th></thead>
+        <thead>
+        <th>Event</th><th>Start Time</th><th>End Time</th>
+        <th><input type="button" name="create_event" value="Create Event" onclick="buildEvent('{}')"></th>
+        </thead>
         <tbody>{}</tbody>
         </table>"#,
+        cal.gcal_id,
         events.join("")
     );
     form_http_response(body)
