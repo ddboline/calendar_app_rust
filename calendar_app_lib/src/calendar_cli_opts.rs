@@ -65,8 +65,7 @@ impl CalendarCliOpts {
         let pool = PgPool::new(&config.database_url);
         let cal_sync = CalendarSync::new(config, pool);
 
-        let stdout = cal_sync.stdout.clone();
-        let stdout = stdout.spawn_stdout_task();
+        let task = cal_sync.stdout.spawn_stdout_task();
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda().await? {
@@ -128,6 +127,6 @@ impl CalendarCliOpts {
         }
 
         cal_sync.stdout.close().await;
-        stdout.await?
+        task.await?
     }
 }
