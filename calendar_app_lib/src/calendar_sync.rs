@@ -202,7 +202,7 @@ impl CalendarSync {
             },
         );
         let max_date = max_date.map_or_else(
-            || (Utc::now() + Duration::weeks(1)),
+            || (Utc::now() + Duration::weeks(2)),
             |d| {
                 Local
                     .from_local_datetime(&d.and_hms(0, 0, 0))
