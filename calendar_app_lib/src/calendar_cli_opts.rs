@@ -66,7 +66,7 @@ impl CalendarCliOpts {
         let cal_sync = CalendarSync::new(config, pool);
 
         let stdout = cal_sync.stdout.clone();
-        stdout.spawn_stdout_task();
+        let stdout = stdout.spawn_stdout_task();
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda().await? {
@@ -92,6 +92,7 @@ impl CalendarCliOpts {
                     cal_sync
                         .stdout
                         .send(format!("delete {} {}", gcal_id, event_id))?;
+                    let cal_sync = cal_sync.clone();
                     spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
                         .await?
                 }?;
@@ -126,6 +127,7 @@ impl CalendarCliOpts {
             }
         }
 
-        Ok(())
+        cal_sync.stdout.close().await;
+        stdout.await?
     }
 }
