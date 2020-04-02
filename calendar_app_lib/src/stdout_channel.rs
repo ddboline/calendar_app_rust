@@ -1,14 +1,18 @@
 use anyhow::Error;
 use std::sync::Arc;
-use tokio::io::{stdout, AsyncWriteExt};
-use tokio::sync::mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender};
-use tokio::sync::Mutex;
-use tokio::task::{spawn, JoinHandle};
+use tokio::{
+    io::{stdout, AsyncWriteExt},
+    sync::{
+        mpsc::{unbounded_channel, UnboundedReceiver, UnboundedSender},
+        Mutex,
+    },
+    task::{spawn, JoinHandle},
+};
 
 #[derive(Clone, Debug)]
 pub struct StdoutChannel {
-    receiver: Arc<Mutex<UnboundedReceiver<String>>>,
-    sender: Arc<UnboundedSender<String>>,
+    receiver: Arc<Mutex<UnboundedReceiver<Option<String>>>>,
+    sender: Arc<UnboundedSender<Option<String>>>,
 }
 
 impl Default for StdoutChannel {
@@ -26,21 +30,22 @@ impl StdoutChannel {
     }
 
     pub fn send(&self, item: String) -> Result<(), Error> {
-        self.sender.send(item).map_err(Into::into)
+        self.sender.send(Some(item)).map_err(Into::into)
     }
 
-    pub async fn recv(&self) -> Option<String> {
+    async fn recv(&self) -> Option<Option<String>> {
         self.receiver.lock().await.recv().await
     }
 
-    pub async fn close(&self) {
-        self.receiver.lock().await.close()
+    pub async fn close(&self) -> Result<(), Error> {
+        self.sender.send(None).map_err(Into::into)
     }
 
     async fn stdout_task(&self) -> Result<(), Error> {
-        while let Some(line) = self.recv().await {
-            stdout().write_all(line.as_bytes()).await?;
-            stdout().write_all(b"\n").await?;
+        while let Some(Some(line)) = self.recv().await {
+            stdout()
+                .write_all(&[line.as_bytes(), b"\n"].concat())
+                .await?;
         }
         Ok(())
     }

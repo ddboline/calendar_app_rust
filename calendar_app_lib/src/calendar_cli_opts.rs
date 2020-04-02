@@ -125,8 +125,7 @@ impl CalendarCliOpts {
                 }
             }
         }
-
-        cal_sync.stdout.close().await;
+        cal_sync.stdout.close().await?;
         task.await?
     }
 }
