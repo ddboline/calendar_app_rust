@@ -3,8 +3,7 @@ use actix_web::{
     web::{Data, Json, Path, Query},
     HttpResponse,
 };
-use chrono::Utc;
-use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone};
+use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -21,7 +20,9 @@ use calendar_app_lib::{
 };
 
 use crate::{
-    app::AppState, errors::ServiceError as Error, errors::ServiceError, logged_user::LoggedUser,
+    app::AppState,
+    errors::{ServiceError as Error, ServiceError},
+    logged_user::LoggedUser,
 };
 
 lazy_static! {
