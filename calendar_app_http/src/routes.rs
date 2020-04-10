@@ -27,7 +27,8 @@ use crate::{
 };
 
 lazy_static! {
-    static ref SHORTENED_URLS: RwLock<HashMap<StackString, StackString>> = RwLock::new(HashMap::new());
+    static ref SHORTENED_URLS: RwLock<HashMap<StackString, StackString>> =
+        RwLock::new(HashMap::new());
 }
 
 fn form_http_response(body: String) -> Result<HttpResponse, Error> {
@@ -145,8 +146,10 @@ pub async fn delete_event(
         let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&data.cal_sync.pool).await?;
         let gcal = data.cal_sync.gcal.clone();
-        spawn_blocking(move || gcal.delete_gcal_event(payload.gcal_id.as_str(), payload.event_id.as_str()))
-            .await??;
+        spawn_blocking(move || {
+            gcal.delete_gcal_event(payload.gcal_id.as_str(), payload.event_id.as_str())
+        })
+        .await??;
         body
     } else {
         "Event not deleted".to_string()
@@ -294,7 +297,8 @@ pub async fn event_detail(
             &event.name
         ));
         if let Some(description) = &event.description {
-            let description: Vec<_> = description.as_str()
+            let description: Vec<_> = description
+                .as_str()
                 .split('\n')
                 .map(|line| {
                     let mut line_length = 0;
@@ -485,8 +489,12 @@ pub async fn build_calendar_event(
 ) -> Result<HttpResponse, Error> {
     let query = query.into_inner();
     let mut events = if let Some(event_id) = &query.event_id {
-        CalendarCache::get_by_gcal_id_event_id(query.gcal_id.as_str(), event_id.as_str(), &data.cal_sync.pool)
-            .await?
+        CalendarCache::get_by_gcal_id_event_id(
+            query.gcal_id.as_str(),
+            event_id.as_str(),
+            &data.cal_sync.pool,
+        )
+        .await?
     } else {
         Vec::new()
     };
@@ -588,7 +596,12 @@ pub async fn create_calendar_event(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(gcal_id.as_str(), event)).await??;
+    spawn_blocking(move || {
+        data.cal_sync
+            .gcal
+            .insert_gcal_event(gcal_id.as_str(), event)
+    })
+    .await??;
 
     form_http_response("Event Inserted".to_string())
 }

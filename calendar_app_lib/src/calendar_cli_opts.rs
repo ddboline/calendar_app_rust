@@ -5,8 +5,7 @@ use tokio::task::spawn_blocking;
 
 use crate::{
     calendar::Event, calendar_sync::CalendarSync, config::Config, models::CalendarCache,
-    pgpool::PgPool,
-    stack_string::StackString,
+    pgpool::PgPool, stack_string::StackString,
 };
 
 #[derive(StructOpt, Debug)]
@@ -73,7 +72,8 @@ impl CalendarCliOpts {
                     cal_sync.stdout.send(
                         event
                             .get_summary(cal_sync.config.domain.as_str(), &cal_sync.pool)
-                            .await.into(),
+                            .await
+                            .into(),
                     )?;
                 }
             }
@@ -93,8 +93,12 @@ impl CalendarCliOpts {
                         .stdout
                         .send(format!("delete {} {}", gcal_id, event_id).into())?;
                     let cal_sync = cal_sync.clone();
-                    spawn_blocking(move || cal_sync.gcal.delete_gcal_event(gcal_id.as_str(), event_id.as_str()))
-                        .await?
+                    spawn_blocking(move || {
+                        cal_sync
+                            .gcal
+                            .delete_gcal_event(gcal_id.as_str(), event_id.as_str())
+                    })
+                    .await?
                 }?;
             }
             CalendarActions::ListCalendars => {
@@ -107,19 +111,26 @@ impl CalendarCliOpts {
                 min_date,
                 max_date,
             } => {
-                for event in cal_sync.list_events(gcal_id.as_str(), min_date, max_date).await? {
+                for event in cal_sync
+                    .list_events(gcal_id.as_str(), min_date, max_date)
+                    .await?
+                {
                     cal_sync.stdout.send(
                         event
                             .get_summary(cal_sync.config.domain.as_str(), &cal_sync.pool)
-                            .await.into(),
+                            .await
+                            .into(),
                     )?;
                 }
             }
             CalendarActions::Detail { gcal_id, event_id } => {
-                if let Some(event) =
-                    CalendarCache::get_by_gcal_id_event_id(gcal_id.as_str(), event_id.as_str(), &cal_sync.pool)
-                        .await?
-                        .pop()
+                if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
+                    gcal_id.as_str(),
+                    event_id.as_str(),
+                    &cal_sync.pool,
+                )
+                .await?
+                .pop()
                 {
                     let event: Event = event.into();
                     cal_sync.stdout.send(event.to_string().into())?;

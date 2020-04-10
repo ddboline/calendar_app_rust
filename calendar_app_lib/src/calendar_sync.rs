@@ -79,9 +79,13 @@ impl CalendarSync {
             if upsert {
                 let event = event.upsert(&self.pool).await?;
                 Ok(Some(event))
-            } else if CalendarCache::get_by_gcal_id_event_id(&gcal_id, event.event_id.as_str(), &self.pool)
-                .await?
-                .is_empty()
+            } else if CalendarCache::get_by_gcal_id_event_id(
+                &gcal_id,
+                event.event_id.as_str(),
+                &self.pool,
+            )
+            .await?
+            .is_empty()
             {
                 let event = event.insert(&self.pool).await?;
                 Ok(Some(event))

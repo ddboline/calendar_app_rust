@@ -15,8 +15,8 @@ use crate::{
         ShortenedLinks,
     },
     pgpool::PgPool,
-    timezone::TimeZone,
     stack_string::StackString,
+    timezone::TimeZone,
 };
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -124,7 +124,8 @@ impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "\t{}:", self.name)?;
         if let Some(description) = &self.description {
-            let description: Vec<_> = description.as_str()
+            let description: Vec<_> = description
+                .as_str()
                 .split('\n')
                 .map(|x| format!("\t\t{}", x))
                 .collect();
@@ -166,13 +167,13 @@ impl From<CalendarCache> for Event {
             loc.replace(location);
         }
         Self {
-            gcal_id: item.gcal_id.into(),
-            event_id: item.event_id.into(),
+            gcal_id: item.gcal_id,
+            event_id: item.event_id,
             start_time: item.event_start_time,
             end_time: item.event_end_time,
             url: item.event_url.and_then(|u| u.as_str().parse().ok()),
-            name: item.event_name.into(),
-            description: item.event_description.map(Into::into),
+            name: item.event_name,
+            description: item.event_description,
             location: loc,
         }
     }
@@ -181,12 +182,12 @@ impl From<CalendarCache> for Event {
 impl Into<InsertCalendarCache> for Event {
     fn into(self) -> InsertCalendarCache {
         InsertCalendarCache {
-            gcal_id: self.gcal_id.into(),
-            event_id: self.event_id.into(),
+            gcal_id: self.gcal_id,
+            event_id: self.event_id,
             event_start_time: self.start_time,
             event_end_time: self.end_time,
             event_url: self.url.map(Url::into_string).map(Into::into),
-            event_name: self.name.into(),
+            event_name: self.name,
             event_description: self.description.map(Into::into),
             event_location_lat: self
                 .location
@@ -257,7 +258,11 @@ impl Event {
         }
         Ok(Self {
             gcal_id: gcal_id.into(),
-            event_id: item.id.as_ref().ok_or_else(|| format_err!("No event id"))?.into(),
+            event_id: item
+                .id
+                .as_ref()
+                .ok_or_else(|| format_err!("No event id"))?
+                .into(),
             start_time: item
                 .start
                 .as_ref()
@@ -272,7 +277,8 @@ impl Event {
             name: item
                 .summary
                 .as_ref()
-                .ok_or_else(|| format_err!("No name for event"))?.into(),
+                .ok_or_else(|| format_err!("No name for event"))?
+                .into(),
             description: item.description.as_ref().map(Into::into),
             location: loc,
         })
@@ -290,7 +296,7 @@ impl Event {
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),
-            description: self.description.as_ref().map(|s| s.to_string()),
+            description: self.description.as_ref().map(ToString::to_string),
             location: self.location.as_ref().map(|l| l.name.to_string()),
             ..GCalEvent::default()
         };
