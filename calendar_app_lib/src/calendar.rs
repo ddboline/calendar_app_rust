@@ -367,6 +367,6 @@ mod tests {
             Utc::now() + Duration::hours(1),
         );
         debug!("{:#?}", event);
-        assert_eq!(event.name, "Test event");
+        assert_eq!(event.name.as_str(), "Test event");
     }
 }
