@@ -9,6 +9,7 @@ use crate::{
     calendar::{Event, Location},
     models::{CalendarCache, InsertCalendarCache},
     pgpool::PgPool,
+    stack_string::StackString,
 };
 
 const CALID: &str = "8hfjg0d8ls2od3s9bd1k1v9jtc@group.calendar.google.com";
@@ -55,8 +56,8 @@ pub async fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                         description.replace(text.join(" "));
                         for line in text {
                             if line.contains("Start:") {
-                                let loc = line.replace("Start:", "").trim().to_string();
-                                if !loc.is_empty() {
+                                let loc: StackString = line.replace("Start:", "").trim().into();
+                                if !loc.as_str().is_empty() {
                                     location.replace(loc);
                                 }
                             }
@@ -69,7 +70,7 @@ pub async fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     let end_time = start_time + Duration::hours(1);
                     let mut event = Event::new(CALID, &name, start_time, end_time);
                     if let Some(description) = description {
-                        event.description.replace(description);
+                        event.description.replace(description.into());
                     }
                     if let Some(location) = location {
                         event.location.replace(Location {
@@ -110,7 +111,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
                         || event.event_description != existing_event.event_description
                         || event.event_location_name != existing_event.event_location_name
                     {
-                        event.event_id = existing_event.event_id.to_string();
+                        event.event_id = existing_event.event_id.as_str().into();
                         Ok(Some(event.upsert(&pool).await?))
                     } else {
                         Ok(None)

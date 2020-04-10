@@ -17,6 +17,7 @@ use calendar_app_lib::{
     models::{
         CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, ShortenedLinks,
     },
+    stack_string::StackString,
 };
 
 use crate::{
@@ -26,7 +27,7 @@ use crate::{
 };
 
 lazy_static! {
-    static ref SHORTENED_URLS: RwLock<HashMap<String, String>> = RwLock::new(HashMap::new());
+    static ref SHORTENED_URLS: RwLock<HashMap<StackString, StackString>> = RwLock::new(HashMap::new());
 }
 
 fn form_http_response(body: String) -> Result<HttpResponse, Error> {
@@ -54,7 +55,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
         .list_calendars()
         .await?
         .into_iter()
-        .map(|cal| (cal.gcal_id.to_string(), cal))
+        .map(|cal| (cal.gcal_id.clone(), cal))
         .collect();
     let events: Vec<_> = data
         .cal_sync
@@ -122,8 +123,8 @@ pub async fn sync_calendars_full(
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct DeleteEventPath {
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
 }
 
 pub async fn delete_event(
@@ -134,8 +135,8 @@ pub async fn delete_event(
     let payload = payload.into_inner();
 
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-        &payload.gcal_id,
-        &payload.event_id,
+        payload.gcal_id.as_str(),
+        payload.event_id.as_str(),
         &data.cal_sync.pool,
     )
     .await?
@@ -144,7 +145,7 @@ pub async fn delete_event(
         let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&data.cal_sync.pool).await?;
         let gcal = data.cal_sync.gcal.clone();
-        spawn_blocking(move || gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id))
+        spawn_blocking(move || gcal.delete_gcal_event(payload.gcal_id.as_str(), payload.event_id.as_str()))
             .await??;
         body
     } else {
@@ -181,9 +182,9 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
                 <td>{description}</td>
                 <td>{create_event}</td>
                 </tr>"#,
-                gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), String::as_str),
+                gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), StackString::as_str),
                 calendar_name=calendar.name,
-                description=calendar.description.as_ref().map_or_else(|| "", String::as_str),
+                description=calendar.description.as_ref().map_or_else(|| "", StackString::as_str),
                 create_event=create_event,
             )
         }).collect();
@@ -205,7 +206,7 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
 
 #[derive(Serialize, Deserialize)]
 pub struct ListEventsRequest {
-    pub calendar_name: String,
+    pub calendar_name: StackString,
     pub min_time: Option<NaiveDate>,
     pub max_time: Option<NaiveDate>,
 }
@@ -221,13 +222,13 @@ pub async fn list_events(
         .list_calendars()
         .await?
         .into_iter()
-        .map(|cal| (cal.name.to_string(), cal))
+        .map(|cal| (cal.name.clone(), cal))
         .collect();
     let cal = match calendar_map.get(&query.calendar_name) {
         Some(cal) => cal,
         None => return form_http_response("".to_string()),
     };
-    let events: Vec<_> = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
+    let events: Vec<_> = data.cal_sync.list_events(cal.gcal_id.as_str(), query.min_time, query.max_time).await?
         .into_iter()
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
@@ -279,8 +280,8 @@ pub async fn event_detail(
 ) -> Result<HttpResponse, Error> {
     let payload = payload.into_inner();
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-        &payload.gcal_id,
-        &payload.event_id,
+        payload.gcal_id.as_str(),
+        payload.event_id.as_str(),
         &data.cal_sync.pool,
     )
     .await?
@@ -293,7 +294,7 @@ pub async fn event_detail(
             &event.name
         ));
         if let Some(description) = &event.description {
-            let description: Vec<_> = description
+            let description: Vec<_> = description.as_str()
                 .split('\n')
                 .map(|line| {
                     let mut line_length = 0;
@@ -429,7 +430,7 @@ pub async fn user(user: LoggedUser) -> Result<HttpResponse, Error> {
 
 #[derive(Serialize, Deserialize)]
 pub struct LinkRequest {
-    pub link: String,
+    pub link: StackString,
 }
 
 pub async fn link_shortener(
@@ -441,12 +442,12 @@ pub async fn link_shortener(
     let config = &data.cal_sync.config;
 
     if let Some(link) = SHORTENED_URLS.read().await.get(link) {
-        let body = format_short_link(&config.domain, &link);
+        let body = format_short_link(config.domain.as_str(), link.as_str());
         return form_http_response(body);
     }
 
     let pool = &data.cal_sync.pool;
-    if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool)
+    if let Some(link) = ShortenedLinks::get_by_shortened_url(link.as_str(), pool)
         .await?
         .pop()
     {
@@ -473,8 +474,8 @@ fn format_short_link(domain: &str, link: &str) -> String {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct BuildEventRequest {
-    pub gcal_id: String,
-    pub event_id: Option<String>,
+    pub gcal_id: StackString,
+    pub event_id: Option<StackString>,
 }
 
 pub async fn build_calendar_event(
@@ -484,13 +485,13 @@ pub async fn build_calendar_event(
 ) -> Result<HttpResponse, Error> {
     let query = query.into_inner();
     let mut events = if let Some(event_id) = &query.event_id {
-        CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, event_id, &data.cal_sync.pool)
+        CalendarCache::get_by_gcal_id_event_id(query.gcal_id.as_str(), event_id.as_str(), &data.cal_sync.pool)
             .await?
     } else {
         Vec::new()
     };
     let event = events.pop().map_or_else(
-        || Event::new(&query.gcal_id, "", Utc::now(), Utc::now()),
+        || Event::new(query.gcal_id.as_str(), "", Utc::now(), Utc::now()),
         |event| event.into(),
     );
     let body = format!(
@@ -517,23 +518,23 @@ pub async fn build_calendar_event(
         end_time = event.end_time.naive_local().time().format("%H:%M"),
         event_name = event.name,
         event_location_name = event.location.as_ref().map_or("", |l| l.name.as_str()),
-        event_description = event.description.as_ref().map_or("", String::as_str),
+        event_description = event.description.as_ref().map_or("", StackString::as_str),
     );
     form_http_response(body)
 }
 
 #[derive(Serialize, Deserialize)]
 pub struct CreateCalendarEventRequest {
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
     pub event_start_date: NaiveDate,
     pub event_start_time: NaiveTime,
     pub event_end_date: NaiveDate,
     pub event_end_time: NaiveTime,
-    pub event_url: Option<String>,
-    pub event_name: String,
-    pub event_description: Option<String>,
-    pub event_location_name: Option<String>,
+    pub event_url: Option<StackString>,
+    pub event_name: StackString,
+    pub event_description: Option<StackString>,
+    pub event_location_name: Option<StackString>,
 }
 
 pub async fn create_calendar_event(
@@ -571,8 +572,8 @@ pub async fn create_calendar_event(
 
     let event = event.upsert(&data.cal_sync.pool).await?;
     let event = match CalendarCache::get_by_gcal_id_event_id(
-        &event.gcal_id,
-        &event.event_id,
+        event.gcal_id.as_str(),
+        event.event_id.as_str(),
         &data.cal_sync.pool,
     )
     .await?
@@ -587,7 +588,7 @@ pub async fn create_calendar_event(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(&gcal_id, event)).await??;
+    spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(gcal_id.as_str(), event)).await??;
 
     form_http_response("Event Inserted".to_string())
 }

@@ -8,17 +8,18 @@ use tokio::task::spawn_blocking;
 use crate::{
     pgpool::PgPool,
     schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
+    stack_string::StackString,
 };
 
 #[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {
     pub id: i32,
-    pub calendar_name: String,
-    pub gcal_id: String,
-    pub gcal_name: Option<String>,
-    pub gcal_description: Option<String>,
-    pub gcal_location: Option<String>,
-    pub gcal_timezone: Option<String>,
+    pub calendar_name: StackString,
+    pub gcal_id: StackString,
+    pub gcal_name: Option<StackString>,
+    pub gcal_description: Option<StackString>,
+    pub gcal_location: Option<StackString>,
+    pub gcal_timezone: Option<StackString>,
     pub sync: bool,
     pub last_modified: DateTime<Utc>,
     pub edit: bool,
@@ -122,12 +123,12 @@ impl CalendarList {
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_list"]
 pub struct InsertCalendarList {
-    pub calendar_name: String,
-    pub gcal_id: String,
-    pub gcal_name: Option<String>,
-    pub gcal_description: Option<String>,
-    pub gcal_location: Option<String>,
-    pub gcal_timezone: Option<String>,
+    pub calendar_name: StackString,
+    pub gcal_id: StackString,
+    pub gcal_name: Option<StackString>,
+    pub gcal_description: Option<StackString>,
+    pub gcal_location: Option<StackString>,
+    pub gcal_timezone: Option<StackString>,
     pub sync: bool,
     pub last_modified: DateTime<Utc>,
     pub edit: bool,
@@ -181,7 +182,7 @@ impl InsertCalendarList {
     }
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
-        let existing = CalendarList::get_by_gcal_id(&self.gcal_id, &pool).await?;
+        let existing = CalendarList::get_by_gcal_id(self.gcal_id.as_str(), &pool).await?;
         match existing.len() {
             0 => self.insert(&pool).await,
             1 => {
@@ -204,14 +205,14 @@ impl InsertCalendarList {
 #[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCache {
     pub id: i32,
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
-    pub event_url: Option<String>,
-    pub event_name: String,
-    pub event_description: Option<String>,
-    pub event_location_name: Option<String>,
+    pub event_url: Option<StackString>,
+    pub event_name: StackString,
+    pub event_description: Option<StackString>,
+    pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
     pub last_modified: DateTime<Utc>,
@@ -406,14 +407,14 @@ impl CalendarCache {
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_cache"]
 pub struct InsertCalendarCache {
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
-    pub event_url: Option<String>,
-    pub event_name: String,
-    pub event_description: Option<String>,
-    pub event_location_name: Option<String>,
+    pub event_url: Option<StackString>,
+    pub event_name: StackString,
+    pub event_description: Option<StackString>,
+    pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
     pub last_modified: DateTime<Utc>,
@@ -472,7 +473,7 @@ impl InsertCalendarCache {
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
         let existing =
-            CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, &pool).await?;
+            CalendarCache::get_by_gcal_id_event_id(self.gcal_id.as_str(), self.event_id.as_str(), &pool).await?;
         match existing.len() {
             0 => self.insert(&pool).await,
             1 => {
@@ -494,7 +495,7 @@ impl InsertCalendarCache {
 #[derive(Queryable, Insertable, Clone, Debug)]
 #[table_name = "authorized_users"]
 pub struct AuthorizedUsers {
-    pub email: String,
+    pub email: StackString,
 }
 
 impl AuthorizedUsers {
@@ -513,8 +514,8 @@ impl AuthorizedUsers {
 #[derive(Queryable, Clone, Debug)]
 pub struct ShortenedLinks {
     pub id: i32,
-    pub original_url: String,
-    pub shortened_url: String,
+    pub original_url: StackString,
+    pub shortened_url: StackString,
     pub last_modified: DateTime<Utc>,
 }
 
@@ -570,8 +571,8 @@ impl ShortenedLinks {
 #[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "shortened_links"]
 pub struct InsertShortenedLinks {
-    pub original_url: String,
-    pub shortened_url: String,
+    pub original_url: StackString,
+    pub shortened_url: StackString,
     pub last_modified: DateTime<Utc>,
 }
 
@@ -613,8 +614,8 @@ impl InsertShortenedLinks {
             let shortened_url = &output[..short_chars];
 
             Ok(Self {
-                original_url: original_url.to_string(),
-                shortened_url: shortened_url.to_string(),
+                original_url: original_url.into(),
+                shortened_url: shortened_url.into(),
                 last_modified: Utc::now(),
             })
         }

@@ -16,20 +16,21 @@ use crate::{
     },
     pgpool::PgPool,
     timezone::TimeZone,
+    stack_string::StackString,
 };
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub struct Location {
-    pub name: String,
+    pub name: StackString,
     pub lat_lon: Option<(Latitude, Longitude)>,
 }
 
 #[derive(Serialize, Deserialize, Clone)]
 pub struct Calendar {
-    pub name: String,
-    pub gcal_id: String,
-    pub gcal_name: Option<String>,
-    pub description: Option<String>,
+    pub name: StackString,
+    pub gcal_id: StackString,
+    pub gcal_name: Option<StackString>,
+    pub description: Option<StackString>,
     pub location: Option<Location>,
     pub timezone: Option<TimeZone>,
     pub sync: bool,
@@ -43,8 +44,8 @@ impl fmt::Display for Calendar {
             "name: {}\tid: {}\n{}{}{}{}\n",
             self.name,
             self.gcal_id,
-            self.gcal_name.as_ref().map_or("", String::as_str),
-            self.description.as_ref().map_or("", String::as_str),
+            self.gcal_name.as_ref().map_or("", StackString::as_str),
+            self.description.as_ref().map_or("", StackString::as_str),
             self.location.as_ref().map_or("", |l| l.name.as_str()),
             self.timezone.as_ref().map_or("", |t| t.name()),
         )
@@ -62,7 +63,7 @@ impl From<CalendarList> for Calendar {
                 name: l,
                 ..Location::default()
             }),
-            timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
+            timezone: item.gcal_timezone.and_then(|z| z.as_str().parse().ok()),
             sync: item.sync,
             edit: item.edit,
         }
@@ -91,12 +92,12 @@ impl Calendar {
             None
         } else {
             Some(Self {
-                name: item.summary.clone().unwrap_or_else(|| "".to_string()),
-                gcal_id: item.id.clone().expect("No gcal_id"),
-                gcal_name: item.summary.clone(),
-                description: item.description.clone(),
+                name: item.summary.clone().map_or_else(|| "".into(), Into::into),
+                gcal_id: item.id.clone().expect("No gcal_id").into(),
+                gcal_name: item.summary.clone().map(Into::into),
+                description: item.description.clone().map(Into::into),
                 location: item.location.as_ref().map(|l| Location {
-                    name: l.to_string(),
+                    name: l.into(),
                     ..Location::default()
                 }),
                 timezone: item.time_zone.as_ref().and_then(|z| z.parse().ok()),
@@ -109,13 +110,13 @@ impl Calendar {
 
 #[derive(Debug)]
 pub struct Event {
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
     pub start_time: DateTime<Utc>,
     pub end_time: DateTime<Utc>,
     pub url: Option<Url>,
-    pub name: String,
-    pub description: Option<String>,
+    pub name: StackString,
+    pub description: Option<StackString>,
     pub location: Option<Location>,
 }
 
@@ -123,7 +124,7 @@ impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "\t{}:", self.name)?;
         if let Some(description) = &self.description {
-            let description: Vec<_> = description
+            let description: Vec<_> = description.as_str()
                 .split('\n')
                 .map(|x| format!("\t\t{}", x))
                 .collect();
@@ -165,13 +166,13 @@ impl From<CalendarCache> for Event {
             loc.replace(location);
         }
         Self {
-            gcal_id: item.gcal_id,
-            event_id: item.event_id,
+            gcal_id: item.gcal_id.into(),
+            event_id: item.event_id.into(),
             start_time: item.event_start_time,
             end_time: item.event_end_time,
-            url: item.event_url.and_then(|u| u.parse().ok()),
-            name: item.event_name,
-            description: item.event_description,
+            url: item.event_url.and_then(|u| u.as_str().parse().ok()),
+            name: item.event_name.into(),
+            description: item.event_description.map(Into::into),
             location: loc,
         }
     }
@@ -180,13 +181,13 @@ impl From<CalendarCache> for Event {
 impl Into<InsertCalendarCache> for Event {
     fn into(self) -> InsertCalendarCache {
         InsertCalendarCache {
-            gcal_id: self.gcal_id,
-            event_id: self.event_id,
+            gcal_id: self.gcal_id.into(),
+            event_id: self.event_id.into(),
             event_start_time: self.start_time,
             event_end_time: self.end_time,
-            event_url: self.url.map(Url::into_string),
-            event_name: self.name,
-            event_description: self.description,
+            event_url: self.url.map(Url::into_string).map(Into::into),
+            event_name: self.name.into(),
+            event_description: self.description.map(Into::into),
             event_location_lat: self
                 .location
                 .as_ref()
@@ -234,12 +235,12 @@ impl Event {
         end_time: DateTime<Utc>,
     ) -> Self {
         Self {
-            gcal_id: gcal_id.to_string(),
-            event_id: Uuid::new_v4().to_string().replace("-", ""),
+            gcal_id: gcal_id.into(),
+            event_id: Uuid::new_v4().to_string().replace("-", "").into(),
             start_time,
             end_time,
             url: None,
-            name: name.to_string(),
+            name: name.into(),
             description: None,
             location: None,
         }
@@ -249,14 +250,14 @@ impl Event {
         let mut loc = None;
         if let Some(name) = &item.location {
             let location = Location {
-                name: name.to_string(),
+                name: name.into(),
                 ..Location::default()
             };
             loc.replace(location);
         }
         Ok(Self {
-            gcal_id: gcal_id.to_string(),
-            event_id: item.id.clone().ok_or_else(|| format_err!("No event id"))?,
+            gcal_id: gcal_id.into(),
+            event_id: item.id.as_ref().ok_or_else(|| format_err!("No event id"))?.into(),
             start_time: item
                 .start
                 .as_ref()
@@ -270,14 +271,14 @@ impl Event {
             url: item.html_link.as_ref().and_then(|u| u.parse().ok()),
             name: item
                 .summary
-                .clone()
-                .ok_or_else(|| format_err!("No name for event"))?,
-            description: item.description.clone(),
+                .as_ref()
+                .ok_or_else(|| format_err!("No name for event"))?.into(),
+            description: item.description.as_ref().map(Into::into),
             location: loc,
         })
     }
 
-    pub fn to_gcal_event(&self) -> Result<(String, GCalEvent), Error> {
+    pub fn to_gcal_event(&self) -> Result<(StackString, GCalEvent), Error> {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
@@ -289,11 +290,11 @@ impl Event {
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),
-            description: self.description.clone(),
+            description: self.description.as_ref().map(|s| s.to_string()),
             location: self.location.as_ref().map(|l| l.name.to_string()),
             ..GCalEvent::default()
         };
-        Ok((self.gcal_id.to_string(), event))
+        Ok((self.gcal_id.as_str().into(), event))
     }
 
     pub async fn get_summary(&self, domain: &str, pool: &PgPool) -> String {

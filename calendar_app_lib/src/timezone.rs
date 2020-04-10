@@ -4,6 +4,8 @@ use derive_more::Into;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, ops::Deref, str::FromStr};
 
+use crate::stack_string::StackString;
+
 /// Direction in degrees
 #[derive(Into, Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
 #[serde(into = "String", try_from = "&str")]
@@ -16,9 +18,15 @@ impl Deref for TimeZone {
     }
 }
 
-impl std::convert::Into<String> for TimeZone {
-    fn into(self) -> String {
-        self.0.name().to_string()
+impl From<TimeZone> for String {
+    fn from(item: TimeZone) -> Self {
+        item.0.name().to_string()
+    }
+}
+
+impl From<TimeZone> for StackString {
+    fn from(item: TimeZone) -> Self {
+        item.0.name().into()
     }
 }
 

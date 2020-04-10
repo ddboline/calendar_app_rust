@@ -68,7 +68,7 @@ impl ParseNycRuns {
                             debug!("{:?}", items);
                         }
                     } else {
-                        location.replace(text);
+                        location.replace(text.into());
                     }
                 }
             }
@@ -125,7 +125,7 @@ impl ParseNycRuns {
                                 || event.event_description != existing_event.event_description
                                 || event.event_location_name != existing_event.event_location_name
                             {
-                                event.event_id = existing_event.event_id.to_string();
+                                event.event_id = existing_event.event_id.as_str().into();
                                 debug!("modifying event {:#?} {:#?}", event, existing_event);
                                 Ok(Some(event.upsert(&self.pool).await?))
                             } else {

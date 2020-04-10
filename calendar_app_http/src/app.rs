@@ -29,7 +29,7 @@ pub async fn start_app() {
     }
     TRIGGER_DB_UPDATE.set();
     let config = Config::init_config().expect("Failed to load config");
-    let pool = PgPool::new(&config.database_url);
+    let pool = PgPool::new(config.database_url.as_str());
     let cal_sync = CalendarSync::new(config, pool);
 
     actix_rt::spawn(_update_db(cal_sync.pool.clone()));
