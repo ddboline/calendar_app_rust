@@ -63,7 +63,7 @@ impl From<CalendarList> for Calendar {
                 name: l,
                 ..Location::default()
             }),
-            timezone: item.gcal_timezone.and_then(|z| z.as_str().parse().ok()),
+            timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
             sync: item.sync,
             edit: item.edit,
         }
@@ -125,7 +125,6 @@ impl fmt::Display for Event {
         writeln!(f, "\t{}:", self.name)?;
         if let Some(description) = &self.description {
             let description: Vec<_> = description
-                .as_str()
                 .split('\n')
                 .map(|x| format!("\t\t{}", x))
                 .collect();
@@ -171,7 +170,7 @@ impl From<CalendarCache> for Event {
             event_id: item.event_id,
             start_time: item.event_start_time,
             end_time: item.event_end_time,
-            url: item.event_url.and_then(|u| u.as_str().parse().ok()),
+            url: item.event_url.and_then(|u| u.parse().ok()),
             name: item.event_name,
             description: item.event_description,
             location: loc,

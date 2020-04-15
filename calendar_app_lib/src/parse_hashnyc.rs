@@ -57,7 +57,7 @@ pub async fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                         for line in text {
                             if line.contains("Start:") {
                                 let loc: StackString = line.replace("Start:", "").trim().into();
-                                if !loc.as_str().is_empty() {
+                                if !loc.is_empty() {
                                     location.replace(loc);
                                 }
                             }

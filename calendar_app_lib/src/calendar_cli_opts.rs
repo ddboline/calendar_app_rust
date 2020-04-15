@@ -62,7 +62,7 @@ impl CalendarCliOpts {
         let action = opts.action.unwrap_or(CalendarActions::PrintAgenda);
 
         let config = Config::init_config()?;
-        let pool = PgPool::new(config.database_url.as_str());
+        let pool = PgPool::new(&config.database_url);
         let cal_sync = CalendarSync::new(config, pool);
 
         let task = cal_sync.stdout.spawn_stdout_task();
@@ -71,7 +71,7 @@ impl CalendarCliOpts {
                 for event in cal_sync.list_agenda().await? {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(cal_sync.config.domain.as_str(), &cal_sync.pool)
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool)
                             .await
                             .into(),
                     )?;
@@ -96,7 +96,7 @@ impl CalendarCliOpts {
                     spawn_blocking(move || {
                         cal_sync
                             .gcal
-                            .delete_gcal_event(gcal_id.as_str(), event_id.as_str())
+                            .delete_gcal_event(&gcal_id, &event_id)
                     })
                     .await?
                 }?;
@@ -112,12 +112,12 @@ impl CalendarCliOpts {
                 max_date,
             } => {
                 for event in cal_sync
-                    .list_events(gcal_id.as_str(), min_date, max_date)
+                    .list_events(&gcal_id, min_date, max_date)
                     .await?
                 {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(cal_sync.config.domain.as_str(), &cal_sync.pool)
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool)
                             .await
                             .into(),
                     )?;
@@ -125,8 +125,8 @@ impl CalendarCliOpts {
             }
             CalendarActions::Detail { gcal_id, event_id } => {
                 if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-                    gcal_id.as_str(),
-                    event_id.as_str(),
+                    &gcal_id,
+                    &event_id,
                     &cal_sync.pool,
                 )
                 .await?

@@ -136,8 +136,8 @@ pub async fn delete_event(
     let payload = payload.into_inner();
 
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-        payload.gcal_id.as_str(),
-        payload.event_id.as_str(),
+        &payload.gcal_id,
+        &payload.event_id,
         &data.cal_sync.pool,
     )
     .await?
@@ -147,7 +147,7 @@ pub async fn delete_event(
         event.delete(&data.cal_sync.pool).await?;
         let gcal = data.cal_sync.gcal.clone();
         spawn_blocking(move || {
-            gcal.delete_gcal_event(payload.gcal_id.as_str(), payload.event_id.as_str())
+            gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id)
         })
         .await??;
         body
@@ -231,7 +231,7 @@ pub async fn list_events(
         Some(cal) => cal,
         None => return form_http_response("".to_string()),
     };
-    let events: Vec<_> = data.cal_sync.list_events(cal.gcal_id.as_str(), query.min_time, query.max_time).await?
+    let events: Vec<_> = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
         .into_iter()
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
@@ -283,8 +283,8 @@ pub async fn event_detail(
 ) -> Result<HttpResponse, Error> {
     let payload = payload.into_inner();
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-        payload.gcal_id.as_str(),
-        payload.event_id.as_str(),
+        &payload.gcal_id,
+        &payload.event_id,
         &data.cal_sync.pool,
     )
     .await?
@@ -298,7 +298,6 @@ pub async fn event_detail(
         ));
         if let Some(description) = &event.description {
             let description: Vec<_> = description
-                .as_str()
                 .split('\n')
                 .map(|line| {
                     let mut line_length = 0;
@@ -442,16 +441,16 @@ pub async fn link_shortener(
     _: LoggedUser,
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let link = &link.into_inner().link;
+    let link = &link.link;
     let config = &data.cal_sync.config;
 
     if let Some(link) = SHORTENED_URLS.read().await.get(link) {
-        let body = format_short_link(config.domain.as_str(), link.as_str());
+        let body = format_short_link(&config.domain, &link);
         return form_http_response(body);
     }
 
     let pool = &data.cal_sync.pool;
-    if let Some(link) = ShortenedLinks::get_by_shortened_url(link.as_str(), pool)
+    if let Some(link) = ShortenedLinks::get_by_shortened_url(&link, pool)
         .await?
         .pop()
     {
@@ -490,8 +489,8 @@ pub async fn build_calendar_event(
     let query = query.into_inner();
     let mut events = if let Some(event_id) = &query.event_id {
         CalendarCache::get_by_gcal_id_event_id(
-            query.gcal_id.as_str(),
-            event_id.as_str(),
+            &query.gcal_id,
+            &event_id,
             &data.cal_sync.pool,
         )
         .await?
@@ -499,7 +498,7 @@ pub async fn build_calendar_event(
         Vec::new()
     };
     let event = events.pop().map_or_else(
-        || Event::new(query.gcal_id.as_str(), "", Utc::now(), Utc::now()),
+        || Event::new(&query.gcal_id, "", Utc::now(), Utc::now()),
         |event| event.into(),
     );
     let body = format!(
@@ -541,7 +540,7 @@ pub struct CreateCalendarEventRequest {
     pub event_end_time: NaiveTime,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
-    pub event_description: Option<StackString>,
+    pub event_description: Option<String>,
     pub event_location_name: Option<StackString>,
 }
 
@@ -571,7 +570,7 @@ pub async fn create_calendar_event(
         event_end_time: end_datetime,
         event_url: payload.event_url,
         event_name: payload.event_name,
-        event_description: payload.event_description,
+        event_description: payload.event_description.as_ref().map(Into::into),
         event_location_name: payload.event_location_name,
         event_location_lat: None,
         event_location_lon: None,
@@ -580,8 +579,8 @@ pub async fn create_calendar_event(
 
     let event = event.upsert(&data.cal_sync.pool).await?;
     let event = match CalendarCache::get_by_gcal_id_event_id(
-        event.gcal_id.as_str(),
-        event.event_id.as_str(),
+        &event.gcal_id,
+        &event.event_id,
         &data.cal_sync.pool,
     )
     .await?
@@ -599,7 +598,7 @@ pub async fn create_calendar_event(
     spawn_blocking(move || {
         data.cal_sync
             .gcal
-            .insert_gcal_event(gcal_id.as_str(), event)
+            .insert_gcal_event(&gcal_id, event)
     })
     .await??;
 

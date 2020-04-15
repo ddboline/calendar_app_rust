@@ -151,7 +151,7 @@ mod tests {
     #[tokio::test]
     async fn test_parse_nycruns_text() -> Result<(), Error> {
         let config = Config::init_config()?;
-        let pool = PgPool::new(config.database_url.as_str());
+        let pool = PgPool::new(&config.database_url);
         let nycruns = ParseNycRuns::new(pool);
         let text = include_str!("../../tests/data/nycruns.html");
         let result = nycruns.parse_nycruns_text(&text).await?;

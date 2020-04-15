@@ -27,8 +27,8 @@ pub struct CalendarSync {
 impl CalendarSync {
     pub fn new(config: Config, pool: PgPool) -> Self {
         let gcal = GCalendarInstance::new(
-            config.gcal_token_path.as_str(),
-            config.gcal_secret_file.as_str(),
+            &config.gcal_token_path,
+            &config.gcal_secret_file,
             "ddboline@gmail.com",
         );
         Self {
@@ -81,7 +81,7 @@ impl CalendarSync {
                 Ok(Some(event))
             } else if CalendarCache::get_by_gcal_id_event_id(
                 &gcal_id,
-                event.event_id.as_str(),
+                &event.event_id,
                 &self.pool,
             )
             .await?
@@ -149,9 +149,9 @@ impl CalendarSync {
             async move {
                 output.push(format!("starting calendar {}", calendar.calendar_name));
                 let inserted = if full {
-                    self.sync_full_calendar(calendar.gcal_id.as_str()).await?
+                    self.sync_full_calendar(&calendar.gcal_id).await?
                 } else {
-                    self.sync_future_events(calendar.gcal_id.as_str()).await?
+                    self.sync_future_events(&calendar.gcal_id).await?
                 };
                 output.push(format!(
                     "future events {} {}",
