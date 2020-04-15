@@ -93,12 +93,8 @@ impl CalendarCliOpts {
                         .stdout
                         .send(format!("delete {} {}", gcal_id, event_id).into())?;
                     let cal_sync = cal_sync.clone();
-                    spawn_blocking(move || {
-                        cal_sync
-                            .gcal
-                            .delete_gcal_event(&gcal_id, &event_id)
-                    })
-                    .await?
+                    spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
+                        .await?
                 }?;
             }
             CalendarActions::ListCalendars => {
@@ -111,10 +107,7 @@ impl CalendarCliOpts {
                 min_date,
                 max_date,
             } => {
-                for event in cal_sync
-                    .list_events(&gcal_id, min_date, max_date)
-                    .await?
-                {
+                for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
                     cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)
@@ -124,13 +117,10 @@ impl CalendarCliOpts {
                 }
             }
             CalendarActions::Detail { gcal_id, event_id } => {
-                if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
-                    &gcal_id,
-                    &event_id,
-                    &cal_sync.pool,
-                )
-                .await?
-                .pop()
+                if let Some(event) =
+                    CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
+                        .await?
+                        .pop()
                 {
                     let event: Event = event.into();
                     cal_sync.stdout.send(event.to_string().into())?;

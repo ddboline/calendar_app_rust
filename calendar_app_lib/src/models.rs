@@ -472,12 +472,8 @@ impl InsertCalendarCache {
     }
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
-        let existing = CalendarCache::get_by_gcal_id_event_id(
-            &self.gcal_id,
-            &self.event_id,
-            &pool,
-        )
-        .await?;
+        let existing =
+            CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, &pool).await?;
         match existing.len() {
             0 => self.insert(&pool).await,
             1 => {
