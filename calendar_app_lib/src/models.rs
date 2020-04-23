@@ -23,6 +23,7 @@ pub struct CalendarList {
     pub sync: bool,
     pub last_modified: DateTime<Utc>,
     pub edit: bool,
+    pub display: bool,
 }
 
 impl CalendarList {
@@ -163,6 +164,7 @@ impl InsertCalendarList {
             sync: false,
             last_modified: Utc::now(),
             edit: false,
+            display: false,
         }
     }
 

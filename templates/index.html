@@ -212,10 +212,20 @@ DISPLAY_TEXT
         xmlhttp.onload = function see_result() {
             document.getElementById("sub_article").innerHTML = "&nbsp;";
             document.getElementById("garminconnectoutput").innerHTML = "done";
-
         }
         xmlhttp.setRequestHeader('Content-Type', 'application/json');
         xmlhttp.send(data);
+        document.getElementById("garminconnectoutput").innerHTML = "running";
+    }
+    function calendarDisplay(gcal_id, display) {
+        let url = "/calendar/edit_calendar?gcal_id=" + gcal_id + "&display=" + display;
+        let xmlhttp = new XMLHttpRequest();
+        xmlhttp.onload = function see_result() {
+            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
+            document.getElementById("garminconnectoutput").innerHTML = "done";
+        }
+        xmlhttp.open("GET", url, true);
+        xmlhttp.send(null);
         document.getElementById("garminconnectoutput").innerHTML = "running";
     }
 </script>

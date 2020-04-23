@@ -177,16 +177,27 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
             } else {
                 "".to_string()
             };
+            let make_visible = if calendar.display {
+                format!(r#"
+                    <input type="button" name="show_calendar" value="Show" onclick="calendarDisplay('{}', true)">
+                "#, calendar.gcal_id)
+            } else {
+                format!(r#"
+                <input type="button" name="hide_calendar" value="Hide" onclick="calendarDisplay('{}', false)">
+                "#, calendar.gcal_id)
+            };
             format!(r#"
                 <tr text-style="center">
                 <td><input type="button" name="list_events" value="{gcal_name}" onclick="listEvents('{calendar_name}')"></td>
                 <td>{description}</td>
+                <td>{make_visible}</td>
                 <td>{create_event}</td>
                 </tr>"#,
                 gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), StackString::as_str),
                 calendar_name=calendar.name,
                 description=calendar.description.as_ref().map_or_else(|| "", StackString::as_str),
                 create_event=create_event,
+                make_visible=make_visible,
             )
         }).collect();
 
@@ -196,6 +207,7 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
         <thead>
         <th>Calendar</th>
         <th>Description</th>
+        <th></th>
         <th><input type="button" name="sync_all" value="Full Sync" onclick="syncCalendarsFull();"/></th>
         </thead>
         <tbody>{}</tbody>
@@ -592,4 +604,35 @@ pub async fn create_calendar_event(
     spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(&gcal_id, event)).await??;
 
     form_http_response("Event Inserted".to_string())
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EditCalendarRequest {
+    pub gcal_id: StackString,
+    pub calendar_name: Option<StackString>,
+    pub sync: Option<bool>,
+    pub edit: Option<bool>,
+    pub display: Option<bool>,
+}
+
+pub async fn edit_calendar(
+    query: Query<EditCalendarRequest>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let mut calendar = CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool).await?;
+    if let Some(calendar_name) = query.calendar_name.as_ref() {
+        calendar.calendar_name = calendar_name.clone();
+    }
+    if let Some(sync) = query.sync.as_ref() {
+        calendar.sync = sync;
+    }
+    if let Some(edit) = query.edit.as_ref() {
+        calendar.edit = edit;
+    }
+    if let Some(display) = query.display.as_ref() {
+        calendar.display = display;
+    }
+    calendar.update(&data.cal_sync.pool).await?;
+    to_json(calendar)
 }
