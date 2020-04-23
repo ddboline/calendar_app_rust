@@ -628,13 +628,13 @@ pub async fn edit_calendar(
     if let Some(calendar_name) = query.calendar_name.as_ref() {
         calendar.calendar_name = calendar_name.clone();
     }
-    if let Some(sync) = query.sync.as_ref() {
+    if let Some(sync) = query.sync {
         calendar.sync = sync;
     }
-    if let Some(edit) = query.edit.as_ref() {
+    if let Some(edit) = query.edit {
         calendar.edit = edit;
     }
-    if let Some(display) = query.display.as_ref() {
+    if let Some(display) = query.display {
         calendar.display = display;
     }
     calendar.update(&data.cal_sync.pool).await?;
