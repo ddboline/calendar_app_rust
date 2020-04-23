@@ -57,7 +57,13 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
         .list_calendars()
         .await?
         .into_iter()
-        .map(|cal| (cal.gcal_id.clone(), cal))
+        .filter_map(|cal| {
+            if cal.display {
+                Some((cal.gcal_id.clone(), cal))
+            } else {
+                None
+            }
+        })
         .collect();
     let events: Vec<_> = data
         .cal_sync
