@@ -10,8 +10,9 @@ use crate::{
     logged_user::{fill_from_db, TRIGGER_DB_UPDATE},
     routes::{
         agenda, build_calendar_event, calendar_cache, calendar_cache_update, calendar_index,
-        calendar_list, calendar_list_update, create_calendar_event, delete_event, event_detail,
-        link_shortener, list_calendars, list_events, sync_calendars, sync_calendars_full, user,
+        calendar_list, calendar_list_update, create_calendar_event, delete_event, edit_calendar,
+        event_detail, link_shortener, list_calendars, list_events, sync_calendars,
+        sync_calendars_full, user,
     },
 };
 
@@ -76,6 +77,7 @@ pub async fn start_app() {
                     .route(web::get().to(build_calendar_event))
                     .route(web::post().to(create_calendar_event)),
             )
+            .service(web::resource("/calendar/edit_calendar").route(web::get().to(edit_calendar)))
     })
     .bind(&format!("127.0.0.1:{}", port))
     .unwrap_or_else(|_| panic!("Failed to bind to port {}", port))

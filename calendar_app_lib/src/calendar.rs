@@ -35,6 +35,7 @@ pub struct Calendar {
     pub timezone: Option<TimeZone>,
     pub sync: bool,
     pub edit: bool,
+    pub display: bool,
 }
 
 impl fmt::Display for Calendar {
@@ -66,6 +67,7 @@ impl From<CalendarList> for Calendar {
             timezone: item.gcal_timezone.and_then(|z| z.parse().ok()),
             sync: item.sync,
             edit: item.edit,
+            display: item.display,
         }
     }
 }
@@ -103,6 +105,7 @@ impl Calendar {
                 timezone: item.time_zone.as_ref().and_then(|z| z.parse().ok()),
                 sync: false,
                 edit: false,
+                display: false,
             })
         }
     }

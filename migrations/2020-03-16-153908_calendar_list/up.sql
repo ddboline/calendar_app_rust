@@ -9,5 +9,6 @@ CREATE TABLE calendar_list (
     gcal_timezone TEXT,
     sync BOOL NOT NULL DEFAULT FALSE,
     last_modified TIMESTAMP WITH TIME ZONE NOT NULL,
-    edit BOOL NOT NULL DEFAULT FALSE
+    edit BOOL NOT NULL DEFAULT FALSE,
+    display BOOL NOT NULL DEFAULT FALSE
 )
