@@ -84,8 +84,8 @@ impl CalendarList {
 
     fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
         use crate::schema::calendar_list::dsl::{
-            calendar_list, gcal_description, gcal_id, gcal_location, gcal_name,
-            gcal_timezone, id, last_modified,
+            calendar_list, gcal_description, gcal_id, gcal_location, gcal_name, gcal_timezone, id,
+            last_modified,
         };
         let conn = pool.get()?;
         diesel::update(calendar_list.filter(id.eq(&self.id)))

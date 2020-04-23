@@ -2,6 +2,7 @@ use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
+use std::collections::HashMap;
 use tokio::{task::spawn_blocking, try_join};
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
@@ -167,9 +168,26 @@ impl CalendarSync {
     pub async fn list_agenda(&self) -> Result<Vec<Event>, Error> {
         let min_time = Utc::now() - Duration::days(1);
         let max_time = Utc::now() + Duration::days(2);
-        let events: Vec<_> = CalendarCache::get_by_datetime(min_time, max_time, &self.pool)
-            .await?
+
+        let (calendar_map, events) = try_join!(
+            self.list_calendars(),
+            CalendarCache::get_by_datetime(min_time, max_time, &self.pool)
+        )?;
+
+        let display_map: HashMap<_, _> = calendar_map
             .into_iter()
+            .filter_map(|cal| {
+                if cal.display {
+                    Some((cal.gcal_id, cal.display))
+                } else {
+                    None
+                }
+            })
+            .collect();
+
+        let events: Vec<_> = events
+            .into_iter()
+            .filter(|event| display_map.get(&event.gcal_id).map_or(false, |x| *x))
             .sorted_by_key(|event| event.event_start_time)
             .map(Into::into)
             .collect();
