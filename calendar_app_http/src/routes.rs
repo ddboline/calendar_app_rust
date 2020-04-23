@@ -621,7 +621,7 @@ pub async fn edit_calendar(
     _: LoggedUser,
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let calendar = CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool).await?;
+    let mut calendar = CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool).await?;
     let mut calendar = calendar
         .get_mut(0)
         .ok_or_else(|| format_err!("No such calendar {}", query.gcal_id))?;
