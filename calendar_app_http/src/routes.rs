@@ -628,7 +628,7 @@ pub async fn edit_calendar(
     {
         calendar
     } else {
-        return Err(format_err!("No such calendar {}", query.gcal_id));
+        return Err(format_err!("No such calendar {}", query.gcal_id).into());
     };
     if let Some(calendar_name) = query.calendar_name.as_ref() {
         calendar.calendar_name = calendar_name.clone();
