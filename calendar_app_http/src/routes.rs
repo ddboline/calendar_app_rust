@@ -180,11 +180,11 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
             };
             let make_visible = if calendar.display {
                 format!(r#"
-                    <input type="button" name="show_calendar" value="Show" onclick="calendarDisplay('{}', true)">
+                    <input type="button" name="hide_calendar" value="Hide" onclick="calendarDisplay('{}', false)">
                 "#, calendar.gcal_id)
             } else {
                 format!(r#"
-                <input type="button" name="hide_calendar" value="Hide" onclick="calendarDisplay('{}', false)">
+                <input type="button" name="show_calendar" value="Show" onclick="calendarDisplay('{}', true)">
                 "#, calendar.gcal_id)
             };
             format!(r#"
