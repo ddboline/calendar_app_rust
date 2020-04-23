@@ -3,6 +3,7 @@ use actix_web::{
     web::{Data, Json, Path, Query},
     HttpResponse,
 };
+use anyhow::format_err;
 use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
@@ -620,7 +621,10 @@ pub async fn edit_calendar(
     _: LoggedUser,
     data: Data<AppState>,
 ) -> Result<HttpResponse, Error> {
-    let mut calendar = CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool).await?;
+    let mut calendar = CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool)
+        .await?
+        .get(0)
+        .ok_or_else(|| format_err!("No such calendar {}", query.gcal_id))?;
     if let Some(calendar_name) = query.calendar_name.as_ref() {
         calendar.calendar_name = calendar_name.clone();
     }
