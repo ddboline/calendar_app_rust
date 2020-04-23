@@ -67,9 +67,24 @@ impl CalendarList {
         spawn_blocking(move || Self::get_by_gcal_id_sync(&gcal_id, &pool)).await?
     }
 
+    fn update_display_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::calendar_list::dsl::{calendar_list, display, id};
+        let conn = pool.get()?;
+        diesel::update(calendar_list.filter(id.eq(&self.id)))
+            .set(display.eq(&self.display))
+            .execute(&conn)
+            .map(|_| ())
+            .map_err(Into::into)
+    }
+
+    pub async fn update_display(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.update_display_sync(&pool).map(|_| self)).await?
+    }
+
     fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
         use crate::schema::calendar_list::dsl::{
-            calendar_list, display, gcal_description, gcal_id, gcal_location, gcal_name,
+            calendar_list, gcal_description, gcal_id, gcal_location, gcal_name,
             gcal_timezone, id, last_modified,
         };
         let conn = pool.get()?;
@@ -80,7 +95,6 @@ impl CalendarList {
                 gcal_description.eq(&self.gcal_description),
                 gcal_location.eq(&self.gcal_location),
                 gcal_timezone.eq(&self.gcal_timezone),
-                display.eq(&self.display),
                 last_modified.eq(Utc::now()),
             ))
             .execute(&conn)

@@ -645,8 +645,11 @@ pub async fn edit_calendar(
     if let Some(edit) = query.edit {
         calendar.edit = edit;
     }
-    if let Some(display) = query.display {
+    let calendar = if let Some(display) = query.display {
         calendar.display = display;
-    }
+        calendar.update_display(&data.cal_sync.pool).await?
+    } else {
+        calendar
+    };
     to_json(calendar.update(&data.cal_sync.pool).await?)
 }
