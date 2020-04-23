@@ -221,8 +221,7 @@ DISPLAY_TEXT
         let url = "/calendar/edit_calendar?gcal_id=" + gcal_id + "&display=" + display;
         let xmlhttp = new XMLHttpRequest();
         xmlhttp.onload = function see_result() {
-            document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
-            document.getElementById("garminconnectoutput").innerHTML = "done";
+            listCalendars();
         }
         xmlhttp.open("GET", url, true);
         xmlhttp.send(null);
