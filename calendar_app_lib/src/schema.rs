@@ -33,6 +33,7 @@ table! {
         sync -> Bool,
         last_modified -> Timestamptz,
         edit -> Bool,
+        display -> Bool,
     }
 }
 
