@@ -4,7 +4,7 @@ use actix_web::{
     HttpResponse,
 };
 use anyhow::format_err;
-use chrono::{Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use lazy_static::lazy_static;
@@ -382,13 +382,20 @@ pub async fn event_detail(
     form_http_response(body)
 }
 
-pub async fn calendar_list(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
-    let calendars =
-        if let Some(max_modified) = CalendarList::get_max_modified(&data.cal_sync.pool).await? {
-            CalendarList::get_recent(max_modified, &data.cal_sync.pool).await?
-        } else {
-            Vec::new()
-        };
+#[derive(Serialize, Deserialize)]
+pub struct MaxModifiedQuery {
+    pub max_modified: Option<DateTime<Utc>>,
+}
+
+pub async fn calendar_list(
+    query: Query<MaxModifiedQuery>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let max_modified = query
+        .max_modified
+        .unwrap_or_else(|| Utc::now() - Duration::days(7));
+    let calendars = CalendarList::get_recent(max_modified, &data.cal_sync.pool).await?;
     to_json(calendars)
 }
 
@@ -413,13 +420,15 @@ pub async fn calendar_list_update(
     to_json(calendars)
 }
 
-pub async fn calendar_cache(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
-    let events =
-        if let Some(max_modified) = CalendarCache::get_max_modified(&data.cal_sync.pool).await? {
-            CalendarCache::get_recent(max_modified, &data.cal_sync.pool).await?
-        } else {
-            Vec::new()
-        };
+pub async fn calendar_cache(
+    query: Query<MaxModifiedQuery>,
+    _: LoggedUser,
+    data: Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let max_modified = query
+        .max_modified
+        .unwrap_or_else(|| Utc::now() - Duration::days(7));
+    let events = CalendarCache::get_recent(max_modified, &data.cal_sync.pool).await?;
     to_json(events)
 }
 
