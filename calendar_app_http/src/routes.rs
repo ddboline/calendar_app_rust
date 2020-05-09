@@ -432,9 +432,43 @@ pub async fn calendar_cache(
     to_json(events)
 }
 
+#[derive(Clone, Debug, Serialize, Deserialize)]
+pub struct CalendarCacheRequest {
+    pub id: i32,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
+    pub event_start_time: DateTime<Utc>,
+    pub event_end_time: DateTime<Utc>,
+    pub event_url: Option<StackString>,
+    pub event_name: StackString,
+    pub event_description: Option<String>,
+    pub event_location_name: Option<String>,
+    pub event_location_lat: Option<f64>,
+    pub event_location_lon: Option<f64>,
+    pub last_modified: DateTime<Utc>,
+}
+
+impl From<CalendarCacheRequest> for InsertCalendarCache {
+    fn from(item: CalendarCacheRequest) -> Self {
+        Self {
+            gcal_id: item.gcal_id,
+            event_id: item.event_id,
+            event_start_time: item.event_start_time,
+            event_end_time: item.event_end_time,
+            event_url: item.event_url,
+            event_name: item.event_name,
+            event_description: item.event_description.map(Into::into),
+            event_location_name: item.event_location_name.map(Into::into),
+            event_location_lat: item.event_location_lat,
+            event_location_lon: item.event_location_lon,
+            last_modified: item.last_modified,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct CalendarCacheUpdateRequest {
-    pub updates: Vec<CalendarCache>,
+    pub updates: Vec<CalendarCacheRequest>,
 }
 
 pub async fn calendar_cache_update(
@@ -563,7 +597,7 @@ pub struct CreateCalendarEventRequest {
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<String>,
-    pub event_location_name: Option<StackString>,
+    pub event_location_name: Option<String>,
 }
 
 pub async fn create_calendar_event(
@@ -593,7 +627,7 @@ pub async fn create_calendar_event(
         event_url: payload.event_url,
         event_name: payload.event_name,
         event_description: payload.event_description.as_ref().map(Into::into),
-        event_location_name: payload.event_location_name,
+        event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
         last_modified: Utc::now(),
