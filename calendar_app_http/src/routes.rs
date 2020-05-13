@@ -435,12 +435,12 @@ pub async fn calendar_cache(
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCacheRequest {
     pub id: i32,
-    pub gcal_id: StackString,
-    pub event_id: StackString,
+    pub gcal_id: String,
+    pub event_id: String,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
-    pub event_url: Option<StackString>,
-    pub event_name: StackString,
+    pub event_url: Option<String>,
+    pub event_name: String,
     pub event_description: Option<String>,
     pub event_location_name: Option<String>,
     pub event_location_lat: Option<f64>,
@@ -451,12 +451,12 @@ pub struct CalendarCacheRequest {
 impl From<CalendarCacheRequest> for InsertCalendarCache {
     fn from(item: CalendarCacheRequest) -> Self {
         Self {
-            gcal_id: item.gcal_id,
-            event_id: item.event_id,
+            gcal_id: item.gcal_id.into(),
+            event_id: item.event_id.into(),
             event_start_time: item.event_start_time,
             event_end_time: item.event_end_time,
-            event_url: item.event_url,
-            event_name: item.event_name,
+            event_url: item.event_url.map(Into::into),
+            event_name: item.event_name.into(),
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
