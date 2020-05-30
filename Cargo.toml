@@ -13,7 +13,7 @@ calendar_app_http = {path="calendar_app_http"}
 chrono = "0.4"
 tokio = {version="0.2", features=["full"]}
 anyhow = "1.0"
-actix-rt = "1.0"
+actix-rt = "1.1"
 env_logger = "0.7"
 log = "0.4"
 
