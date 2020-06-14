@@ -451,12 +451,12 @@ pub struct CalendarCacheRequest {
 impl From<CalendarCacheRequest> for InsertCalendarCache {
     fn from(item: CalendarCacheRequest) -> Self {
         Self {
-            gcal_id: item.gcal_id.into(),
-            event_id: item.event_id.into(),
+            gcal_id: item.gcal_id,
+            event_id: item.event_id,
             event_start_time: item.event_start_time,
             event_end_time: item.event_end_time,
             event_url: item.event_url.map(Into::into),
-            event_name: item.event_name.into(),
+            event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
