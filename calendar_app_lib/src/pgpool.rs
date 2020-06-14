@@ -23,9 +23,9 @@ impl PgPool {
         Self {
             pgurl: pgurl.into(),
             pool: Pool::builder()
-            .min_idle(Some(2))
-            .build(manager)
-            .expect("Failed to open DB connection"),
+                .min_idle(Some(2))
+                .build(manager)
+                .expect("Failed to open DB connection"),
         }
     }
 

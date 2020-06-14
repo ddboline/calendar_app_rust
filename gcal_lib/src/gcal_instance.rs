@@ -28,7 +28,7 @@ pub struct GCalendarInstance {
 }
 
 impl GCalendarInstance {
-    pub fn new(gcal_token_path: &str, gcal_secret_file: &str, session_name: &str) -> Self {
+    pub fn new(gcal_token_path: &Path, gcal_secret_file: &Path, session_name: &str) -> Self {
         Self {
             gcal: Arc::new(Mutex::new(
                 Self::create_gcal(gcal_token_path, gcal_secret_file, session_name).unwrap(),
@@ -38,8 +38,8 @@ impl GCalendarInstance {
 
     /// Creates a cal hub.
     fn create_gcal(
-        gcal_token_path: &str,
-        gcal_secret_file: &str,
+        gcal_token_path: &Path,
+        gcal_secret_file: &Path,
         session_name: &str,
     ) -> Result<GCCalendar, Error> {
         let auth = Self::create_drive_auth(gcal_token_path, gcal_secret_file, session_name)?;
@@ -50,8 +50,8 @@ impl GCalendarInstance {
     }
 
     fn create_drive_auth(
-        gcal_token_path: &str,
-        gcal_secret_file: &str,
+        gcal_token_path: &Path,
+        gcal_secret_file: &Path,
         session_name: &str,
     ) -> Result<GCAuthenticator, Error> {
         let secret_file = File::open(gcal_secret_file)?;
@@ -59,9 +59,10 @@ impl GCalendarInstance {
         let secret = secret
             .installed
             .ok_or_else(|| format_err!("ConsoleApplicationSecret.installed is None"))?;
-        let token_file = format!("{}/{}.json", gcal_token_path, session_name);
+        let token_file = gcal_token_path.join(format!("{}.json", session_name));
+        let token_file = token_file.to_string_lossy().to_string();
 
-        let parent = Path::new(gcal_token_path);
+        let parent = gcal_token_path;
 
         if !parent.exists() {
             create_dir_all(parent)?;

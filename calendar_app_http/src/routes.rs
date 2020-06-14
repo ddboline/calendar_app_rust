@@ -435,14 +435,14 @@ pub async fn calendar_cache(
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCacheRequest {
     pub id: i32,
-    pub gcal_id: String,
-    pub event_id: String,
+    pub gcal_id: StackString,
+    pub event_id: StackString,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
-    pub event_url: Option<String>,
-    pub event_name: String,
-    pub event_description: Option<String>,
-    pub event_location_name: Option<String>,
+    pub event_url: Option<StackString>,
+    pub event_name: StackString,
+    pub event_description: Option<StackString>,
+    pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
     pub last_modified: DateTime<Utc>,
@@ -596,8 +596,8 @@ pub struct CreateCalendarEventRequest {
     pub event_end_time: NaiveTime,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
-    pub event_description: Option<String>,
-    pub event_location_name: Option<String>,
+    pub event_description: Option<StackString>,
+    pub event_location_name: Option<StackString>,
 }
 
 pub async fn create_calendar_event(
@@ -626,7 +626,7 @@ pub async fn create_calendar_event(
         event_end_time: end_datetime,
         event_url: payload.event_url,
         event_name: payload.event_name,
-        event_description: payload.event_description.as_ref().map(Into::into),
+        event_description: payload.event_description,
         event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
