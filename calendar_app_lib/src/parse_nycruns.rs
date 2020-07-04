@@ -149,6 +149,7 @@ mod tests {
     use crate::{config::Config, parse_nycruns::ParseNycRuns, pgpool::PgPool};
 
     #[tokio::test]
+    #[ignore]
     async fn test_parse_nycruns_text() -> Result<(), Error> {
         let config = Config::init_config()?;
         let pool = PgPool::new(&config.database_url);
