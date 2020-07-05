@@ -645,7 +645,7 @@ pub async fn create_calendar_event(
         Some(event) => event,
         None => {
             return Err(ServiceError::BadRequest(
-                "Failed to store event in db".to_string(),
+                "Failed to store event in db".into(),
             ))
         }
     };

@@ -305,7 +305,7 @@ impl Event {
         Ok((self.gcal_id.as_str().into(), event))
     }
 
-    pub async fn get_summary(&self, domain: &str, pool: &PgPool) -> String {
+    pub async fn get_summary(&self, domain: &str, pool: &PgPool) -> StackString {
         let mut short_url = None;
         let original_url = self.url.as_ref();
 
@@ -349,7 +349,7 @@ impl Event {
             self.gcal_id,
             self.event_id,
             url,
-        )
+        ).into()
     }
 }
 

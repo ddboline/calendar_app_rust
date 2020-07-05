@@ -30,5 +30,5 @@ blake3 = {version="0.3", features=["rayon"]}
 hex = "0.4"
 log = "0.4"
 env_logger = "0.7"
-inlinable_string = "0.1"
 envy = "0.4"
+smartstring = "0.2"

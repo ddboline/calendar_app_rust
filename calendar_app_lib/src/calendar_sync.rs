@@ -15,6 +15,7 @@ use crate::{
     parse_nycruns::ParseNycRuns,
     pgpool::PgPool,
     stdout_channel::StdoutChannel,
+    stack_string::StackString,
 };
 
 #[derive(Clone)]
@@ -121,7 +122,7 @@ impl CalendarSync {
             .await
     }
 
-    pub async fn run_syncing(&self, full: bool) -> Result<Vec<String>, Error> {
+    pub async fn run_syncing(&self, full: bool) -> Result<Vec<StackString>, Error> {
         let mut output = Vec::new();
 
         let nycruns = ParseNycRuns::new(self.pool.clone());
@@ -130,11 +131,11 @@ impl CalendarSync {
 
         let (hashnyc_events, nycruns_events) = try_join!(hashnyc_future, nycruns_future)?;
 
-        output.push(format!("parse_hashnyc {}", hashnyc_events.len()));
-        output.push(format!("parse_nycruns {}", nycruns_events.len()));
+        output.push(format!("parse_hashnyc {}", hashnyc_events.len()).into());
+        output.push(format!("parse_nycruns {}", nycruns_events.len()).into());
 
         let inserted = self.sync_calendar_list().await?;
-        output.push(format!("inserted {} caledars", inserted.len()));
+        output.push(format!("inserted {} caledars", inserted.len()).into());
 
         let calendar_list = CalendarList::get_calendars(&self.pool)
             .await?
@@ -144,7 +145,7 @@ impl CalendarSync {
         let futures = calendar_list.map(|calendar| {
             let mut output = Vec::new();
             async move {
-                output.push(format!("starting calendar {}", calendar.calendar_name));
+                output.push(format!("starting calendar {}", calendar.calendar_name).into());
                 let inserted = if full {
                     self.sync_full_calendar(&calendar.gcal_id).await?
                 } else {
@@ -154,7 +155,7 @@ impl CalendarSync {
                     "future events {} {}",
                     calendar.calendar_name,
                     inserted.len()
-                ));
+                ).into());
                 Ok(output)
             }
         });

@@ -654,7 +654,7 @@ impl InsertShortenedLinks {
     }
 }
 
-fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<String, Error> {
+fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<StackString, Error> {
     // Encoding multiples of the block size is most efficient.
     let mut block = [0; blake3::BLOCK_LEN];
     let mut result = Vec::new();
@@ -666,7 +666,7 @@ fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<St
         result.push(hex_str.to_string());
         len -= take_bytes;
     }
-    Ok(result.join(""))
+    Ok(result.join("").into())
 }
 
 fn copy_wide(mut reader: impl io::Read, hasher: &mut blake3::Hasher) -> Result<u64, Error> {
