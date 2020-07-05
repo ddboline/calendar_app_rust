@@ -72,19 +72,18 @@ impl CalendarCliOpts {
                     cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)
-                            .await
-                            .into(),
+                            .await,
                     )?;
                 }
             }
             CalendarActions::SyncCalendars => {
                 for line in cal_sync.run_syncing(false).await? {
-                    cal_sync.stdout.send(line.into())?;
+                    cal_sync.stdout.send(line)?;
                 }
             }
             CalendarActions::SyncCalendarsFull => {
                 for line in cal_sync.run_syncing(true).await? {
-                    cal_sync.stdout.send(line.into())?;
+                    cal_sync.stdout.send(line)?;
                 }
             }
             CalendarActions::Delete { gcal_id, event_id } => {
@@ -111,8 +110,7 @@ impl CalendarCliOpts {
                     cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)
-                            .await
-                            .into(),
+                            .await,
                     )?;
                 }
             }
