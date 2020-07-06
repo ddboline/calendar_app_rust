@@ -506,7 +506,7 @@ pub async fn link_shortener(
 
     if let Some(link) = SHORTENED_URLS.read().await.get(link) {
         let body = format_short_link(&config.domain, &link);
-        return form_http_response(body);
+        return form_http_response(body.into());
     }
 
     let pool = &data.cal_sync.pool;
@@ -528,11 +528,12 @@ pub async fn link_shortener(
     }
 }
 
-fn format_short_link(domain: &str, link: &str) -> String {
+fn format_short_link(domain: &str, link: &str) -> StackString {
     format!(
         r#"<script>window.location.replace("https://{}/calendar/link/{}")</script>"#,
         domain, link
     )
+    .into()
 }
 
 #[derive(Serialize, Deserialize, Debug)]

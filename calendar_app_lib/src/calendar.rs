@@ -349,7 +349,8 @@ impl Event {
             self.gcal_id,
             self.event_id,
             url,
-        ).into()
+        )
+        .into()
     }
 }
 

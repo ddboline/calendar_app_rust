@@ -14,8 +14,8 @@ use crate::{
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::ParseNycRuns,
     pgpool::PgPool,
-    stdout_channel::StdoutChannel,
     stack_string::StackString,
+    stdout_channel::StdoutChannel,
 };
 
 #[derive(Clone)]
@@ -151,11 +151,14 @@ impl CalendarSync {
                 } else {
                     self.sync_future_events(&calendar.gcal_id).await?
                 };
-                output.push(format!(
-                    "future events {} {}",
-                    calendar.calendar_name,
-                    inserted.len()
-                ).into());
+                output.push(
+                    format!(
+                        "future events {} {}",
+                        calendar.calendar_name,
+                        inserted.len()
+                    )
+                    .into(),
+                );
                 Ok(output)
             }
         });
