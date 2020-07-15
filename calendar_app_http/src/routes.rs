@@ -12,13 +12,13 @@ use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use tokio::{sync::RwLock, task::spawn_blocking};
 use url::Url;
+use stack_string::StackString;
 
 use calendar_app_lib::{
     calendar::Event,
     models::{
         CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, ShortenedLinks,
     },
-    stack_string::StackString,
 };
 
 use crate::{

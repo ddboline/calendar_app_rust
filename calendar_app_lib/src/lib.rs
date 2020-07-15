@@ -24,7 +24,6 @@ pub mod parse_hashnyc;
 pub mod parse_nycruns;
 pub mod pgpool;
 pub mod schema;
-pub mod stack_string;
 pub mod stdout_channel;
 pub mod timezone;
 

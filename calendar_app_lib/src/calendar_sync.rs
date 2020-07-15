@@ -4,6 +4,7 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use std::collections::HashMap;
 use tokio::{task::spawn_blocking, try_join};
+use stack_string::StackString;
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
 
@@ -14,7 +15,6 @@ use crate::{
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::ParseNycRuns,
     pgpool::PgPool,
-    stack_string::StackString,
     stdout_channel::StdoutChannel,
 };
 

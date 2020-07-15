@@ -6,7 +6,7 @@ use std::fmt::Debug;
 use thiserror::Error;
 use tokio::task::JoinError;
 
-use calendar_app_lib::stack_string::StackString;
+use stack_string::StackString;
 
 #[derive(Error, Debug)]
 pub enum ServiceError {

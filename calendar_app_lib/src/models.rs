@@ -4,11 +4,11 @@ use diesel::{dsl::max, ExpressionMethods, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use std::{cmp, io};
 use tokio::task::spawn_blocking;
+use stack_string::StackString;
 
 use crate::{
     pgpool::PgPool,
     schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
-    stack_string::StackString,
 };
 
 #[derive(Queryable, Clone, Debug, Serialize, Deserialize)]

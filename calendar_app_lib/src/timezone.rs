@@ -4,7 +4,7 @@ use derive_more::Into;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, ops::Deref, str::FromStr};
 
-use crate::stack_string::StackString;
+use stack_string::StackString;
 
 /// Direction in degrees
 #[derive(Into, Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]

@@ -32,3 +32,4 @@ dirs = "2.0"
 itertools = "0.9"
 url = "2.1"
 reqwest = {version="0.10", features=["cookies", "json", "rustls-tls", "stream"]}
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", branch="master", features=["diesel_types"] }

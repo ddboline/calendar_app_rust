@@ -4,12 +4,12 @@ use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use select::{document::Document, predicate::Name};
 use std::{collections::HashMap, sync::Arc};
+use stack_string::StackString;
 
 use crate::{
     calendar::{Event, Location},
     models::{CalendarCache, InsertCalendarCache},
     pgpool::PgPool,
-    stack_string::StackString,
 };
 
 const CALID: &str = "8hfjg0d8ls2od3s9bd1k1v9jtc@group.calendar.google.com";

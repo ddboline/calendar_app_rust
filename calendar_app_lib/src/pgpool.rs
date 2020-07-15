@@ -3,7 +3,7 @@ use diesel::{pg::PgConnection, r2d2::ConnectionManager};
 use r2d2::{Pool, PooledConnection};
 use std::fmt;
 
-use crate::stack_string::StackString;
+use stack_string::StackString;
 
 #[derive(Clone)]
 pub struct PgPool {

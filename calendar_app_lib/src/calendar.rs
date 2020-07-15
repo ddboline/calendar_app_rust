@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 use std::{convert::TryInto, fmt};
 use url::Url;
 use uuid::Uuid;
+use stack_string::StackString;
 
 use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
 
@@ -15,7 +16,6 @@ use crate::{
         ShortenedLinks,
     },
     pgpool::PgPool,
-    stack_string::StackString,
     timezone::TimeZone,
 };
 
