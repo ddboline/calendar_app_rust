@@ -15,6 +15,7 @@ use std::{
     sync::Arc,
 };
 use yup_oauth2 as oauth2;
+use stack_string::StackString;
 
 use crate::exponential_retry;
 
@@ -100,14 +101,14 @@ impl GCalendarInstance {
 
     pub fn list_gcal_calendars(&self) -> Result<Vec<CalendarListEntry>, Error> {
         let mut output = Vec::new();
-        let mut next_page_token: Option<String> = None;
+        let mut next_page_token: Option<StackString> = None;
         loop {
-            let cal_list = self.gcal_calendars(next_page_token.as_deref())?;
+            let cal_list = self.gcal_calendars(next_page_token.as_ref().map(StackString::as_str))?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
             if let Some(token) = cal_list.next_page_token {
-                next_page_token.replace(token);
+                next_page_token.replace(token.into());
             } else {
                 break;
             }
@@ -152,15 +153,15 @@ impl GCalendarInstance {
         max_time: Option<DateTime<Utc>>,
     ) -> Result<Vec<Event>, Error> {
         let mut output = Vec::new();
-        let mut next_page_token: Option<String> = None;
+        let mut next_page_token: Option<StackString> = None;
         loop {
             let cal_list =
-                self.gcal_events(gcal_id, min_time, max_time, next_page_token.as_deref())?;
+                self.gcal_events(gcal_id, min_time, max_time, next_page_token.as_ref().map(StackString::as_str))?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
             if let Some(token) = cal_list.next_page_token {
-                next_page_token.replace(token);
+                next_page_token.replace(token.into());
             } else {
                 break;
             }
