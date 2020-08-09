@@ -339,7 +339,7 @@ impl Event {
         } else if let Some(original_url) = original_url {
             original_url.as_str()
         } else {
-            self.event_id.as_str()
+            &self.event_id
         };
 
         format!(
@@ -370,6 +370,6 @@ mod tests {
             Utc::now() + Duration::hours(1),
         );
         debug!("{:#?}", event);
-        assert_eq!(event.name.as_str(), "Test event");
+        assert_eq!(&event.name, "Test event");
     }
 }
