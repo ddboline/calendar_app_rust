@@ -48,6 +48,7 @@ impl CalendarSync {
             spawn_blocking(move || gcal.list_gcal_calendars()).await?
         }?;
 
+        #[allow(clippy::filter_map)]
         let futures = calendar_list
             .into_iter()
             .filter_map(|item| Calendar::from_gcal_entry(&item))
@@ -106,6 +107,7 @@ impl CalendarSync {
             .collect();
         let event_map = Arc::new(event_map);
 
+        #[allow(clippy::filter_map)]
         let futures = database_events.iter().map(|item| {
             let event_map = event_map.clone();
             async move {
