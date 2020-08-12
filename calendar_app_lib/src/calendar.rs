@@ -1,10 +1,10 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use serde::{Deserialize, Serialize};
+use stack_string::StackString;
 use std::{convert::TryInto, fmt};
 use url::Url;
 use uuid::Uuid;
-use stack_string::StackString;
 
 use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
 

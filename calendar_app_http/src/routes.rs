@@ -9,10 +9,10 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
+use stack_string::StackString;
 use std::collections::HashMap;
 use tokio::{sync::RwLock, task::spawn_blocking};
 use url::Url;
-use stack_string::StackString;
 
 use calendar_app_lib::{
     calendar::Event,

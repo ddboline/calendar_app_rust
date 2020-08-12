@@ -2,9 +2,9 @@ use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
+use stack_string::StackString;
 use std::collections::HashMap;
 use tokio::{task::spawn_blocking, try_join};
-use stack_string::StackString;
 
 use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
 
@@ -13,7 +13,7 @@ use crate::{
     config::Config,
     models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
     parse_hashnyc::parse_hashnyc,
-    parse_nycruns::ParseNycRuns,
+    parse_nycruns::parse_nycruns,
     pgpool::PgPool,
     stdout_channel::StdoutChannel,
 };
@@ -47,19 +47,16 @@ impl CalendarSync {
             spawn_blocking(move || gcal.list_gcal_calendars()).await?
         }?;
 
-        let futures = calendar_list.into_iter().map(|item| async move {
-            if let Some(calendar) = Calendar::from_gcal_entry(&item) {
+        let futures = calendar_list
+            .into_iter()
+            .filter_map(|item| Calendar::from_gcal_entry(&item))
+            .map(|calendar| async move {
                 let cal: InsertCalendarList = calendar.into();
-                match cal.upsert(&self.pool).await {
-                    Ok(ev) => Ok(Some(ev)),
-                    Err(e) => Err(e),
-                }
-            } else {
-                Ok(None)
-            }
-        });
+                cal.upsert(&self.pool).await
+            });
+
         let result: Result<Vec<_>, Error> = try_join_all(futures).await;
-        let inserted: Vec<_> = result?.into_iter().filter_map(|x| x).collect();
+        let inserted = result?;
         Ok(inserted)
     }
 
@@ -125,9 +122,8 @@ impl CalendarSync {
     pub async fn run_syncing(&self, full: bool) -> Result<Vec<StackString>, Error> {
         let mut output = Vec::new();
 
-        let nycruns = ParseNycRuns::new(self.pool.clone());
         let hashnyc_future = parse_hashnyc(&self.pool);
-        let nycruns_future = nycruns.parse_nycruns();
+        let nycruns_future = parse_nycruns(&self.pool);
 
         let (hashnyc_events, nycruns_events) = try_join!(hashnyc_future, nycruns_future)?;
 

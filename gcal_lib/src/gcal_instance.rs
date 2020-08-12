@@ -9,13 +9,13 @@ use oauth2::{
     FlowType,
 };
 use parking_lot::Mutex;
+use stack_string::StackString;
 use std::{
     fs::{create_dir_all, File},
     path::Path,
     sync::Arc,
 };
 use yup_oauth2 as oauth2;
-use stack_string::StackString;
 
 use crate::exponential_retry;
 
@@ -103,7 +103,8 @@ impl GCalendarInstance {
         let mut output = Vec::new();
         let mut next_page_token: Option<StackString> = None;
         loop {
-            let cal_list = self.gcal_calendars(next_page_token.as_ref().map(StackString::as_str))?;
+            let cal_list =
+                self.gcal_calendars(next_page_token.as_ref().map(StackString::as_str))?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
@@ -155,8 +156,12 @@ impl GCalendarInstance {
         let mut output = Vec::new();
         let mut next_page_token: Option<StackString> = None;
         loop {
-            let cal_list =
-                self.gcal_events(gcal_id, min_time, max_time, next_page_token.as_ref().map(StackString::as_str))?;
+            let cal_list = self.gcal_events(
+                gcal_id,
+                min_time,
+                max_time,
+                next_page_token.as_ref().map(StackString::as_str),
+            )?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }

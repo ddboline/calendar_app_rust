@@ -1,8 +1,8 @@
 use anyhow::Error;
 use chrono::NaiveDate;
+use stack_string::StackString;
 use structopt::StructOpt;
 use tokio::task::spawn_blocking;
-use stack_string::StackString;
 
 use crate::{
     calendar::Event, calendar_sync::CalendarSync, config::Config, models::CalendarCache,

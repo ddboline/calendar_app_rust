@@ -3,8 +3,9 @@ use chrono::{Duration, TimeZone, Utc};
 use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use select::{document::Document, predicate::Name};
-use std::{collections::HashMap, sync::Arc};
+use smallvec::SmallVec;
 use stack_string::StackString;
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     calendar::{Event, Location},
@@ -15,7 +16,7 @@ use crate::{
 const CALID: &str = "8hfjg0d8ls2od3s9bd1k1v9jtc@group.calendar.google.com";
 const URL: &str = "https://hashnyc.com/?days=all";
 
-pub async fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
+pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
     let mut events = Vec::new();
     for table in Document::from(body).find(Name("table")) {
         if table.attr("class") != Some("future_hashes") {
@@ -37,7 +38,7 @@ pub async fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     }
                 }
                 if td.attr("class") == Some("deeplink_container") {
-                    let text: Vec<_> = td.children().map(|c| c.text()).collect();
+                    let text: SmallVec<[String; 5]> = td.children().map(|c| c.text()).collect();
                     let date = text.join(" ");
                     let date = date.trim();
                     // Local::parse_from_str(&date, "%A %B %d ")
@@ -100,7 +101,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
 
     let body = reqwest::get(URL).await?.text().await?;
 
-    let futures = parse_hashnyc_text(&body).await?.into_iter().map(|event| {
+    let futures = parse_hashnyc_text(&body)?.into_iter().map(|event| {
         let current_event_map = current_event_map.clone();
         async move {
             let mut event: InsertCalendarCache = event.into();
@@ -132,10 +133,10 @@ mod tests {
 
     use crate::parse_hashnyc::parse_hashnyc_text;
 
-    #[tokio::test]
-    async fn test_parse_hashnyc_text() -> Result<(), Error> {
+    #[test]
+    fn test_parse_hashnyc_text() -> Result<(), Error> {
         let text = include_str!("../../tests/data/hashnyc.html");
-        let result = parse_hashnyc_text(&text).await?;
+        let result = parse_hashnyc_text(&text)?;
         assert_eq!(result.len(), 12);
         Ok(())
     }
