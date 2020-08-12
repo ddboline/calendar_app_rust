@@ -114,25 +114,21 @@ impl CalendarSync {
                 let event_id = item.event_id.as_str();
                 let event: Event = item.clone().into();
                 let (gcal_id, event) = event.to_gcal_event()?;
-                match event_map.get(event_id) {
-                    Some(gcal_event) => {
-                        if !compare_gcal_events(gcal_event, &event) && update {
-                            let gcal = self.gcal.clone();
-                            Ok(Some(
-                                spawn_blocking(move || gcal.update_gcal_event(&gcal_id, event))
-                                    .await??,
-                            ))
-                        } else {
-                            Ok(None)
-                        }
-                    }
-                    None => {
+                if let Some(gcal_event) = event_map.get(event_id) {
+                    if !compare_gcal_events(gcal_event, &event) && update {
                         let gcal = self.gcal.clone();
                         Ok(Some(
-                            spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event))
+                            spawn_blocking(move || gcal.update_gcal_event(&gcal_id, event))
                                 .await??,
                         ))
+                    } else {
+                        Ok(None)
                     }
+                } else {
+                    let gcal = self.gcal.clone();
+                    Ok(Some(
+                        spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event)).await??,
+                    ))
                 }
             }
         });
