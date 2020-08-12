@@ -315,26 +315,37 @@ impl CalendarCache {
 
     fn get_by_gcal_id_datetime_sync(
         gcal_id_: &str,
-        min_time: DateTime<Utc>,
-        max_time: DateTime<Utc>,
+        min_time: Option<DateTime<Utc>>,
+        max_time: Option<DateTime<Utc>>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
         use crate::schema::calendar_cache::dsl::{
             calendar_cache, event_end_time, event_start_time, gcal_id,
         };
         let conn = pool.get()?;
-        calendar_cache
-            .filter(gcal_id.eq(gcal_id_))
-            .filter(event_end_time.gt(min_time))
-            .filter(event_start_time.lt(max_time))
-            .load(&conn)
-            .map_err(Into::into)
+        if let Some(min_time) = min_time {
+            if let Some(max_time) = max_time {
+                calendar_cache
+                    .filter(gcal_id.eq(gcal_id_))
+                    .filter(event_end_time.gt(min_time))
+                    .filter(event_start_time.lt(max_time))
+                    .load(&conn)
+            } else {
+                calendar_cache
+                    .filter(gcal_id.eq(gcal_id_))
+                    .filter(event_end_time.gt(min_time))
+                    .load(&conn)
+            }
+        } else {
+            calendar_cache.filter(gcal_id.eq(gcal_id_)).load(&conn)
+        }
+        .map_err(Into::into)
     }
 
     pub async fn get_by_gcal_id_datetime(
         gcal_id: &str,
-        min_time: DateTime<Utc>,
-        max_time: DateTime<Utc>,
+        min_time: Option<DateTime<Utc>>,
+        max_time: Option<DateTime<Utc>>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
         let pool = pool.clone();
