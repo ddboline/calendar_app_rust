@@ -181,25 +181,25 @@ impl From<CalendarCache> for Event {
     }
 }
 
-impl Into<InsertCalendarCache> for Event {
-    fn into(self) -> InsertCalendarCache {
-        InsertCalendarCache {
-            gcal_id: self.gcal_id,
-            event_id: self.event_id,
-            event_start_time: self.start_time,
-            event_end_time: self.end_time,
-            event_url: self.url.map(Url::into_string).map(Into::into),
-            event_name: self.name,
-            event_description: self.description.map(Into::into),
-            event_location_lat: self
+impl From<Event> for InsertCalendarCache {
+    fn from(item: Event) -> Self {
+        Self {
+            gcal_id: item.gcal_id,
+            event_id: item.event_id,
+            event_start_time: item.start_time,
+            event_end_time: item.end_time,
+            event_url: item.url.map(Url::into_string).map(Into::into),
+            event_name: item.name,
+            event_description: item.description.map(Into::into),
+            event_location_lat: item
                 .location
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(lat, _)| lat.into())),
-            event_location_lon: self
+            event_location_lon: item
                 .location
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(_, lon)| lon.into())),
-            event_location_name: self.location.map(|l| l.name),
+            event_location_name: item.location.map(|l| l.name),
             last_modified: Utc::now(),
         }
     }
