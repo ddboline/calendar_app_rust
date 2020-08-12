@@ -4,9 +4,10 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use stack_string::StackString;
 use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::{task::spawn_blocking, try_join};
 
-use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance};
+use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
 
 use crate::{
     calendar::{Calendar, Event},
@@ -60,7 +61,7 @@ impl CalendarSync {
         Ok(inserted)
     }
 
-    async fn sync_calendar_events(
+    async fn import_calendar_events(
         &self,
         gcal_id: &str,
         calendar_events: &[GCalEvent],
@@ -93,30 +94,97 @@ impl CalendarSync {
         Ok(inserted)
     }
 
+    async fn export_calendar_events(
+        &self,
+        calendar_events: &[GCalEvent],
+        database_events: &[CalendarCache],
+        update: bool,
+    ) -> Result<Vec<GCalEvent>, Error> {
+        let event_map: HashMap<_, _> = calendar_events
+            .iter()
+            .filter_map(|item| item.id.as_ref().map(|event_id| (event_id.as_str(), item)))
+            .collect();
+        let event_map = Arc::new(event_map);
+
+        let futures = database_events.iter().map(|item| {
+            let event_map = event_map.clone();
+            async move {
+                let event_id = item.event_id.as_str();
+                let event: Event = item.clone().into();
+                let (gcal_id, event) = event.to_gcal_event()?;
+                match event_map.get(event_id) {
+                    Some(gcal_event) => {
+                        if !compare_gcal_events(gcal_event, &event) && update {
+                            let gcal = self.gcal.clone();
+                            Ok(Some(
+                                spawn_blocking(move || gcal.update_gcal_event(&gcal_id, event))
+                                    .await??,
+                            ))
+                        } else {
+                            Ok(None)
+                        }
+                    }
+                    None => {
+                        let gcal = self.gcal.clone();
+                        Ok(Some(
+                            spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event))
+                                .await??,
+                        ))
+                    }
+                }
+            }
+        });
+        let result: Result<Vec<_>, Error> = try_join_all(futures).await;
+        Ok(result?.into_iter().filter_map(|x| x).collect())
+    }
+
     pub async fn sync_full_calendar(
         &self,
         gcal_id: &str,
-    ) -> Result<Vec<InsertCalendarCache>, Error> {
+        edit: bool,
+    ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
         let calendar_events = {
             let gcal = self.gcal.clone();
             let gcal_id = gcal_id.to_string();
             spawn_blocking(move || gcal.get_gcal_events(&gcal_id, None, None)).await?
         }?;
-        self.sync_calendar_events(gcal_id, &calendar_events, false)
-            .await
+        let exported = if edit {
+            let database_events =
+                CalendarCache::get_by_gcal_id_datetime(gcal_id, None, None, &self.pool).await?;
+            self.export_calendar_events(&calendar_events, &database_events, false)
+                .await?
+        } else {
+            Vec::new()
+        };
+        let imported = self
+            .import_calendar_events(gcal_id, &calendar_events, false)
+            .await?;
+        Ok((exported, imported))
     }
 
     pub async fn sync_future_events(
         &self,
         gcal_id: &str,
-    ) -> Result<Vec<InsertCalendarCache>, Error> {
+        edit: bool,
+    ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
         let calendar_events = {
             let gcal = self.gcal.clone();
             let gcal_id = gcal_id.to_string();
             spawn_blocking(move || gcal.get_gcal_events(&gcal_id, Some(Utc::now()), None)).await?
         }?;
-        self.sync_calendar_events(gcal_id, &calendar_events, true)
-            .await
+        let exported = if edit {
+            let database_events =
+                CalendarCache::get_by_gcal_id_datetime(gcal_id, Some(Utc::now()), None, &self.pool)
+                    .await?;
+            self.export_calendar_events(&calendar_events, &database_events, true)
+                .await?
+        } else {
+            Vec::new()
+        };
+        let imported = self
+            .import_calendar_events(gcal_id, &calendar_events, true)
+            .await?;
+        Ok((exported, imported))
     }
 
     pub async fn run_syncing(&self, full: bool) -> Result<Vec<StackString>, Error> {
@@ -141,16 +209,18 @@ impl CalendarSync {
         let futures = calendar_list.map(|calendar| {
             let mut output = Vec::new();
             async move {
-                output.push(format!("starting calendar {}", calendar.calendar_name).into());
-                let inserted = if full {
-                    self.sync_full_calendar(&calendar.gcal_id).await?
+                let (exported, inserted) = if full {
+                    self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
+                        .await?
                 } else {
-                    self.sync_future_events(&calendar.gcal_id).await?
+                    self.sync_future_events(&calendar.gcal_id, calendar.edit)
+                        .await?
                 };
                 output.push(
                     format!(
-                        "future events {} {}",
+                        "future events {} {} {}",
                         calendar.calendar_name,
+                        exported.len(),
                         inserted.len()
                     )
                     .into(),
@@ -229,13 +299,17 @@ impl CalendarSync {
                     .with_timezone(&Utc)
             },
         );
-        let events: Vec<_> =
-            CalendarCache::get_by_gcal_id_datetime(&gcal_id, min_date, max_date, &self.pool)
-                .await?
-                .into_iter()
-                .sorted_by_key(|event| event.event_start_time)
-                .map(|c| c.into())
-                .collect();
+        let events: Vec<_> = CalendarCache::get_by_gcal_id_datetime(
+            &gcal_id,
+            Some(min_date),
+            Some(max_date),
+            &self.pool,
+        )
+        .await?
+        .into_iter()
+        .sorted_by_key(|event| event.event_start_time)
+        .map(|c| c.into())
+        .collect();
         Ok(events)
     }
 }
