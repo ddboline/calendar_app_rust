@@ -208,3 +208,22 @@ impl GCalendarInstance {
         Ok(())
     }
 }
+
+pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
+    (event0.id == event1.id)
+        && (event0.start.as_ref().map(|s| s.date.as_ref())
+            == event1.start.as_ref().map(|s| s.date.as_ref()))
+        && (event0.start.as_ref().map(|s| s.time_zone.as_ref())
+            == event1.start.as_ref().map(|s| s.time_zone.as_ref()))
+        && (event0.start.as_ref().map(|s| s.date_time.as_ref())
+            == event1.start.as_ref().map(|s| s.date_time.as_ref()))
+        && (event0.end.as_ref().map(|s| s.date.as_ref())
+            == event1.end.as_ref().map(|s| s.date.as_ref()))
+        && (event0.end.as_ref().map(|s| s.time_zone.as_ref())
+            == event1.end.as_ref().map(|s| s.time_zone.as_ref()))
+        && (event0.end.as_ref().map(|s| s.date_time.as_ref())
+            == event1.end.as_ref().map(|s| s.date_time.as_ref()))
+        && (event0.summary == event1.summary)
+        && (event0.description == event1.description)
+        && (event0.location == event1.location)
+}
