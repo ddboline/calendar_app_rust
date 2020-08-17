@@ -49,35 +49,38 @@ pub async fn start_app() {
                     .max_age_time(Duration::days(1))
                     .secure(false),
             ))
-            .service(web::resource("/calendar/index.html").route(web::get().to(calendar_index)))
-            .service(web::resource("/calendar/agenda").route(web::get().to(agenda)))
-            .service(web::resource("/calendar/sync_calendars").route(web::get().to(sync_calendars)))
             .service(
-                web::resource("/calendar/sync_calendars_full")
-                    .route(web::get().to(sync_calendars_full)),
+                web::scope("/calendar")
+                    .service(web::resource("/index.html").route(web::get().to(calendar_index)))
+                    .service(web::resource("/agenda").route(web::get().to(agenda)))
+                    .service(web::resource("/sync_calendars").route(web::get().to(sync_calendars)))
+                    .service(
+                        web::resource("/sync_calendars_full")
+                            .route(web::get().to(sync_calendars_full)),
+                    )
+                    .service(web::resource("/delete_event").route(web::delete().to(delete_event)))
+                    .service(web::resource("/list_calendars").route(web::get().to(list_calendars)))
+                    .service(web::resource("/list_events").route(web::get().to(list_events)))
+                    .service(web::resource("/event_detail").route(web::post().to(event_detail)))
+                    .service(
+                        web::resource("/calendar_list")
+                            .route(web::get().to(calendar_list))
+                            .route(web::post().to(calendar_list_update)),
+                    )
+                    .service(
+                        web::resource("/calendar_cache")
+                            .route(web::get().to(calendar_cache))
+                            .route(web::post().to(calendar_cache_update)),
+                    )
+                    .service(web::resource("/user").route(web::get().to(user)))
+                    .service(web::resource("/link/{link}").route(web::get().to(link_shortener)))
+                    .service(
+                        web::resource("/create_calendar_event")
+                            .route(web::get().to(build_calendar_event))
+                            .route(web::post().to(create_calendar_event)),
+                    )
+                    .service(web::resource("/edit_calendar").route(web::get().to(edit_calendar))),
             )
-            .service(web::resource("/calendar/delete_event").route(web::delete().to(delete_event)))
-            .service(web::resource("/calendar/list_calendars").route(web::get().to(list_calendars)))
-            .service(web::resource("/calendar/list_events").route(web::get().to(list_events)))
-            .service(web::resource("/calendar/event_detail").route(web::post().to(event_detail)))
-            .service(
-                web::resource("/calendar/calendar_list")
-                    .route(web::get().to(calendar_list))
-                    .route(web::post().to(calendar_list_update)),
-            )
-            .service(
-                web::resource("/calendar/calendar_cache")
-                    .route(web::get().to(calendar_cache))
-                    .route(web::post().to(calendar_cache_update)),
-            )
-            .service(web::resource("/calendar/user").route(web::get().to(user)))
-            .service(web::resource("/calendar/link/{link}").route(web::get().to(link_shortener)))
-            .service(
-                web::resource("/calendar/create_calendar_event")
-                    .route(web::get().to(build_calendar_event))
-                    .route(web::post().to(create_calendar_event)),
-            )
-            .service(web::resource("/calendar/edit_calendar").route(web::get().to(edit_calendar)))
     })
     .bind(&format!("127.0.0.1:{}", port))
     .unwrap_or_else(|_| panic!("Failed to bind to port {}", port))
