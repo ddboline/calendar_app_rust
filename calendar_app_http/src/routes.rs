@@ -27,31 +27,33 @@ use crate::{
     logged_user::LoggedUser,
 };
 
+pub type HttpResult = Result<HttpResponse, Error>;
+type UrlCache = RwLock<HashMap<StackString, StackString>>;
+
 lazy_static! {
-    static ref SHORTENED_URLS: RwLock<HashMap<StackString, StackString>> =
-        RwLock::new(HashMap::new());
+    static ref SHORTENED_URLS: UrlCache = RwLock::new(HashMap::new());
 }
 
-fn form_http_response(body: String) -> Result<HttpResponse, Error> {
+fn form_http_response(body: String) -> HttpResult {
     Ok(HttpResponse::build(StatusCode::OK)
         .content_type("text/html; charset=utf-8")
         .body(body))
 }
 
-fn to_json<T>(js: T) -> Result<HttpResponse, Error>
+fn to_json<T>(js: T) -> HttpResult
 where
     T: Serialize,
 {
     Ok(HttpResponse::Ok().json(js))
 }
 
-pub async fn calendar_index(_: LoggedUser, _: Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn calendar_index(_: LoggedUser, _: Data<AppState>) -> HttpResult {
     let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
 
     form_http_response(body)
 }
 
-pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
     let calendar_map: HashMap<_, _> = data
         .cal_sync
         .list_calendars()
@@ -116,7 +118,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse,
     form_http_response(body)
 }
 
-pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
     let body = data.cal_sync.run_syncing(false).await?.join("<br>");
     form_http_response(body)
 }
@@ -124,7 +126,7 @@ pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpR
 pub async fn sync_calendars_full(
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let body = data.cal_sync.run_syncing(true).await?.join("<br>");
     form_http_response(body)
 }
@@ -139,7 +141,7 @@ pub async fn delete_event(
     payload: Json<DeleteEventPath>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let payload = payload.into_inner();
 
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
@@ -162,7 +164,7 @@ pub async fn delete_event(
     form_http_response(body)
 }
 
-pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> Result<HttpResponse, Error> {
+pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
     let calendars = data
         .cal_sync
         .list_calendars()
@@ -235,7 +237,7 @@ pub async fn list_events(
     query: Query<ListEventsRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let query = query.into_inner();
     let calendar_map: HashMap<_, _> = data
         .cal_sync
@@ -297,7 +299,7 @@ pub async fn event_detail(
     payload: Json<DeleteEventPath>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let payload = payload.into_inner();
     let body = if let Some(event) = CalendarCache::get_by_gcal_id_event_id(
         &payload.gcal_id,
@@ -391,7 +393,7 @@ pub async fn calendar_list(
     query: Query<MaxModifiedQuery>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let max_modified = query
         .max_modified
         .unwrap_or_else(|| Utc::now() - Duration::days(7));
@@ -408,7 +410,7 @@ pub async fn calendar_list_update(
     payload: Json<CalendarUpdateRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let payload = payload.into_inner();
     let futures = payload.updates.into_iter().map(|calendar| {
         let pool = data.cal_sync.pool.clone();
@@ -424,7 +426,7 @@ pub async fn calendar_cache(
     query: Query<MaxModifiedQuery>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let max_modified = query
         .max_modified
         .unwrap_or_else(|| Utc::now() - Duration::days(7));
@@ -475,7 +477,7 @@ pub async fn calendar_cache_update(
     payload: Json<CalendarCacheUpdateRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let payload = payload.into_inner();
     let futures = payload.updates.into_iter().map(|event| {
         let pool = data.cal_sync.pool.clone();
@@ -487,7 +489,7 @@ pub async fn calendar_cache_update(
     to_json(events)
 }
 
-pub async fn user(user: LoggedUser) -> Result<HttpResponse, Error> {
+pub async fn user(user: LoggedUser) -> HttpResult {
     to_json(user)
 }
 
@@ -500,7 +502,7 @@ pub async fn link_shortener(
     link: Path<LinkRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let link = &link.link;
     let config = &data.cal_sync.config;
 
@@ -546,7 +548,7 @@ pub async fn build_calendar_event(
     query: Query<BuildEventRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let query = query.into_inner();
     let mut events = if let Some(event_id) = &query.event_id {
         CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, &event_id, &data.cal_sync.pool)
@@ -605,7 +607,7 @@ pub async fn create_calendar_event(
     payload: Json<CreateCalendarEventRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let payload = payload.into_inner();
     let start_datetime = NaiveDateTime::new(payload.event_start_date, payload.event_start_time);
     let start_datetime = Local
@@ -670,7 +672,7 @@ pub async fn edit_calendar(
     query: Query<EditCalendarRequest>,
     _: LoggedUser,
     data: Data<AppState>,
-) -> Result<HttpResponse, Error> {
+) -> HttpResult {
     let mut calendar = if let Some(calendar) =
         CalendarList::get_by_gcal_id(&query.gcal_id, &data.cal_sync.pool)
             .await?
