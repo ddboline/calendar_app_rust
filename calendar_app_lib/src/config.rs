@@ -23,6 +23,7 @@ pub struct ConfigInner {
     pub port: u32,
     #[serde(default = "default_n_db_workers")]
     pub n_db_workers: usize,
+    pub telegram_bot_token: Option<StackString>,
 }
 
 #[derive(Default, Debug, Clone)]

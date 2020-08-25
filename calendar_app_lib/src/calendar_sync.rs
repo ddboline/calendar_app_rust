@@ -233,9 +233,13 @@ impl CalendarSync {
         Ok(output)
     }
 
-    pub async fn list_agenda(&self) -> Result<Vec<Event>, Error> {
-        let min_time = Utc::now() - Duration::days(1);
-        let max_time = Utc::now() + Duration::days(2);
+    pub async fn list_agenda(
+        &self,
+        days_before: i64,
+        days_after: i64,
+    ) -> Result<Vec<Event>, Error> {
+        let min_time = Utc::now() - Duration::days(days_before);
+        let max_time = Utc::now() + Duration::days(days_after);
 
         let (calendar_map, events) = try_join!(
             self.list_calendars(),
