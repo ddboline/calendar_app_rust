@@ -1,8 +1,7 @@
 use anyhow::Error;
 
 use calendar_app_bot::telegram_bot::TelegramBot;
-use calendar_app_lib::config::Config;
-use calendar_app_lib::pgpool::PgPool;
+use calendar_app_lib::{config::Config, pgpool::PgPool};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

@@ -1,21 +1,23 @@
 use anyhow::Error;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use futures::join;
-use futures::StreamExt;
+use futures::{join, StreamExt};
 use lazy_static::lazy_static;
-use std::collections::{HashMap, VecDeque};
-use std::sync::Arc;
+use std::{
+    collections::{HashMap, VecDeque},
+    sync::Arc,
+};
 use telegram_bot::{
     Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind, ToChatRef, UpdateKind,
     UserId,
 };
-use tokio::sync::RwLock;
-use tokio::time::{self, delay_for};
+use tokio::{
+    sync::RwLock,
+    time::{self, delay_for},
+};
 
-use calendar_app_lib::calendar_sync::CalendarSync;
-use calendar_app_lib::config::Config;
-use calendar_app_lib::models::AuthorizedUsers;
-use calendar_app_lib::pgpool::PgPool;
+use calendar_app_lib::{
+    calendar_sync::CalendarSync, config::Config, models::AuthorizedUsers, pgpool::PgPool,
+};
 
 type UserIds = RwLock<HashMap<UserId, Option<ChatId>>>;
 
@@ -84,7 +86,7 @@ impl TelegramBot {
                                             .get_summary(&self.cal_sync.config.domain, &self.pool)
                                             .await,
                                     )
-                                    .await?;        
+                                    .await?;
                                 }
                             }
                         }
