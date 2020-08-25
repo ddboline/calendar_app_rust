@@ -69,7 +69,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
         .collect();
     let events: Vec<_> = data
         .cal_sync
-        .list_agenda()
+        .list_agenda(1, 2)
         .await?
         .into_iter()
         .sorted_by_key(|event| event.start_time)
@@ -123,10 +123,7 @@ pub async fn sync_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
     form_http_response(body)
 }
 
-pub async fn sync_calendars_full(
-    _: LoggedUser,
-    data: Data<AppState>,
-) -> HttpResult {
+pub async fn sync_calendars_full(_: LoggedUser, data: Data<AppState>) -> HttpResult {
     let body = data.cal_sync.run_syncing(true).await?.join("<br>");
     form_http_response(body)
 }
@@ -498,11 +495,7 @@ pub struct LinkRequest {
     pub link: StackString,
 }
 
-pub async fn link_shortener(
-    link: Path<LinkRequest>,
-    _: LoggedUser,
-    data: Data<AppState>,
-) -> HttpResult {
+pub async fn link_shortener(link: Path<LinkRequest>, data: Data<AppState>) -> HttpResult {
     let link = &link.link;
     let config = &data.cal_sync.config;
 

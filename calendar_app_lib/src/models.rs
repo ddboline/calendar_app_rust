@@ -524,6 +524,8 @@ impl InsertCalendarCache {
 #[table_name = "authorized_users"]
 pub struct AuthorizedUsers {
     pub email: StackString,
+    pub telegram_userid: Option<i64>,
+    pub telegram_chatid: Option<i64>,
 }
 
 impl AuthorizedUsers {
@@ -536,6 +538,25 @@ impl AuthorizedUsers {
     pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
         let pool = pool.clone();
         spawn_blocking(move || Self::get_authorized_users_sync(&pool)).await?
+    }
+
+    fn update_authorized_users_sync(&self, pool: &PgPool) -> Result<(), Error> {
+        use crate::schema::authorized_users::dsl::{
+            authorized_users, email, telegram_chatid, telegram_userid,
+        };
+        let conn = pool.get()?;
+        diesel::update(authorized_users.filter(email.eq(&self.email)))
+            .set((
+                telegram_userid.eq(self.telegram_userid),
+                telegram_chatid.eq(self.telegram_chatid),
+            ))
+            .execute(&conn)?;
+        Ok(())
+    }
+
+    pub async fn update_authorized_users(self, pool: &PgPool) -> Result<Self, Error> {
+        let pool = pool.clone();
+        spawn_blocking(move || self.update_authorized_users_sync(&pool).map(|_| self)).await?
     }
 }
 

@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_rust"
-version = "0.2.9"
+version = "0.2.10"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -8,6 +8,7 @@ edition = "2018"
 
 [dependencies]
 gcal_lib = {path="gcal_lib"}
+calendar_app_bot = {path="calendar_app_bot"}
 calendar_app_lib = {path="calendar_app_lib"}
 calendar_app_http = {path="calendar_app_http"}
 chrono = "0.4"
@@ -32,4 +33,9 @@ doc = false
 [[bin]]
 name = "calendar-app-http"
 path = "src/calendar_app_http.rs"
+doc = false
+
+[[bin]]
+name = "calendar-app-bot"
+path = "src/calendar_app_bot.rs"
 doc = false

@@ -8,7 +8,7 @@ all:
 	mkdir -p build/ && \
 	cp Dockerfile.build.ubuntu18.04 build/Dockerfile && \
 	cp -a Cargo.toml src calendar_app_lib calendar_app_http scripts \
-		gcal_lib templates Makefile build/ && \
+		calendar_app_bot gcal_lib templates Makefile build/ && \
 	cd build/ && \
 	docker build -t calendar_app_rust/build_rust:ubuntu18.04 . && \
 	cd ../ && \
@@ -39,6 +39,7 @@ build_test:
 install:
 	cp target/$(build_type)/calendar-app-rust /usr/bin/calendar-app-rust
 	cp target/$(build_type)/calendar-app-http /usr/bin/calendar-app-http
+	cp target/$(build_type)/calendar-app-bot /usr/bin/calendar-app-bot
 
 pull:
 	`aws ecr --region us-east-1 get-login --no-include-email`

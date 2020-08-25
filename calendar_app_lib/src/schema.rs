@@ -1,6 +1,8 @@
 table! {
     authorized_users (email) {
         email -> Varchar,
+        telegram_userid -> Nullable<Int8>,
+        telegram_chatid -> Nullable<Int8>,
     }
 }
 

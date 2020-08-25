@@ -69,7 +69,7 @@ impl CalendarCliOpts {
         let task = cal_sync.stdout.spawn_stdout_task();
         match action {
             CalendarActions::PrintAgenda => {
-                for event in cal_sync.list_agenda().await? {
+                for event in cal_sync.list_agenda(1, 2).await? {
                     cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool)

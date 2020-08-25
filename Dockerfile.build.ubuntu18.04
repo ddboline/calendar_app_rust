@@ -11,3 +11,4 @@ ADD templates /calendar_app_rust/templates
 ADD calendar_app_lib /calendar_app_rust/calendar_app_lib
 ADD calendar_app_http /calendar_app_rust/calendar_app_http
 ADD gcal_lib /calendar_app_rust/gcal_lib
+ADD calendar_app_bot /calendar_app_rust/calendar_app_bot
