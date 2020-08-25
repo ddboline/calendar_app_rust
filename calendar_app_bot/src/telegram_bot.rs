@@ -174,7 +174,7 @@ impl TelegramBot {
                 user.telegram_chatid.replace(chatid.into());
                 user.update_authorized_users(&self.pool).await?;
                 if let Some(telegram_chatid) = TELEGRAM_USERIDS.write().await.get_mut(&userid) {
-                    telegram_chatid.replace(chatid.clone());
+                    telegram_chatid.replace(chatid);
                 }
             }
         }
