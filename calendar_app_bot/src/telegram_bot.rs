@@ -57,7 +57,7 @@ impl TelegramBot {
                     if TELEGRAM_USERIDS.read().await.contains_key(&message.from.id) {
                         if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
                             if data.starts_with("/init") {
-                                self.update_telegram_chat_id(&message.from.id, &chat_id)
+                                self.update_telegram_chat_id(message.from.id, chat_id)
                                     .await?;
                                 self.api
                                     .send(
@@ -70,7 +70,7 @@ impl TelegramBot {
                             } else if data.starts_with("/cal") {
                                 for event in self.cal_sync.list_agenda(0, 1).await? {
                                     self.send_message(
-                                        &chat_id,
+                                        chat_id,
                                         &event
                                             .get_summary(&self.cal_sync.config.domain, &self.pool)
                                             .await,
@@ -113,7 +113,7 @@ impl TelegramBot {
                         events = self.cal_sync.list_agenda(0, 1).await?.into_iter().collect();
                         for event in &events {
                             self.send_message(
-                                &chat_id,
+                                *chat_id,
                                 &event
                                     .get_summary(&self.cal_sync.config.domain, &self.pool)
                                     .await,
@@ -124,7 +124,7 @@ impl TelegramBot {
                         while let Some(event) = events.front() {
                             if now > event.start_time - Duration::minutes(5) {
                                 self.send_message(
-                                    &chat_id,
+                                    *chat_id,
                                     &event
                                         .get_summary(&self.cal_sync.config.domain, &self.pool)
                                         .await,
@@ -142,7 +142,7 @@ impl TelegramBot {
         }
     }
 
-    pub async fn send_message(&self, chat: &ChatId, msg: &str) -> Result<(), Error> {
+    pub async fn send_message(&self, chat: ChatId, msg: &str) -> Result<(), Error> {
         self.api.spawn(chat.text(msg));
         Ok(())
     }
@@ -165,15 +165,15 @@ impl TelegramBot {
         }
     }
 
-    async fn update_telegram_chat_id(&self, userid: &UserId, chatid: &ChatId) -> Result<(), Error> {
+    async fn update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
         if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&self.pool).await {
             if let Some(mut user) = authorized_users
                 .into_iter()
-                .find(|user| user.telegram_userid == Some((*userid).into()))
+                .find(|user| user.telegram_userid == Some(userid.into()))
             {
-                user.telegram_chatid.replace((*chatid).into());
+                user.telegram_chatid.replace(chatid.into());
                 user.update_authorized_users(&self.pool).await?;
-                if let Some(telegram_chatid) = TELEGRAM_USERIDS.write().await.get_mut(userid) {
+                if let Some(telegram_chatid) = TELEGRAM_USERIDS.write().await.get_mut(&userid) {
                     telegram_chatid.replace(chatid.clone());
                 }
             }
