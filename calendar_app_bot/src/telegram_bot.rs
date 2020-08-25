@@ -54,19 +54,8 @@ impl TelegramBot {
         while let Some(update) = stream.next().await {
             if let UpdateKind::Message(message) = update?.kind {
                 if let MessageKind::Text { ref data, .. } = message.kind {
-                    let chat_id = if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
-                        Some(chat_id)
-                    } else {
-                        None
-                    };
-
-                    let correct_id = TELEGRAM_USERIDS.read().await.contains_key(&message.from.id);
-
-                    if correct_id {
-                        self.api
-                            .send(message.text_reply(format!("Chat id is {:?}", chat_id)))
-                            .await?;
-                        if let Some(chat_id) = chat_id {
+                    if TELEGRAM_USERIDS.read().await.contains_key(&message.from.id) {
+                        if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
                             if data.starts_with("/init") {
                                 self.update_telegram_chat_id(&message.from.id, &chat_id)
                                     .await?;
@@ -132,23 +121,19 @@ impl TelegramBot {
                             .await?;
                         }
                     } else {
-                        loop {
-                            if let Some(event) = events.front() {
-                                if now > event.start_time - Duration::minutes(5) {
-                                    self.send_message(
-                                        &chat_id,
-                                        &event
-                                            .get_summary(&self.cal_sync.config.domain, &self.pool)
-                                            .await,
-                                    )
-                                    .await?;
-                                } else {
-                                    break;
-                                }
+                        while let Some(event) = events.front() {
+                            if now > event.start_time - Duration::minutes(5) {
+                                self.send_message(
+                                    &chat_id,
+                                    &event
+                                        .get_summary(&self.cal_sync.config.domain, &self.pool)
+                                        .await,
+                                )
+                                .await?;
+                                events.pop_front();
                             } else {
                                 break;
                             }
-                            events.pop_front();
                         }
                     }
                 }
