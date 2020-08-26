@@ -12,17 +12,20 @@ use telegram_bot::{
 };
 use tokio::{
     sync::RwLock,
-    time::{self, delay_for},
+    time::{self, delay_for, timeout},
 };
 
 use calendar_app_lib::{
     calendar_sync::CalendarSync, config::Config, models::AuthorizedUsers, pgpool::PgPool,
 };
 
+use crate::failure_count::FailureCount;
+
 type UserIds = RwLock<HashMap<UserId, Option<ChatId>>>;
 
 lazy_static! {
     static ref TELEGRAM_USERIDS: UserIds = RwLock::new(HashMap::new());
+    static ref FAILURE_COUNT: FailureCount = FailureCount::new(5);
 }
 
 #[derive(Clone)]
@@ -44,17 +47,31 @@ impl TelegramBot {
     pub async fn run(&self) -> Result<(), Error> {
         let fill_task = self.fill_telegram_user_ids();
         let notification_task = self.notification_handler();
-        let bot_task = self.bot_handler();
+        let bot_task = self.telegram_worker();
         let (r0, r1, r2) = join!(fill_task, notification_task, bot_task);
         r0.and_then(|_| r1).and_then(|_| r2)
+    }
+
+    pub async fn telegram_worker(&self) -> Result<(), Error> {
+        loop {
+            FAILURE_COUNT.check()?;
+            match timeout(time::Duration::from_secs(3600), self.bot_handler()).await {
+                Ok(Ok(_)) | Err(_) => FAILURE_COUNT.reset()?,
+                Ok(Err(_)) => FAILURE_COUNT.increment()?,
+            }
+        }
     }
 
     pub async fn bot_handler(&self) -> Result<(), Error> {
         let mut stream = self.api.stream();
         while let Some(update) = stream.next().await {
+            FAILURE_COUNT.check()?;
             if let UpdateKind::Message(message) = update?.kind {
+                FAILURE_COUNT.check()?;
                 if let MessageKind::Text { ref data, .. } = message.kind {
+                    FAILURE_COUNT.check()?;
                     if TELEGRAM_USERIDS.read().await.contains_key(&message.from.id) {
+                        FAILURE_COUNT.check()?;
                         if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
                             if data.starts_with("/init") {
                                 self.update_telegram_chat_id(message.from.id, chat_id)
@@ -105,6 +122,7 @@ impl TelegramBot {
             Utc,
         );
         loop {
+            FAILURE_COUNT.check()?;
             let now = Utc::now();
             for chat_id in TELEGRAM_USERIDS.read().await.values() {
                 if let Some(chat_id) = chat_id {
@@ -149,6 +167,7 @@ impl TelegramBot {
 
     async fn fill_telegram_user_ids(&self) -> Result<(), Error> {
         loop {
+            FAILURE_COUNT.check()?;
             let p = self.pool.clone();
             if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&p).await {
                 let telegram_userid_map: HashMap<_, _> = authorized_users
@@ -160,6 +179,9 @@ impl TelegramBot {
                     })
                     .collect();
                 *TELEGRAM_USERIDS.write().await = telegram_userid_map;
+                FAILURE_COUNT.reset()?;
+            } else {
+                FAILURE_COUNT.increment()?;
             }
             delay_for(time::Duration::from_secs(60)).await;
         }
@@ -177,6 +199,9 @@ impl TelegramBot {
                     telegram_chatid.replace(chatid);
                 }
             }
+            FAILURE_COUNT.reset()?;
+        } else {
+            FAILURE_COUNT.increment()?;
         }
         Ok(())
     }

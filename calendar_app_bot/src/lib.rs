@@ -11,6 +11,7 @@
 #![allow(clippy::used_underscore_binding)]
 
 pub mod telegram_bot;
+pub mod failure_count;
 
 #[cfg(test)]
 mod tests {
