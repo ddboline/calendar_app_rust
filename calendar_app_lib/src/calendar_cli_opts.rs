@@ -1,11 +1,20 @@
 use anyhow::Error;
 use chrono::NaiveDate;
+use futures::future::try_join_all;
 use stack_string::StackString;
+use std::path::PathBuf;
 use structopt::StructOpt;
-use tokio::task::spawn_blocking;
+use tokio::{
+    fs::read_to_string,
+    io::{stdin, AsyncReadExt},
+    task::spawn_blocking,
+};
 
 use crate::{
-    calendar::Event, calendar_sync::CalendarSync, config::Config, models::CalendarCache,
+    calendar::Event,
+    calendar_sync::CalendarSync,
+    config::Config,
+    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
     pgpool::PgPool,
 };
 
@@ -48,6 +57,15 @@ pub enum CalendarActions {
         #[structopt(short, long)]
         /// Google Event Id
         event_id: StackString,
+    },
+    /// Import into table
+    Import {
+        #[structopt(short, long)]
+        /// Table name
+        table: StackString,
+        #[structopt(short, long)]
+        /// Input file (if missinge will read from stdin)
+        filepath: Option<PathBuf>,
     },
 }
 
@@ -123,6 +141,39 @@ impl CalendarCliOpts {
                 {
                     let event: Event = event.into();
                     cal_sync.stdout.send(event.to_string().into())?;
+                }
+            }
+            CalendarActions::Import { table, filepath } => {
+                let data = if let Some(filepath) = filepath {
+                    read_to_string(&filepath).await?
+                } else {
+                    let mut stdin = stdin();
+                    let mut buf = String::new();
+                    stdin.read_to_string(&mut buf).await?;
+                    buf
+                };
+                match table.as_str() {
+                    "calendar_list" => {
+                        let calendars: Vec<CalendarList> = serde_json::from_str(&data)?;
+                        let futures = calendars.into_iter().map(|calendar| {
+                            let pool = cal_sync.pool.clone();
+                            let calendar: InsertCalendarList = calendar.into();
+                            async move { calendar.upsert(&pool).await.map_err(Into::into) }
+                        });
+                        let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+                        results?;
+                    }
+                    "calendar_cache" => {
+                        let events: Vec<CalendarCache> = serde_json::from_str(&data)?;
+                        let futures = events.into_iter().map(|event| {
+                            let pool = cal_sync.pool.clone();
+                            let event: InsertCalendarCache = event.into();
+                            async move { event.upsert(&pool).await.map_err(Into::into) }
+                        });
+                        let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+                        results?;
+                    }
+                    _ => {}
                 }
             }
         }

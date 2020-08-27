@@ -10,8 +10,8 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::used_underscore_binding)]
 
-pub mod telegram_bot;
 pub mod failure_count;
+pub mod telegram_bot;
 
 #[cfg(test)]
 mod tests {
