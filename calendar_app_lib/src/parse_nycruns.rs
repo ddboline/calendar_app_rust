@@ -56,7 +56,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                         debug!("{:?}", items);
                     }
                 } else {
-                    location.replace(text.into());
+                    location.replace(text.trim().into());
                 }
             }
         }

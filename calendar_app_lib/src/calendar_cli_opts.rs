@@ -5,10 +5,11 @@ use stack_string::StackString;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::{
-    fs::read_to_string,
-    io::{stdin, AsyncReadExt},
+    fs::{read_to_string, File},
+    io::{stdin, stdout, AsyncWrite, AsyncWriteExt, AsyncReadExt},
     task::spawn_blocking,
 };
+use chrono::{Utc, Duration};
 
 use crate::{
     calendar::Event,
@@ -67,6 +68,14 @@ pub enum CalendarActions {
         /// Input file (if missinge will read from stdin)
         filepath: Option<PathBuf>,
     },
+    Export {
+        #[structopt(short, long)]
+        /// Table name
+        table: StackString,
+        #[structopt(short, long)]
+        /// Input file (if missinge will read from stdin)
+        filepath: Option<PathBuf>,
+    }
 }
 
 #[derive(StructOpt, Debug)]
@@ -174,6 +183,28 @@ impl CalendarCliOpts {
                         results?;
                     }
                     _ => {}
+                }
+            }
+            CalendarActions::Export {table, filepath} => {
+                let mut file: Box<dyn AsyncWrite + Unpin> = if let Some(filepath) = filepath {
+                    Box::new(File::create(&filepath).await?)
+                } else {
+                    Box::new(stdout())
+                };
+                match table.as_str() {
+                    "calendar_list" => {
+                        let max_modified = Utc::now() - Duration::days(7);
+                        for calendar in CalendarList::get_recent(max_modified, &cal_sync.pool).await? {
+                            file.write_all(&serde_json::to_vec(&calendar)?).await?
+                        }
+                    }
+                    "calendar_cache" => {
+                        let max_modified = Utc::now() - Duration::days(7);
+                        for event in CalendarCache::get_recent(max_modified, &cal_sync.pool).await? {
+                            file.write_all(&serde_json::to_vec(&event)?).await?;
+                        }
+                    }
+                    _ => {},
                 }
             }
         }
