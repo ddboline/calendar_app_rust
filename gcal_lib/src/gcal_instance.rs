@@ -4,6 +4,7 @@ use google_calendar3::{CalendarHub, CalendarList, Events};
 pub use google_calendar3::{CalendarListEntry, Event, EventDateTime};
 use hyper::{net::HttpsConnector, Client};
 use hyper_native_tls::NativeTlsClient;
+use log::debug;
 use oauth2::{
     Authenticator, ConsoleApplicationSecret, DefaultAuthenticatorDelegate, DiskTokenStorage,
     FlowType,
@@ -142,7 +143,10 @@ impl GCalendarInstance {
             } else {
                 req
             };
-            let (_, result) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
+            let (_, result) = req.doit().map_err(|e| {
+                debug!("{}", gcal_id);
+                format_err!("{:#?}", e)
+            })?;
             Ok(result)
         })
     }
@@ -174,6 +178,18 @@ impl GCalendarInstance {
         Ok(output)
     }
 
+    fn get_event(gcal: &GCCalendar, gcal_id: &str, gcal_event_id: &str) -> Result<Event, Error> {
+        let (_, result) = gcal
+            .events()
+            .get(gcal_id, gcal_event_id)
+            .doit()
+            .map_err(|e| {
+                debug!("get_event {} {}", gcal_id, gcal_event_id);
+                format_err!("{:#?}", e)
+            })?;
+        Ok(result)
+    }
+
     pub fn insert_gcal_event(&self, gcal_id: &str, gcal_event: Event) -> Result<Event, Error> {
         let gcal = self.gcal.lock();
         let (_, result) = gcal
@@ -181,22 +197,34 @@ impl GCalendarInstance {
             .insert(gcal_event, gcal_id)
             .supports_attachments(true)
             .doit()
-            .map_err(|e| format_err!("{:#?}", e))?;
+            .map_err(|e| {
+                debug!("insert {}", gcal_id);
+                format_err!("{:#?}", e)
+            })?;
         Ok(result)
     }
 
-    pub fn update_gcal_event(&self, gcal_id: &str, gcal_event: Event) -> Result<Event, Error> {
+    pub fn update_gcal_event(
+        &self,
+        gcal_id: &str,
+        gcal_event: Event,
+    ) -> Result<Option<Event>, Error> {
         let event_id = gcal_event
             .id
             .clone()
             .ok_or_else(|| format_err!("No event id"))?;
         let gcal = self.gcal.lock();
-        let (_, result) = gcal
-            .events()
-            .update(gcal_event, gcal_id, &event_id)
-            .doit()
-            .map_err(|e| format_err!("{:#?}", e))?;
-        Ok(result)
+        if let Ok((_, result)) = gcal.events().update(gcal_event, gcal_id, &event_id).doit() {
+            Ok(Some(result))
+        } else {
+            debug!(
+                "update {} {} {:#?}",
+                gcal_id,
+                event_id,
+                Self::get_event(&gcal, gcal_id, &event_id).unwrap()
+            );
+            Ok(None)
+        }
     }
 
     pub fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
@@ -204,7 +232,10 @@ impl GCalendarInstance {
         gcal.events()
             .delete(gcal_id, gcal_event_id)
             .doit()
-            .map_err(|e| format_err!("{:#?}", e))?;
+            .map_err(|e| {
+                debug!("delete {} {}", gcal_id, gcal_event_id);
+                format_err!("{:#?}", e)
+            })?;
         Ok(())
     }
 }

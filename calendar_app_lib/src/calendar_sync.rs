@@ -2,6 +2,7 @@ use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
+use log::debug;
 use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{task::spawn_blocking, try_join};
@@ -116,10 +117,10 @@ impl CalendarSync {
                 if let Some(gcal_event) = event_map.get(event_id) {
                     if !compare_gcal_events(gcal_event, &event) && update {
                         let gcal = self.gcal.clone();
-                        Ok(Some(
+                        Ok(
                             spawn_blocking(move || gcal.update_gcal_event(&gcal_id, event))
                                 .await??,
-                        ))
+                        )
                     } else {
                         Ok(None)
                     }
@@ -210,6 +211,7 @@ impl CalendarSync {
                     self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
                         .await?
                 } else {
+                    debug!("gcal_id {}", calendar.gcal_id);
                     self.sync_future_events(&calendar.gcal_id, calendar.edit)
                         .await?
                 };
