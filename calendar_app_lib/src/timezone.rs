@@ -8,7 +8,7 @@ use stack_string::StackString;
 
 /// Direction in degrees
 #[derive(Into, Debug, PartialEq, Copy, Clone, Eq, Serialize, Deserialize)]
-#[serde(into = "String", try_from = "&str")]
+#[serde(into = "StackString", try_from = "StackString")]
 pub struct TimeZone(Tz);
 
 impl Deref for TimeZone {
@@ -43,5 +43,12 @@ impl TryFrom<&str> for TimeZone {
     type Error = Error;
     fn try_from(item: &str) -> Result<Self, Self::Error> {
         item.parse()
+    }
+}
+
+impl TryFrom<StackString> for TimeZone {
+    type Error = Error;
+    fn try_from(item: StackString) -> Result<Self, Self::Error> {
+        item.as_str().parse()
     }
 }

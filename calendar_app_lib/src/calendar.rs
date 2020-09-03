@@ -1,5 +1,6 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
+use chrono_tz::Tz;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{convert::TryInto, fmt};
@@ -305,7 +306,12 @@ impl Event {
         Ok((self.gcal_id.as_str().into(), event))
     }
 
-    pub async fn get_summary(&self, domain: &str, pool: &PgPool) -> StackString {
+    pub async fn get_summary(
+        &self,
+        domain: &str,
+        pool: &PgPool,
+        timezone: Option<TimeZone>,
+    ) -> StackString {
         let mut short_url = None;
         let original_url = self.url.as_ref();
 
@@ -342,9 +348,17 @@ impl Event {
             &self.event_id
         };
 
+        let start_time = match timezone {
+            Some(tz) => {
+                let tz: Tz = tz.into();
+                self.start_time.with_timezone(&tz).to_string()
+            }
+            None => self.start_time.with_timezone(&Local).to_string(),
+        };
+
         format!(
             "{} {} {} {} {}",
-            self.start_time.with_timezone(&Local),
+            start_time,
             self.name,
             self.gcal_id,
             self.event_id,

@@ -89,7 +89,11 @@ impl TelegramBot {
                                     self.send_message(
                                         chat_id,
                                         &event
-                                            .get_summary(&self.cal_sync.config.domain, &self.pool)
+                                            .get_summary(
+                                                &self.cal_sync.config.domain,
+                                                &self.pool,
+                                                self.cal_sync.config.default_time_zone,
+                                            )
                                             .await,
                                     )
                                     .await?;
@@ -133,7 +137,11 @@ impl TelegramBot {
                             self.send_message(
                                 *chat_id,
                                 &event
-                                    .get_summary(&self.cal_sync.config.domain, &self.pool)
+                                    .get_summary(
+                                        &self.cal_sync.config.domain,
+                                        &self.pool,
+                                        self.cal_sync.config.default_time_zone,
+                                    )
                                     .await,
                             )
                             .await?;
@@ -144,7 +152,11 @@ impl TelegramBot {
                                 self.send_message(
                                     *chat_id,
                                     &event
-                                        .get_summary(&self.cal_sync.config.domain, &self.pool)
+                                        .get_summary(
+                                            &self.cal_sync.config.domain,
+                                            &self.pool,
+                                            self.cal_sync.config.default_time_zone,
+                                        )
                                         .await,
                                 )
                                 .await?;

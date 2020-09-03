@@ -8,6 +8,8 @@ use std::{
 
 use stack_string::StackString;
 
+use crate::timezone::TimeZone;
+
 #[derive(Default, Debug, Deserialize)]
 pub struct ConfigInner {
     pub database_url: StackString,
@@ -24,6 +26,7 @@ pub struct ConfigInner {
     #[serde(default = "default_n_db_workers")]
     pub n_db_workers: usize,
     pub telegram_bot_token: Option<StackString>,
+    pub default_time_zone: Option<TimeZone>,
 }
 
 #[derive(Default, Debug, Clone)]

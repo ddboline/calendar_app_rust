@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.2.13"
+version = "0.2.14"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -13,6 +13,7 @@ actix-identity = "0.2"
 actix-rt = "1.1"
 calendar_app_lib = {path = "../calendar_app_lib"}
 chrono = "0.4"
+chrono-tz = "0.5"
 futures = "0.3"
 serde = "1.0"
 serde_derive = "1.0"

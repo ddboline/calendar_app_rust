@@ -13,6 +13,7 @@ use stack_string::StackString;
 use std::collections::HashMap;
 use tokio::{sync::RwLock, task::spawn_blocking};
 use url::Url;
+use chrono_tz::Tz;
 
 use calendar_app_lib::{
     calendar::Event,
@@ -88,6 +89,13 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
             } else {
                 "".to_string()
             };
+            let start_time = match data.cal_sync.config.default_time_zone {
+                Some(tz) => {
+                    let tz: Tz = tz.into();
+                    event.start_time.with_timezone(&tz).to_string()
+                },
+                None => event.start_time.with_timezone(&Local).to_string(),
+            };
             Some(format!(
                 r#"
                     <tr text-style="center">
@@ -102,7 +110,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
                 event_name=event.name,
-                start_time=event.start_time.with_timezone(&Local),
+                start_time=start_time,
                 delete=delete,
             ))
         })
