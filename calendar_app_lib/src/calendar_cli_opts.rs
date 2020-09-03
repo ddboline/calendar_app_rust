@@ -1,6 +1,5 @@
 use anyhow::Error;
-use chrono::NaiveDate;
-use chrono::{Duration, Utc};
+use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use stack_string::StackString;
 use std::path::PathBuf;
@@ -99,7 +98,11 @@ impl CalendarCliOpts {
                 for event in cal_sync.list_agenda(1, 2).await? {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(&cal_sync.config.domain, &cal_sync.pool, cal_sync.config.default_time_zone)
+                            .get_summary(
+                                &cal_sync.config.domain,
+                                &cal_sync.pool,
+                                cal_sync.config.default_time_zone,
+                            )
                             .await,
                     )?;
                 }
@@ -137,7 +140,11 @@ impl CalendarCliOpts {
                 for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(&cal_sync.config.domain, &cal_sync.pool, cal_sync.config.default_time_zone)
+                            .get_summary(
+                                &cal_sync.config.domain,
+                                &cal_sync.pool,
+                                cal_sync.config.default_time_zone,
+                            )
                             .await,
                     )?;
                 }

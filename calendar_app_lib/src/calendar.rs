@@ -358,11 +358,7 @@ impl Event {
 
         format!(
             "{} {} {} {} {}",
-            start_time,
-            self.name,
-            self.gcal_id,
-            self.event_id,
-            url,
+            start_time, self.name, self.gcal_id, self.event_id, url,
         )
         .into()
     }
