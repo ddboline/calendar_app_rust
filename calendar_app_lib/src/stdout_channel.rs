@@ -40,7 +40,7 @@ impl StdoutChannel {
         }))));
         let stderr_task = Arc::new(Mutex::new(Some(spawn({
             let queue = stderr_queue.clone();
-            async move { Self::stdout_task(&queue).await }
+            async move { Self::stderr_task(&queue).await }
         }))));
         Self {
             stdout_queue,
