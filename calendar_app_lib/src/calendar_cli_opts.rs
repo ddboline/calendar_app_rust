@@ -92,7 +92,6 @@ impl CalendarCliOpts {
         let pool = PgPool::new(&config.database_url);
         let cal_sync = CalendarSync::new(config, pool);
 
-        let task = cal_sync.stdout.spawn_stdout_task();
         match action {
             CalendarActions::PrintAgenda => {
                 for event in cal_sync.list_agenda(1, 2).await? {
@@ -104,32 +103,32 @@ impl CalendarCliOpts {
                                 cal_sync.config.default_time_zone,
                             )
                             .await,
-                    )?;
+                    );
                 }
             }
             CalendarActions::SyncCalendars => {
                 for line in cal_sync.run_syncing(false).await? {
-                    cal_sync.stdout.send(line)?;
+                    cal_sync.stdout.send(line);
                 }
             }
             CalendarActions::SyncCalendarsFull => {
                 for line in cal_sync.run_syncing(true).await? {
-                    cal_sync.stdout.send(line)?;
+                    cal_sync.stdout.send(line);
                 }
             }
             CalendarActions::Delete { gcal_id, event_id } => {
                 {
                     cal_sync
                         .stdout
-                        .send(format!("delete {} {}", gcal_id, event_id).into())?;
+                        .send(format!("delete {} {}", gcal_id, event_id));
                     let cal_sync = cal_sync.clone();
                     spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
-                        .await?
-                }?;
+                        .await??
+                };
             }
             CalendarActions::ListCalendars => {
                 for calendar in cal_sync.list_calendars().await? {
-                    cal_sync.stdout.send(format!("{}", calendar).into())?;
+                    cal_sync.stdout.send(format!("{}", calendar));
                 }
             }
             CalendarActions::List {
@@ -146,7 +145,7 @@ impl CalendarCliOpts {
                                 cal_sync.config.default_time_zone,
                             )
                             .await,
-                    )?;
+                    );
                 }
             }
             CalendarActions::Detail { gcal_id, event_id } => {
@@ -156,7 +155,7 @@ impl CalendarCliOpts {
                         .pop()
                 {
                     let event: Event = event.into();
-                    cal_sync.stdout.send(event.to_string().into())?;
+                    cal_sync.stdout.send(event.to_string());
                 }
             }
             CalendarActions::Import { table, filepath } => {
@@ -219,6 +218,6 @@ impl CalendarCliOpts {
             }
         }
         cal_sync.stdout.close().await?;
-        task.await?
+        Ok(())
     }
 }

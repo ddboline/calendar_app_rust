@@ -73,7 +73,7 @@ impl CalendarSync {
                 return Ok(None);
             } else if item.summary.is_none() {
                 self.stdout
-                    .send(format!("{:?} {:?}", item.start, item.description).into())?;
+                    .send(format!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
             let event: InsertCalendarCache = Event::from_gcal_event(&item, &gcal_id)?.into();
