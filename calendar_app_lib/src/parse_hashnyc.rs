@@ -129,7 +129,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
 
 #[cfg(test)]
 mod tests {
-    use anyhow::{format_err, Error};
+    use anyhow::Error;
 
     use crate::parse_hashnyc::parse_hashnyc_text;
 
