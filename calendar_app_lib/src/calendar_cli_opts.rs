@@ -176,7 +176,9 @@ impl CalendarCliOpts {
                             async move { calendar.upsert(&pool).await.map_err(Into::into) }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-                        results?;
+                        cal_sync
+                            .stdout
+                            .send(format!("calendar_list {}", results?.len()));
                     }
                     "calendar_cache" => {
                         let events: Vec<CalendarCache> = serde_json::from_str(&data)?;
@@ -186,7 +188,9 @@ impl CalendarCliOpts {
                             async move { event.upsert(&pool).await.map_err(Into::into) }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-                        results?;
+                        cal_sync
+                            .stdout
+                            .send(format!("calendar_cache {}", results?.len()));
                     }
                     _ => {}
                 }
