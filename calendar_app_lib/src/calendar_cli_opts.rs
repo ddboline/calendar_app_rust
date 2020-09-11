@@ -200,12 +200,14 @@ impl CalendarCliOpts {
                 match table.as_str() {
                     "calendar_list" => {
                         let max_modified = Utc::now() - Duration::days(7);
-                        let calendars =CalendarList::get_recent(max_modified, &cal_sync.pool).await?;
+                        let calendars =
+                            CalendarList::get_recent(max_modified, &cal_sync.pool).await?;
                         file.write_all(&serde_json::to_vec(&calendars)?).await?;
                     }
                     "calendar_cache" => {
                         let max_modified = Utc::now() - Duration::days(7);
-                        let events = CalendarCache::get_recent(max_modified, &cal_sync.pool).await?;
+                        let events =
+                            CalendarCache::get_recent(max_modified, &cal_sync.pool).await?;
                         file.write_all(&serde_json::to_vec(&events)?).await?;
                     }
                     _ => {}
