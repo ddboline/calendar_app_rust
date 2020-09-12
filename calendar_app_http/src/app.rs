@@ -1,7 +1,6 @@
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{web, App, HttpServer};
-use chrono::Duration;
-use std::time;
+use std::time::Duration;
 use tokio::time::interval;
 
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
@@ -22,7 +21,7 @@ pub struct AppState {
 
 pub async fn start_app() {
     async fn _update_db(pool: PgPool) {
-        let mut i = interval(time::Duration::from_secs(60));
+        let mut i = interval(Duration::from_secs(60));
         loop {
             i.tick().await;
             fill_from_db(&pool).await.unwrap_or(());
@@ -46,7 +45,7 @@ pub async fn start_app() {
                     .name("auth")
                     .path("/")
                     .domain(cal_sync.config.domain.as_str())
-                    .max_age_time(Duration::days(1))
+                    .max_age(24*3600)
                     .secure(false),
             ))
             .service(
