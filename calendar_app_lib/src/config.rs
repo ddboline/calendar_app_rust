@@ -12,13 +12,12 @@ use crate::timezone::TimeZone;
 
 #[derive(Default, Debug, Deserialize)]
 pub struct ConfigInner {
+    #[serde(default = "default_database_url")]
     pub database_url: StackString,
     #[serde(default = "default_gcal_secret")]
     pub gcal_secret_file: PathBuf,
     #[serde(default = "default_gcal_token_path")]
     pub gcal_token_path: PathBuf,
-    #[serde(default = "default_secret_key")]
-    pub secret_key: StackString,
     #[serde(default = "default_domain")]
     pub domain: StackString,
     #[serde(default = "default_port")]
@@ -27,11 +26,18 @@ pub struct ConfigInner {
     pub n_db_workers: usize,
     pub telegram_bot_token: Option<StackString>,
     pub default_time_zone: Option<TimeZone>,
+    #[serde(default = "default_secret_path")]
+    pub secret_path: PathBuf,
+    #[serde(default = "default_secret_path")]
+    pub jwt_secret_path: PathBuf,
 }
 
 #[derive(Default, Debug, Clone)]
 pub struct Config(Arc<ConfigInner>);
 
+fn default_database_url() -> StackString {
+    "postgresql://user:password@host:1234/test_db".into()
+}
 fn default_gcal_secret() -> PathBuf {
     let config_dir = dirs::config_dir().expect("No CONFIG directory");
     config_dir
@@ -45,14 +51,17 @@ fn default_gcal_token_path() -> PathBuf {
 fn default_port() -> u32 {
     4042
 }
-fn default_secret_key() -> StackString {
-    "0123".repeat(8).into()
-}
 fn default_domain() -> StackString {
     "localhost".into()
 }
 fn default_n_db_workers() -> usize {
     2
+}
+fn default_secret_path() -> PathBuf {
+    dirs::config_dir()
+        .expect("No CONFIG directory")
+        .join("aws_app_rust")
+        .join("secret.bin")
 }
 
 impl Config {
