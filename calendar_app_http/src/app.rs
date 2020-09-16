@@ -1,5 +1,6 @@
 use actix_identity::{CookieIdentityPolicy, IdentityService};
 use actix_web::{web, App, HttpServer};
+use anyhow::Error;
 use lazy_static::lazy_static;
 use std::time::Duration;
 use tokio::time::interval;
@@ -7,7 +8,6 @@ use tokio::time::interval;
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
 
 use crate::{
-    errors::ServiceError as Error,
     logged_user::{fill_from_db, JWT_SECRET, SECRET_KEY, TRIGGER_DB_UPDATE},
     routes::{
         agenda, build_calendar_event, calendar_cache, calendar_cache_update, calendar_index,
