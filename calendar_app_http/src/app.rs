@@ -8,7 +8,7 @@ use tokio::time::interval;
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
 
 use crate::{
-    logged_user::{fill_from_db, get_secrets, JWT_SECRET, SECRET_KEY, TRIGGER_DB_UPDATE},
+    logged_user::{fill_from_db, get_secrets, SECRET_KEY, TRIGGER_DB_UPDATE},
     routes::{
         agenda, build_calendar_event, calendar_cache, calendar_cache_update, calendar_index,
         calendar_list, calendar_list_update, create_calendar_event, delete_event, edit_calendar,
@@ -29,8 +29,8 @@ pub async fn start_app() -> Result<(), Error> {
     async fn _update_db(pool: PgPool) {
         let mut i = interval(Duration::from_secs(60));
         loop {
-            i.tick().await;
             fill_from_db(&pool).await.unwrap_or(());
+            i.tick().await;
         }
     }
     TRIGGER_DB_UPDATE.set();
