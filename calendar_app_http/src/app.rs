@@ -8,7 +8,7 @@ use tokio::time::interval;
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
 
 use crate::{
-    logged_user::{fill_from_db, JWT_SECRET, SECRET_KEY, TRIGGER_DB_UPDATE},
+    logged_user::{fill_from_db, get_secrets, JWT_SECRET, SECRET_KEY, TRIGGER_DB_UPDATE},
     routes::{
         agenda, build_calendar_event, calendar_cache, calendar_cache_update, calendar_index,
         calendar_list, calendar_list_update, create_calendar_event, delete_event, edit_calendar,
@@ -19,12 +19,6 @@ use crate::{
 
 lazy_static! {
     pub static ref CONFIG: Config = Config::init_config().expect("Failed to load config");
-}
-
-async fn get_secrets() -> Result<(), Error> {
-    SECRET_KEY.read_from_file(&CONFIG.secret_path).await?;
-    JWT_SECRET.read_from_file(&CONFIG.jwt_secret_path).await?;
-    Ok(())
 }
 
 pub struct AppState {
@@ -40,7 +34,7 @@ pub async fn start_app() -> Result<(), Error> {
         }
     }
     TRIGGER_DB_UPDATE.set();
-    get_secrets().await?;
+    get_secrets(&CONFIG.secret_path, &CONFIG.jwt_secret_path).await?;
     let pool = PgPool::new(&CONFIG.database_url);
     let cal_sync = CalendarSync::new(CONFIG.clone(), pool);
 
