@@ -243,7 +243,6 @@ impl CalendarSync {
         )?;
 
         let display_map: HashMap<_, _> = calendar_map
-            .into_iter()
             .filter_map(|cal| {
                 if cal.display {
                     Some((cal.gcal_id, cal.display))

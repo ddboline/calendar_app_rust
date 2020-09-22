@@ -59,7 +59,6 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
         .cal_sync
         .list_calendars()
         .await?
-        .into_iter()
         .filter_map(|cal| {
             if cal.display {
                 Some((cal.gcal_id.clone(), cal))
@@ -72,7 +71,6 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
         .cal_sync
         .list_agenda(1, 2)
         .await?
-        .into_iter()
         .sorted_by_key(|event| event.start_time)
         .filter_map(|event| {
             let cal = match calendar_map.get(&event.gcal_id) {
@@ -174,7 +172,6 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
         .cal_sync
         .list_calendars()
         .await?
-        .into_iter()
         .filter(|calendar| calendar.sync)
         .sorted_by_key(|calendar| {
             calendar
@@ -248,7 +245,6 @@ pub async fn list_events(
         .cal_sync
         .list_calendars()
         .await?
-        .into_iter()
         .map(|cal| (cal.name.clone(), cal))
         .collect();
     let cal = match calendar_map.get(&query.calendar_name) {
@@ -256,7 +252,6 @@ pub async fn list_events(
         None => return form_http_response("".to_string()),
     };
     let events: Vec<_> = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
-        .into_iter()
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
             let delete = if cal.edit {

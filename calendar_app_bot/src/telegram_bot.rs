@@ -117,7 +117,7 @@ impl TelegramBot {
 
     pub async fn notification_handler(&self) -> Result<(), Error> {
         let now = Utc::now();
-        let mut events: VecDeque<_> = self.cal_sync.list_agenda(0, 1).await?.into_iter().collect();
+        let mut events: VecDeque<_> = self.cal_sync.list_agenda(0, 1).await?.collect();
         let mut agenda_datetime = DateTime::<Utc>::from_utc(
             NaiveDateTime::new(
                 NaiveDate::from_ymd(now.year(), now.month(), now.day()),
@@ -132,7 +132,7 @@ impl TelegramBot {
                 if let Some(chat_id) = chat_id {
                     if now > agenda_datetime {
                         agenda_datetime = agenda_datetime + Duration::days(1);
-                        events = self.cal_sync.list_agenda(0, 1).await?.into_iter().collect();
+                        events = self.cal_sync.list_agenda(0, 1).await?.collect();
                         for event in &events {
                             self.send_message(
                                 *chat_id,
