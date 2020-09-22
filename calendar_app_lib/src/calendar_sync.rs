@@ -204,31 +204,26 @@ impl CalendarSync {
             .into_iter()
             .filter(|calendar| calendar.sync);
 
-        let futures = calendar_list.map(|calendar| {
-            let mut output = Vec::new();
-            async move {
-                let (exported, inserted) = if full {
-                    self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
-                        .await?
-                } else {
-                    debug!("gcal_id {}", calendar.gcal_id);
-                    self.sync_future_events(&calendar.gcal_id, calendar.edit)
-                        .await?
-                };
-                output.push(
-                    format!(
-                        "future events {} {} {}",
-                        calendar.calendar_name,
-                        exported.len(),
-                        inserted.len()
-                    )
-                    .into(),
-                );
-                Ok(output)
-            }
+        let futures = calendar_list.map(|calendar| async move {
+            let (exported, inserted) = if full {
+                self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
+                    .await?
+            } else {
+                debug!("gcal_id {}", calendar.gcal_id);
+                self.sync_future_events(&calendar.gcal_id, calendar.edit)
+                    .await?
+            };
+            let result = format!(
+                "future events {} {} {}",
+                calendar.calendar_name,
+                exported.len(),
+                inserted.len()
+            )
+            .into();
+            Ok(result)
         });
         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-        let results: Vec<_> = results?.into_iter().flatten().collect();
+        let results = results?;
         output.extend_from_slice(&results);
 
         Ok(output)
@@ -238,7 +233,7 @@ impl CalendarSync {
         &self,
         days_before: i64,
         days_after: i64,
-    ) -> Result<Vec<Event>, Error> {
+    ) -> Result<impl Iterator<Item = Event>, Error> {
         let min_time = Utc::now() - Duration::days(days_before);
         let max_time = Utc::now() + Duration::days(days_after);
 
@@ -258,21 +253,19 @@ impl CalendarSync {
             })
             .collect();
 
-        let events: Vec<_> = events
+        let events = events
             .into_iter()
             .filter(|event| display_map.get(&event.gcal_id).map_or(false, |x| *x))
             .sorted_by_key(|event| event.event_start_time)
-            .map(Into::into)
-            .collect();
+            .map(Into::into);
         Ok(events)
     }
 
-    pub async fn list_calendars(&self) -> Result<Vec<Calendar>, Error> {
-        let calendars: Vec<_> = CalendarList::get_calendars(&self.pool)
+    pub async fn list_calendars(&self) -> Result<impl Iterator<Item = Calendar>, Error> {
+        let calendars = CalendarList::get_calendars(&self.pool)
             .await?
             .into_iter()
-            .map(|c| c.into())
-            .collect();
+            .map(|c| c.into());
         Ok(calendars)
     }
 
@@ -281,7 +274,7 @@ impl CalendarSync {
         gcal_id: &str,
         min_date: Option<NaiveDate>,
         max_date: Option<NaiveDate>,
-    ) -> Result<Vec<Event>, Error> {
+    ) -> Result<impl Iterator<Item = Event>, Error> {
         let min_date = min_date.map_or_else(
             || (Utc::now() - Duration::weeks(1)),
             |d| {
@@ -302,7 +295,7 @@ impl CalendarSync {
                     .with_timezone(&Utc)
             },
         );
-        let events: Vec<_> = CalendarCache::get_by_gcal_id_datetime(
+        let events = CalendarCache::get_by_gcal_id_datetime(
             &gcal_id,
             Some(min_date),
             Some(max_date),
@@ -311,8 +304,7 @@ impl CalendarSync {
         .await?
         .into_iter()
         .sorted_by_key(|event| event.event_start_time)
-        .map(|c| c.into())
-        .collect();
+        .map(|c| c.into());
         Ok(events)
     }
 }

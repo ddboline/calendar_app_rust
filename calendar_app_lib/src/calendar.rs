@@ -1,6 +1,7 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use chrono_tz::Tz;
+use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{convert::TryInto, fmt};
@@ -128,11 +129,11 @@ impl fmt::Display for Event {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         writeln!(f, "\t{}:", self.name)?;
         if let Some(description) = &self.description {
-            let description: Vec<_> = description
+            let description = description
                 .split('\n')
                 .map(|x| format!("\t\t{}", x))
-                .collect();
-            writeln!(f, "{}", description.join("\n"))?;
+                .join("\n");
+            writeln!(f, "{}", description)?;
         }
         if let Some(url) = &self.url {
             writeln!(f, "\t\t{}", url.as_str())?;

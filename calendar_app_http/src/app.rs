@@ -47,7 +47,7 @@ pub async fn start_app() -> Result<(), Error> {
                 cal_sync: cal_sync.clone(),
             })
             .wrap(IdentityService::new(
-                CookieIdentityPolicy::new(&SECRET_KEY.load())
+                CookieIdentityPolicy::new(&SECRET_KEY.get())
                     .name("auth")
                     .path("/")
                     .domain(cal_sync.config.domain.as_str())
