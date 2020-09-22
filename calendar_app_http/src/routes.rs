@@ -67,7 +67,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
             }
         })
         .collect();
-    let events: Vec<_> = data
+    let events = data
         .cal_sync
         .list_agenda(1, 2)
         .await?
@@ -112,14 +112,14 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
                 delete=delete,
             ))
         })
-        .collect();
+        .join("");
     let body = format!(
         r#"
         <table border="1" class="dataframe">
         <thead><th>Calendar</th><th>Event</th><th>Start Time</th></thead>
         <tbody>{}</tbody>
         </table>"#,
-        events.join("")
+        events
     );
     form_http_response(body)
 }
@@ -179,7 +179,7 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
                 .as_ref()
                 .map_or_else(|| calendar.name.to_string(), ToString::to_string)
         });
-    let calendars: Vec<_> = calendars
+    let calendars = calendars
         .map(|calendar| {
             let create_event = if calendar.edit {
                 format!(r#"
@@ -210,7 +210,7 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
                 create_event=create_event,
                 make_visible=make_visible,
             )
-        }).collect();
+        }).join("");
 
     let body = format!(
         r#"
@@ -223,7 +223,7 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
         </thead>
         <tbody>{}</tbody>
         </table>"#,
-        calendars.join("")
+        calendars
     );
     form_http_response(body)
 }
@@ -279,7 +279,7 @@ pub async fn list_events(
                 event_id=event.event_id,
                 delete=delete
             )
-        }).collect();
+        }).join("");
     let body = format!(
         r#"
         <table border="1" class="dataframe">
@@ -290,7 +290,7 @@ pub async fn list_events(
         <tbody>{}</tbody>
         </table>"#,
         cal.gcal_id,
-        events.join("")
+        events
     );
     form_http_response(body)
 }
@@ -316,11 +316,11 @@ pub async fn event_detail(
             &event.name
         ));
         if let Some(description) = &event.description {
-            let description: Vec<_> = description
+            let description = description
                 .split('\n')
                 .map(|line| {
                     let mut line_length = 0;
-                    let words: Vec<_> = line
+                    let words = line
                         .split_whitespace()
                         .map(|word| {
                             let mut output_word = word.to_string();
@@ -336,13 +336,13 @@ pub async fn event_detail(
                             }
                             output_word
                         })
-                        .collect();
-                    format!("\t\t{}", words.join(" "))
+                        .join(" ");
+                    format!("\t\t{}", words)
                 })
-                .collect();
+                .join("");
             output.push(format!(
                 r#"<tr text-style="center"><td>Description</td><td>{}</td></tr>"#,
-                &description.join("")
+                &description
             ));
         }
         if let Some(url) = &event.url {

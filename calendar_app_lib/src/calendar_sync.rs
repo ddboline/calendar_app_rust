@@ -57,18 +57,18 @@ impl CalendarSync {
                 cal.upsert(&self.pool).await
             });
 
-        let result: Result<Vec<_>, Error> = try_join_all(futures).await;
-        let inserted = result?;
-        Ok(inserted)
+        try_join_all(futures).await
     }
 
-    async fn import_calendar_events(
+    async fn import_calendar_events<T>(
         &self,
         gcal_id: &str,
-        calendar_events: &[GCalEvent],
+        calendar_events: T,
         upsert: bool,
-    ) -> Result<Vec<InsertCalendarCache>, Error> {
-        let futures = calendar_events.iter().map(|item| async move {
+    ) -> Result<Vec<InsertCalendarCache>, Error>
+    where T: IntoIterator<Item=GCalEvent>,
+    {
+        let futures = calendar_events.into_iter().map(|item| async move {
             if item.start.is_none() {
                 return Ok(None);
             } else if item.summary.is_none() {
@@ -223,8 +223,7 @@ impl CalendarSync {
             Ok(result)
         });
         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-        let results = results?;
-        output.extend_from_slice(&results);
+        output.extend_from_slice(&results?);
 
         Ok(output)
     }
