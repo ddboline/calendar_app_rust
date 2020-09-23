@@ -251,7 +251,7 @@ pub async fn list_events(
         Some(cal) => cal,
         None => return form_http_response("".to_string()),
     };
-    let events: Vec<_> = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
+    let events = data.cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
             let delete = if cal.edit {
@@ -289,8 +289,7 @@ pub async fn list_events(
         </thead>
         <tbody>{}</tbody>
         </table>"#,
-        cal.gcal_id,
-        events
+        cal.gcal_id, events
     );
     form_http_response(body)
 }
@@ -417,9 +416,8 @@ pub async fn calendar_list_update(
         let calendar: InsertCalendarList = calendar.into();
         async move { calendar.upsert(&pool).await.map_err(Into::into) }
     });
-    let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-    let calendars = results?;
-    to_json(calendars)
+    let calendars: Result<Vec<_>, Error> = try_join_all(futures).await;
+    to_json(calendars?)
 }
 
 pub async fn calendar_cache(
@@ -484,9 +482,8 @@ pub async fn calendar_cache_update(
         let event: InsertCalendarCache = event.into();
         async move { event.upsert(&pool).await.map_err(Into::into) }
     });
-    let results: Result<Vec<_>, Error> = try_join_all(futures).await;
-    let events = results?;
-    to_json(events)
+    let events: Result<Vec<_>, Error> = try_join_all(futures).await;
+    to_json(events?)
 }
 
 pub async fn user(user: LoggedUser) -> HttpResult {

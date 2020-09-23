@@ -60,13 +60,14 @@ impl CalendarSync {
         try_join_all(futures).await
     }
 
-    async fn import_calendar_events<T>(
-        &self,
-        gcal_id: &str,
+    async fn import_calendar_events<'a, T>(
+        &'a self,
+        gcal_id: &'a str,
         calendar_events: T,
         upsert: bool,
     ) -> Result<Vec<InsertCalendarCache>, Error>
-    where T: IntoIterator<Item=GCalEvent>,
+    where
+        T: IntoIterator<Item = &'a GCalEvent>,
     {
         let futures = calendar_events.into_iter().map(|item| async move {
             if item.start.is_none() {
@@ -90,25 +91,28 @@ impl CalendarSync {
                 Ok(None)
             }
         });
-        let result: Result<Vec<_>, Error> = try_join_all(futures).await;
-        let inserted: Vec<_> = result?.into_iter().filter_map(|x| x).collect();
-        Ok(inserted)
+        let inserted: Result<Vec<_>, Error> = try_join_all(futures).await;
+        Ok(inserted?.into_iter().filter_map(|x| x).collect())
     }
 
-    async fn export_calendar_events(
+    async fn export_calendar_events<'a, T, U>(
         &self,
-        calendar_events: &[GCalEvent],
-        database_events: &[CalendarCache],
+        calendar_events: T,
+        database_events: U,
         update: bool,
-    ) -> Result<Vec<GCalEvent>, Error> {
+    ) -> Result<Vec<GCalEvent>, Error>
+    where
+        T: IntoIterator<Item = &'a GCalEvent>,
+        U: IntoIterator<Item = &'a CalendarCache>,
+    {
         let event_map: HashMap<_, _> = calendar_events
-            .iter()
+            .into_iter()
             .filter_map(|item| item.id.as_ref().map(|event_id| (event_id.as_str(), item)))
             .collect();
         let event_map = Arc::new(event_map);
 
         #[allow(clippy::filter_map)]
-        let futures = database_events.iter().map(|item| {
+        let futures = database_events.into_iter().map(|item| {
             let event_map = event_map.clone();
             async move {
                 let event_id = item.event_id.as_str();
