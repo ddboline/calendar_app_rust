@@ -14,10 +14,13 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - name: Install deps
-      run: sudo apt-get update && sudo apt-get install libpq-dev && rustup update
+      run: sudo apt-get update && sudo apt-get install libpq-dev && \
+            rustup update && cargo install diesel_cli
     - name: Clippy
       run: cargo clippy -- -W clippy::pedantic
     - name: Build
       run: cargo build --verbose
+    - name: Start Postgres
+      run: sh ./scripts/bootstrap_github.sh
     - name: Run tests
       run: cargo test --all --verbose

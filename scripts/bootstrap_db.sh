@@ -12,8 +12,8 @@ sudo -u postgres psql -c "CREATE ROLE $USER PASSWORD '$PASSWORD' NOSUPERUSER NOC
 sudo -u postgres psql -c "ALTER ROLE $USER PASSWORD '$PASSWORD' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;"
 sudo -u postgres createdb $DB
 
-mkdir -p ${HOME}/.config/sync_app_rust
-cat > ${HOME}/.config/sync_app_rust/config.env <<EOL
+mkdir -p ${HOME}/.config/calendar_app_rust
+cat > ${HOME}/.config/calendar_app_rust/config.env <<EOL
 DATABASE_URL=postgresql://$USER:$PASSWORD@localhost:5432/$DB
 GCAL_SECRET_FILE=${HOME}/.config/calendar_app_rust/client_secrets.json
 GCAL_TOKEN_PATH=${HOME}/.gcal
