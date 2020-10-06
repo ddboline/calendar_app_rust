@@ -60,14 +60,12 @@ impl CalendarSync {
         try_join_all(futures).await
     }
 
-    async fn import_calendar_events<'a, T>(
+    async fn import_calendar_events<'a>(
         &'a self,
         gcal_id: &'a str,
-        calendar_events: T,
+        calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
         upsert: bool,
     ) -> Result<Vec<InsertCalendarCache>, Error>
-    where
-        T: IntoIterator<Item = &'a GCalEvent>,
     {
         let futures = calendar_events.into_iter().map(|item| async move {
             if item.start.is_none() {
@@ -95,15 +93,12 @@ impl CalendarSync {
         Ok(inserted?.into_iter().filter_map(|x| x).collect())
     }
 
-    async fn export_calendar_events<'a, T, U>(
+    async fn export_calendar_events<'a>(
         &self,
-        calendar_events: T,
-        database_events: U,
+        calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
+        database_events: impl IntoIterator<Item = &'a CalendarCache>,
         update: bool,
     ) -> Result<Vec<GCalEvent>, Error>
-    where
-        T: IntoIterator<Item = &'a GCalEvent>,
-        U: IntoIterator<Item = &'a CalendarCache>,
     {
         let event_map: HashMap<_, _> = calendar_events
             .into_iter()
