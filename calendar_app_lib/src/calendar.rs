@@ -212,23 +212,25 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
         DateTime::parse_from_rfc3339(date_time)
             .ok()
             .map(|d| d.with_timezone(&Utc))
-    } else if let Some(date) = dt.date.as_ref() {
-        let date: Option<NaiveDate> = date.parse().ok();
-        if let Some(tz) = dt
-            .time_zone
-            .as_ref()
-            .and_then(|tz| tz.parse::<TimeZone>().ok())
-        {
-            use chrono::TimeZone;
-            date.and_then(|d| tz.from_local_datetime(&d.and_hms(0, 0, 0)).single())
-                .map(|d| d.with_timezone(&Utc))
-        } else {
-            use chrono::TimeZone;
-            date.and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
-                .map(|d| d.with_timezone(&Utc))
-        }
     } else {
-        None
+        dt.date.as_ref().map_or(None, |date| {
+            let date: Option<NaiveDate> = date.parse().ok();
+            dt.time_zone
+                .as_ref()
+                .and_then(|tz| tz.parse::<TimeZone>().ok())
+                .map_or_else(
+                    || {
+                        use chrono::TimeZone;
+                        date.and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+                            .map(|d| d.with_timezone(&Utc))
+                    },
+                    |tz| {
+                        use chrono::TimeZone;
+                        date.and_then(|d| tz.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+                            .map(|d| d.with_timezone(&Utc))
+                    },
+                )
+        })
     }
 }
 
@@ -343,10 +345,8 @@ impl Event {
 
         let url = if let Some(short_url) = &short_url {
             short_url.as_str()
-        } else if let Some(original_url) = original_url {
-            original_url.as_str()
         } else {
-            &self.event_id
+            original_url.map_or_else(|| self.event_id.as_str(), Url::as_str)
         };
 
         let start_time = match timezone {

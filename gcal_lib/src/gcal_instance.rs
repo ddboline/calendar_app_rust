@@ -85,15 +85,13 @@ impl GCalendarInstance {
     fn gcal_calendars(&self, next_page_token: Option<&str>) -> Result<CalendarList, Error> {
         exponential_retry(|| {
             let gcal = self.gcal.lock();
-            let req = gcal
+            let mut req = gcal
                 .calendar_list()
                 .list()
                 .show_deleted(false)
                 .show_hidden(true);
-            let req = if let Some(next_page_token) = next_page_token {
-                req.page_token(next_page_token)
-            } else {
-                req
+            if let Some(t) = next_page_token {
+                req = req.page_token(t);
             };
             let (_, cal_list) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
             Ok(cal_list)
@@ -127,21 +125,15 @@ impl GCalendarInstance {
     ) -> Result<Events, Error> {
         exponential_retry(|| {
             let gcal = self.gcal.lock();
-            let req = gcal.events().list(gcal_id);
-            let req = if let Some(min_time) = min_time {
-                req.time_min(&min_time.to_rfc3339())
-            } else {
-                req
+            let mut req = gcal.events().list(gcal_id);
+            if let Some(min_time) = min_time {
+                req = req.time_min(&min_time.to_rfc3339());
             };
-            let req = if let Some(max_time) = max_time {
-                req.time_min(&max_time.to_rfc3339())
-            } else {
-                req
+            if let Some(max_time) = max_time {
+                req = req.time_max(&max_time.to_rfc3339());
             };
-            let req = if let Some(next_page_token) = next_page_token {
-                req.page_token(next_page_token)
-            } else {
-                req
+            if let Some(next_page_token) = next_page_token {
+                req = req.page_token(next_page_token);
             };
             let (_, result) = req.doit().map_err(|e| {
                 debug!("{}", gcal_id);

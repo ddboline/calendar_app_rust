@@ -323,23 +323,28 @@ impl CalendarCache {
             calendar_cache, event_end_time, event_start_time, gcal_id,
         };
         let conn = pool.get()?;
-        if let Some(min_time) = min_time {
-            if let Some(max_time) = max_time {
-                calendar_cache
-                    .filter(gcal_id.eq(gcal_id_))
-                    .filter(event_end_time.gt(min_time))
-                    .filter(event_start_time.lt(max_time))
-                    .load(&conn)
-            } else {
-                calendar_cache
-                    .filter(gcal_id.eq(gcal_id_))
-                    .filter(event_end_time.gt(min_time))
-                    .load(&conn)
-            }
-        } else {
-            calendar_cache.filter(gcal_id.eq(gcal_id_)).load(&conn)
-        }
-        .map_err(Into::into)
+        min_time
+            .map_or_else(
+                || calendar_cache.filter(gcal_id.eq(gcal_id_)).load(&conn),
+                |min_time| {
+                    max_time.map_or_else(
+                        || {
+                            calendar_cache
+                                .filter(gcal_id.eq(gcal_id_))
+                                .filter(event_end_time.gt(min_time))
+                                .load(&conn)
+                        },
+                        |max_time| {
+                            calendar_cache
+                                .filter(gcal_id.eq(gcal_id_))
+                                .filter(event_end_time.gt(min_time))
+                                .filter(event_start_time.lt(max_time))
+                                .load(&conn)
+                        },
+                    )
+                },
+            )
+            .map_err(Into::into)
     }
 
     pub async fn get_by_gcal_id_datetime(
