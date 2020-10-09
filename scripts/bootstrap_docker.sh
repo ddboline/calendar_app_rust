@@ -5,23 +5,22 @@ if [ -z "$PASSWORD" ]; then
 fi
 DB=calendar_app_cache
 
-sudo apt-get install -y postgresql
+docker run --name $DB -p 12345:5432 -e POSTGRES_PASSWORD=$PASSWORD -d postgres
+sleep 10
+DATABASE_URL="postgresql://postgres:$PASSWORD@localhost:12345/postgres"
 
-sudo -u postgres createuser -E -e $USER
-sudo -u postgres psql -c "CREATE ROLE $USER PASSWORD '$PASSWORD' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;"
-sudo -u postgres psql -c "ALTER ROLE $USER PASSWORD '$PASSWORD' NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN;"
-sudo -u postgres createdb $DB
+psql $DATABASE_URL -c "CREATE DATABASE $DB"
+
+DATABASE_URL="postgresql://postgres:$PASSWORD@localhost:12345/$DB"
 
 mkdir -p ${HOME}/.config/calendar_app_rust
 cat > ${HOME}/.config/calendar_app_rust/config.env <<EOL
-DATABASE_URL=postgresql://$USER:$PASSWORD@localhost:5432/$DB
-GCAL_SECRET_FILE=${HOME}/.config/calendar_app_rust/client_secrets.json
-GCAL_TOKEN_PATH=${HOME}/.gcal
+DATABASE_URL=$DATABASE_URL
 EOL
 
 cat > ${HOME}/.config/calendar_app_rust/postgres.toml <<EOL
 [calendar_app_rust]
-database_url = 'postgresql://$USER:$PASSWORD@localhost:5432/$DB'
+database_url = '$DATABASE_URL'
 destination = 'file:///home/ddboline/setup_files/build/calendar_app_rust/backup'
 tables = ['calendar_cache', 'calendar_list']
 sequences = {calendar_list_id_seq=['calendar_list', 'id'], calendar_cache_id_seq=['calendar_cache', 'id']}
