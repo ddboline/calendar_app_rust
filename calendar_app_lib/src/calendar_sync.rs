@@ -65,8 +65,7 @@ impl CalendarSync {
         gcal_id: &'a str,
         calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
         upsert: bool,
-    ) -> Result<Vec<InsertCalendarCache>, Error>
-    {
+    ) -> Result<Vec<InsertCalendarCache>, Error> {
         let futures = calendar_events.into_iter().map(|item| async move {
             if item.start.is_none() {
                 return Ok(None);
@@ -98,8 +97,7 @@ impl CalendarSync {
         calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
         database_events: impl IntoIterator<Item = &'a CalendarCache>,
         update: bool,
-    ) -> Result<Vec<GCalEvent>, Error>
-    {
+    ) -> Result<Vec<GCalEvent>, Error> {
         let event_map: HashMap<_, _> = calendar_events
             .into_iter()
             .filter_map(|item| item.id.as_ref().map(|event_id| (event_id.as_str(), item)))
