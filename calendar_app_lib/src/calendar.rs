@@ -208,30 +208,35 @@ impl From<Event> for InsertCalendarCache {
 }
 
 fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
-    if let Some(date_time) = dt.date_time.as_ref() {
-        DateTime::parse_from_rfc3339(date_time)
-            .ok()
-            .map(|d| d.with_timezone(&Utc))
-    } else {
-        dt.date.as_ref().map_or(None, |date| {
-            let date: Option<NaiveDate> = date.parse().ok();
-            dt.time_zone
-                .as_ref()
-                .and_then(|tz| tz.parse::<TimeZone>().ok())
-                .map_or_else(
-                    || {
-                        use chrono::TimeZone;
-                        date.and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+    dt.date_time.as_ref().map_or_else(
+        || {
+            dt.date.as_ref().and_then(|date| {
+                let date: Option<NaiveDate> = date.parse().ok();
+                dt.time_zone
+                    .as_ref()
+                    .and_then(|tz| tz.parse::<TimeZone>().ok())
+                    .map_or_else(
+                        || {
+                            use chrono::TimeZone;
+                            date.and_then(|d| {
+                                Local.from_local_datetime(&d.and_hms(0, 0, 0)).single()
+                            })
                             .map(|d| d.with_timezone(&Utc))
-                    },
-                    |tz| {
-                        use chrono::TimeZone;
-                        date.and_then(|d| tz.from_local_datetime(&d.and_hms(0, 0, 0)).single())
-                            .map(|d| d.with_timezone(&Utc))
-                    },
-                )
-        })
-    }
+                        },
+                        |tz| {
+                            use chrono::TimeZone;
+                            date.and_then(|d| tz.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+                                .map(|d| d.with_timezone(&Utc))
+                        },
+                    )
+            })
+        },
+        |date_time| {
+            DateTime::parse_from_rfc3339(date_time)
+                .ok()
+                .map(|d| d.with_timezone(&Utc))
+        },
+    )
 }
 
 impl Event {
@@ -343,11 +348,10 @@ impl Event {
             }
         }
 
-        let url = if let Some(short_url) = &short_url {
-            short_url.as_str()
-        } else {
-            original_url.map_or_else(|| self.event_id.as_str(), Url::as_str)
-        };
+        let url = short_url.as_ref().map_or_else(
+            || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
+            |short_url| short_url.as_str(),
+        );
 
         let start_time = match timezone {
             Some(tz) => {
