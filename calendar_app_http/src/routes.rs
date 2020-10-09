@@ -199,12 +199,11 @@ pub async fn list_calendars(_: LoggedUser, data: Data<AppState>) -> HttpResult {
             };
             format!(r#"
                 <tr text-style="center">
-                <td><input type="button" name="list_events" value="{gcal_name}" onclick="listEvents('{calendar_name}')"></td>
+                <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{calendar_name}')"></td>
                 <td>{description}</td>
                 <td>{make_visible}</td>
                 <td>{create_event}</td>
                 </tr>"#,
-                gcal_name=calendar.gcal_name.as_ref().map_or_else(|| calendar.name.as_str(), StackString::as_str),
                 calendar_name=calendar.name,
                 description=calendar.description.as_ref().map_or_else(|| "", StackString::as_str),
                 create_event=create_event,
