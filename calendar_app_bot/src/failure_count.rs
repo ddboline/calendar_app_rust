@@ -47,3 +47,23 @@ impl FailureCount {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Error;
+
+    use crate::failure_count::FailureCount;
+
+    #[test]
+    fn test_failure_count() -> Result<(), Error> {
+        let f = FailureCount::new(3);
+        f.increment()?;
+        f.increment()?;
+        assert!(f.check().is_ok());
+        f.increment()?;
+        assert!(f.check().is_ok());
+        f.increment()?;
+        assert!(f.check().is_err());
+        Ok(())
+    }
+}

@@ -29,5 +29,8 @@ dirs = "3.0"
 itertools = "0.9"
 url = "2.1"
 reqwest = {version="0.10", features=["cookies", "json", "rustls-tls", "stream"]}
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.6", features=["diesel_types"] }
-auth_server_rust = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.1.18"}
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.7", features=["diesel_types"] }
+auth_server_rust = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.1.21"}
+
+[dev-dependencies]
+maplit = "1.0"

@@ -34,4 +34,4 @@ smartstring = "0.2"
 smallvec = "1.4"
 serde_json = "1.0"
 deadqueue = "0.1"
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.6", features=["diesel_types"] }
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.7", features=["diesel_types"] }
