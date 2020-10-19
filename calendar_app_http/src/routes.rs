@@ -157,7 +157,7 @@ pub async fn delete_event(
     {
         let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&data.cal_sync.pool).await?;
-        let gcal = data.cal_sync.gcal.clone();
+        let gcal = data.cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
         spawn_blocking(move || gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id))
             .await??;
         body
@@ -646,7 +646,8 @@ pub async fn create_calendar_event(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    spawn_blocking(move || data.cal_sync.gcal.insert_gcal_event(&gcal_id, event)).await??;
+    let gcal = data.cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
+    spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event)).await??;
 
     form_http_response("Event Inserted".to_string())
 }

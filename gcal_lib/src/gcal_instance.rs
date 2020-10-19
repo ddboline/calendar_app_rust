@@ -30,12 +30,12 @@ pub struct GCalendarInstance {
 }
 
 impl GCalendarInstance {
-    pub fn new(gcal_token_path: &Path, gcal_secret_file: &Path, session_name: &str) -> Self {
-        Self {
+    pub fn new(gcal_token_path: &Path, gcal_secret_file: &Path, session_name: &str) -> Result<Self, Error> {
+        Ok(Self {
             gcal: Arc::new(Mutex::new(
-                Self::create_gcal(gcal_token_path, gcal_secret_file, session_name).unwrap(),
+                Self::create_gcal(gcal_token_path, gcal_secret_file, session_name)?,
             )),
-        }
+        })
     }
 
     /// Creates a cal hub.

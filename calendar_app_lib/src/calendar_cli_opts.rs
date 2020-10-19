@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{format_err, Error};
 use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use stack_string::StackString;
@@ -121,8 +121,8 @@ impl CalendarCliOpts {
                     cal_sync
                         .stdout
                         .send(format!("delete {} {}", gcal_id, event_id));
-                    let cal_sync = cal_sync.clone();
-                    spawn_blocking(move || cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id))
+                    let gcal = cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
+                    spawn_blocking(move || gcal.delete_gcal_event(&gcal_id, &event_id))
                         .await??
                 };
             }
