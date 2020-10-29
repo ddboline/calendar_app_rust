@@ -1,6 +1,6 @@
-use anyhow::{format_err, Error};
+use anyhow::Error;
 use chrono::{DateTime, Utc};
-use diesel::{dsl::max, ExpressionMethods, QueryDsl, RunQueryDsl};
+use diesel::{dsl::max, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{cmp, io};
@@ -266,13 +266,14 @@ impl CalendarCache {
         gcal_id_: &str,
         event_id_: &str,
         pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
+    ) -> Result<Option<CalendarCache>, Error> {
         use crate::schema::calendar_cache::dsl::{calendar_cache, event_id, gcal_id};
         let conn = pool.get()?;
         calendar_cache
             .filter(gcal_id.eq(gcal_id_))
             .filter(event_id.eq(event_id_))
-            .load(&conn)
+            .get_result(&conn)
+            .optional()
             .map_err(Into::into)
     }
 
@@ -280,7 +281,7 @@ impl CalendarCache {
         gcal_id: &str,
         event_id: &str,
         pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
+    ) -> Result<Option<CalendarCache>, Error> {
         let pool = pool.clone();
         let gcal_id = gcal_id.to_owned();
         let event_id = event_id.to_owned();
@@ -507,20 +508,15 @@ impl InsertCalendarCache {
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
         let existing =
             CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, &pool).await?;
-        match existing.len() {
-            0 => self.insert(&pool).await,
-            1 => {
-                let id = existing[0].id;
+        match existing {
+            None => self.insert(&pool).await,
+            Some(event) => {
+                let id = event.id;
                 self.into_calendar_cache(id)
                     .update(&pool)
                     .await
                     .map(Into::into)
             }
-            _ => Err(format_err!(
-                "gcal_id {}, event_id {} is not unique",
-                self.gcal_id,
-                self.event_id
-            )),
         }
     }
 }

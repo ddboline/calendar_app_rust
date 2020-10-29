@@ -121,9 +121,17 @@ impl CalendarCliOpts {
                     cal_sync
                         .stdout
                         .send(format!("delete {} {}", gcal_id, event_id));
-                    let gcal = cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
-                    spawn_blocking(move || gcal.delete_gcal_event(&gcal_id, &event_id))
-                        .await??
+                    if let Some(event) =
+                        CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
+                            .await?
+                    {
+                        event.delete(&cal_sync.pool).await?;
+                    }
+                    let gcal = cal_sync
+                        .gcal
+                        .clone()
+                        .ok_or_else(|| format_err!("No GCAL"))?;
+                    spawn_blocking(move || gcal.delete_gcal_event(&gcal_id, &event_id)).await??
                 };
             }
             CalendarActions::ListCalendars => {
@@ -152,7 +160,6 @@ impl CalendarCliOpts {
                 if let Some(event) =
                     CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
                         .await?
-                        .pop()
                 {
                     let event: Event = event.into();
                     cal_sync.stdout.send(event.to_string());

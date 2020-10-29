@@ -2,7 +2,7 @@ use anyhow::{format_err, Error};
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
-use log::debug;
+use log::{debug, error};
 use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{task::spawn_blocking, try_join};
@@ -33,7 +33,8 @@ impl CalendarSync {
             &config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
-        ).ok();
+        )
+        .ok();
         Self {
             config,
             gcal,
@@ -80,7 +81,7 @@ impl CalendarSync {
                 Ok(Some(event))
             } else if CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event.event_id, &self.pool)
                 .await?
-                .is_empty()
+                .is_none()
             {
                 let event = event.insert(&self.pool).await?;
                 Ok(Some(event))
@@ -123,8 +124,14 @@ impl CalendarSync {
                     }
                 } else {
                     let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
+                    let event_id = item.event_id.clone();
                     Ok(Some(
-                        spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event)).await??,
+                        spawn_blocking(move || {
+                            gcal.insert_gcal_event(&gcal_id, event).map_err(|e| {
+                                error!("gcal_id {} event_id {} is duplicate (possibly deleted removely) {}", gcal_id, event_id, e);
+                                e
+                            })
+                        }).await??,
                     ))
                 }
             }
@@ -194,7 +201,7 @@ impl CalendarSync {
         output.push(format!("parse_nycruns {}", nycruns_events.len()).into());
 
         let inserted = self.sync_calendar_list().await?;
-        output.push(format!("inserted {} caledars", inserted.len()).into());
+        output.push(format!("inserted {} calendars", inserted.len()).into());
 
         let calendar_list = CalendarList::get_calendars(&self.pool)
             .await?

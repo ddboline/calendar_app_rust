@@ -153,11 +153,14 @@ pub async fn delete_event(
         &data.cal_sync.pool,
     )
     .await?
-    .pop()
     {
         let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&data.cal_sync.pool).await?;
-        let gcal = data.cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
+        let gcal = data
+            .cal_sync
+            .gcal
+            .clone()
+            .ok_or_else(|| format_err!("No GCAL"))?;
         spawn_blocking(move || gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id))
             .await??;
         body
@@ -305,7 +308,6 @@ pub async fn event_detail(
         &data.cal_sync.pool,
     )
     .await?
-    .pop()
     {
         let event: Event = event.into();
         let mut output = Vec::new();
@@ -542,13 +544,13 @@ pub async fn build_calendar_event(
     data: Data<AppState>,
 ) -> HttpResult {
     let query = query.into_inner();
-    let mut events = if let Some(event_id) = &query.event_id {
+    let event = if let Some(event_id) = &query.event_id {
         CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, &event_id, &data.cal_sync.pool)
             .await?
     } else {
-        Vec::new()
+        None
     };
-    let event = events.pop().map_or_else(
+    let event = event.map_or_else(
         || Event::new(&query.gcal_id, "", Utc::now(), Utc::now()),
         |event| event.into(),
     );
@@ -635,7 +637,6 @@ pub async fn create_calendar_event(
         &data.cal_sync.pool,
     )
     .await?
-    .pop()
     {
         Some(event) => event,
         None => {
@@ -646,7 +647,11 @@ pub async fn create_calendar_event(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    let gcal = data.cal_sync.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
+    let gcal = data
+        .cal_sync
+        .gcal
+        .clone()
+        .ok_or_else(|| format_err!("No GCAL"))?;
     spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event)).await??;
 
     form_http_response("Event Inserted".to_string())

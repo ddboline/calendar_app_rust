@@ -1,6 +1,6 @@
 use anyhow::Error;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
-use futures::{join, StreamExt};
+use futures::{try_join, StreamExt};
 use lazy_static::lazy_static;
 use std::{
     collections::{HashMap, VecDeque},
@@ -48,8 +48,7 @@ impl TelegramBot {
         let fill_task = self.fill_telegram_user_ids();
         let notification_task = self.notification_handler();
         let bot_task = self.telegram_worker();
-        let (r0, r1, r2) = join!(fill_task, notification_task, bot_task);
-        r0.and_then(|_| r1).and_then(|_| r2)
+        try_join!(fill_task, notification_task, bot_task).map(|_| ())
     }
 
     pub async fn telegram_worker(&self) -> Result<(), Error> {

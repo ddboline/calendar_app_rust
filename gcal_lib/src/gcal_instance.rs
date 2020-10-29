@@ -4,7 +4,7 @@ use google_calendar3::{CalendarHub, CalendarList, Events};
 pub use google_calendar3::{CalendarListEntry, Event, EventDateTime};
 use hyper::{net::HttpsConnector, Client};
 use hyper_native_tls::NativeTlsClient;
-use log::debug;
+use log::{debug, error};
 use oauth2::{
     Authenticator, ConsoleApplicationSecret, DefaultAuthenticatorDelegate, DiskTokenStorage,
     FlowType,
@@ -30,11 +30,17 @@ pub struct GCalendarInstance {
 }
 
 impl GCalendarInstance {
-    pub fn new(gcal_token_path: &Path, gcal_secret_file: &Path, session_name: &str) -> Result<Self, Error> {
+    pub fn new(
+        gcal_token_path: &Path,
+        gcal_secret_file: &Path,
+        session_name: &str,
+    ) -> Result<Self, Error> {
         Ok(Self {
-            gcal: Arc::new(Mutex::new(
-                Self::create_gcal(gcal_token_path, gcal_secret_file, session_name)?,
-            )),
+            gcal: Arc::new(Mutex::new(Self::create_gcal(
+                gcal_token_path,
+                gcal_secret_file,
+                session_name,
+            )?)),
         })
     }
 
@@ -190,7 +196,7 @@ impl GCalendarInstance {
             .supports_attachments(true)
             .doit()
             .map_err(|e| {
-                debug!("insert {}", gcal_id);
+                error!("insert {}", gcal_id);
                 format_err!("{:#?}", e)
             })?;
         Ok(result)
