@@ -128,10 +128,15 @@ impl CalendarSync {
                     Ok(Some(
                         spawn_blocking(move || {
                             gcal.insert_gcal_event(&gcal_id, event).map_err(|e| {
-                                error!("gcal_id {} event_id {} is duplicate (possibly deleted removely) {}", gcal_id, event_id, e);
+                                error!(
+                                    "gcal_id {} event_id {} is duplicate (possibly deleted \
+                                     removely) {}",
+                                    gcal_id, event_id, e
+                                );
                                 e
                             })
-                        }).await??,
+                        })
+                        .await??,
                     ))
                 }
             }
