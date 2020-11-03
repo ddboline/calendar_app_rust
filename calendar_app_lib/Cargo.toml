@@ -13,7 +13,7 @@ reqwest = {version="0.10", features=["cookies", "json"]}
 anyhow = "1.0"
 chrono = "0.4"
 chrono-tz = "0.5"
-rayon = "1.4"
+rayon = "1.5"
 tokio = {version="0.2", features=["full"]}
 url = "2.1"
 dirs = "3.0"
@@ -34,4 +34,4 @@ smartstring = "0.2"
 smallvec = "1.4"
 serde_json = "1.0"
 deadqueue = "0.1"
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.7", features=["diesel_types"] }
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.1.9", features=["diesel_types"] }
