@@ -117,7 +117,8 @@ mod tests {
     use maplit::hashmap;
     use std::env::{remove_var, set_var};
 
-    use auth_server_rust::app::{get_random_string, run_test_app};
+    use auth_server_http::app::run_test_app;
+    use auth_server_lib::get_random_string;
 
     use calendar_app_lib::config::Config;
 
