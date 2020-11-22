@@ -77,7 +77,7 @@ pub async fn agenda(_: LoggedUser, data: Data<AppState>) -> HttpResult {
                 Some(cal) => cal,
                 None => return None,
             };
-            let calendar_name = cal.gcal_name.as_ref().unwrap_or_else(|| &cal.name);
+            let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
             let delete = if cal.edit {
                 format!(
                     r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventAgenda('{gcal_id}', '{event_id}')">"#,
