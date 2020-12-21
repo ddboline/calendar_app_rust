@@ -6,6 +6,7 @@ use log::{debug, error};
 use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
 use tokio::{task::spawn_blocking, try_join};
+use stdout_channel::StdoutChannel;
 
 use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
 
@@ -16,7 +17,6 @@ use crate::{
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::parse_nycruns,
     pgpool::PgPool,
-    stdout_channel::StdoutChannel,
 };
 
 #[derive(Clone)]
