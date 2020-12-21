@@ -1,11 +1,16 @@
 [package]
 name = "calendar_app_rust"
-version = "0.2.24"
+version = "0.2.25"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
 [package.metadata.deb]
 name = "calendar-app-rust"
+priority = "optional"
+section = "rust"
+provides = "calendar-app-rust"
+extended-description = """\
+CLI and Web app frontend for calendar"""
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
