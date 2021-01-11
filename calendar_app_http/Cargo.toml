@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 actix-web = "4.0.0-beta.1"
-actix-identity = "4.0.0-beta.1"
+actix-identity = {git="https://github.com/ddboline/actix-extras", branch="update-dependencies"}
 actix-rt = "2.0.0-beta.2"
 calendar_app_lib = {path = "../calendar_app_lib"}
 chrono = "0.4"
