@@ -12,7 +12,7 @@ use telegram_bot::{
 };
 use tokio::{
     sync::RwLock,
-    time::{self, delay_for, timeout},
+    time::{self, sleep, timeout},
 };
 
 use calendar_app_lib::{
@@ -167,7 +167,7 @@ impl TelegramBot {
                     }
                 }
             }
-            delay_for(time::Duration::from_secs(60)).await;
+            sleep(time::Duration::from_secs(60)).await;
         }
     }
 
@@ -194,7 +194,7 @@ impl TelegramBot {
             } else {
                 FAILURE_COUNT.increment()?;
             }
-            delay_for(time::Duration::from_secs(60)).await;
+            sleep(time::Duration::from_secs(60)).await;
         }
     }
 
