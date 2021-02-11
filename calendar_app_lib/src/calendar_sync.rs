@@ -5,8 +5,8 @@ use itertools::Itertools;
 use log::{debug, error};
 use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
-use tokio::{task::spawn_blocking, try_join};
 use stdout_channel::StdoutChannel;
+use tokio::{task::spawn_blocking, try_join};
 
 use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
 
