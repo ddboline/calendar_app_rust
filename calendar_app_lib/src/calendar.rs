@@ -231,11 +231,7 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
                     )
             })
         },
-        |date_time| {
-            DateTime::parse_from_rfc3339(date_time)
-                .ok()
-                .map(|d| d.with_timezone(&Utc))
-        },
+        |date_time| Some(*date_time),
     )
 }
 
@@ -299,11 +295,11 @@ impl Event {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
-                date_time: Some(self.start_time.to_rfc3339()),
+                date_time: Some(self.start_time),
                 ..EventDateTime::default()
             }),
             end: Some(EventDateTime {
-                date_time: Some(self.end_time.to_rfc3339()),
+                date_time: Some(self.end_time),
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),

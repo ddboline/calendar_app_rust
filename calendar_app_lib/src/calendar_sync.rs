@@ -1,4 +1,4 @@
-use anyhow::{format_err, Error};
+use anyhow::Error;
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
@@ -6,7 +6,7 @@ use log::{debug, error};
 use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
 use stdout_channel::StdoutChannel;
-use tokio::{task::spawn_blocking, try_join};
+use tokio::try_join;
 
 use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
 
@@ -22,19 +22,20 @@ use crate::{
 #[derive(Clone)]
 pub struct CalendarSync {
     pub config: Config,
-    pub gcal: Option<GCalendarInstance>,
+    pub gcal: GCalendarInstance,
     pub pool: PgPool,
     pub stdout: StdoutChannel,
 }
 
 impl CalendarSync {
-    pub fn new(config: Config, pool: PgPool) -> Self {
+    pub async fn new(config: Config, pool: PgPool) -> Self {
         let gcal = GCalendarInstance::new(
             &config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
         )
-        .ok();
+        .await
+        .expect("Failed to get gcal instance");
         Self {
             config,
             gcal,
@@ -44,10 +45,7 @@ impl CalendarSync {
     }
 
     pub async fn sync_calendar_list(&self) -> Result<Vec<InsertCalendarList>, Error> {
-        let calendar_list = {
-            let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
-            spawn_blocking(move || gcal.list_gcal_calendars()).await?
-        }?;
+        let calendar_list = self.gcal.list_gcal_calendars().await?;
 
         #[allow(clippy::filter_map)]
         let futures = calendar_list
@@ -114,29 +112,24 @@ impl CalendarSync {
                 let (gcal_id, event) = event.to_gcal_event()?;
                 if let Some(gcal_event) = event_map.get(event_id) {
                     if !compare_gcal_events(gcal_event, &event) && update {
-                        let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
-                        Ok(
-                            spawn_blocking(move || gcal.update_gcal_event(&gcal_id, event))
-                                .await??,
-                        )
+                        Ok(Some(self.gcal.update_gcal_event(&gcal_id, event).await?))
                     } else {
                         Ok(None)
                     }
                 } else {
-                    let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
                     let event_id = item.event_id.clone();
                     Ok(Some(
-                        spawn_blocking(move || {
-                            gcal.insert_gcal_event(&gcal_id, event).map_err(|e| {
+                        self.gcal
+                            .insert_gcal_event(&gcal_id, event)
+                            .await
+                            .map_err(|e| {
                                 error!(
                                     "gcal_id {} event_id {} is duplicate (possibly deleted \
                                      removely) {}",
                                     gcal_id, event_id, e
                                 );
                                 e
-                            })
-                        })
-                        .await??,
+                            })?,
                     ))
                 }
             }
@@ -150,11 +143,7 @@ impl CalendarSync {
         gcal_id: &str,
         edit: bool,
     ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
-        let calendar_events = {
-            let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
-            let gcal_id = gcal_id.to_string();
-            spawn_blocking(move || gcal.get_gcal_events(&gcal_id, None, None)).await?
-        }?;
+        let calendar_events = self.gcal.get_gcal_events(&gcal_id, None, None).await?;
         let exported = if edit {
             let database_events =
                 CalendarCache::get_by_gcal_id_datetime(gcal_id, None, None, &self.pool).await?;
@@ -174,11 +163,10 @@ impl CalendarSync {
         gcal_id: &str,
         edit: bool,
     ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
-        let calendar_events = {
-            let gcal = self.gcal.clone().ok_or_else(|| format_err!("No GCAL"))?;
-            let gcal_id = gcal_id.to_string();
-            spawn_blocking(move || gcal.get_gcal_events(&gcal_id, Some(Utc::now()), None)).await?
-        }?;
+        let calendar_events = self
+            .gcal
+            .get_gcal_events(&gcal_id, Some(Utc::now()), None)
+            .await?;
         let exported = if edit {
             let database_events =
                 CalendarCache::get_by_gcal_id_datetime(gcal_id, Some(Utc::now()), None, &self.pool)

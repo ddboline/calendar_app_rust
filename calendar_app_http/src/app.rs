@@ -38,7 +38,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
     }
     TRIGGER_DB_UPDATE.set();
     let pool = PgPool::new(&config.database_url);
-    let cal_sync = CalendarSync::new(config.clone(), pool);
+    let cal_sync = CalendarSync::new(config.clone(), pool).await;
 
     tokio::task::spawn(_update_db(cal_sync.pool.clone()));
 

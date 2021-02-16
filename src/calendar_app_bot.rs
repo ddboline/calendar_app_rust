@@ -9,7 +9,7 @@ async fn main() -> Result<(), Error> {
     let config = Config::init_config()?;
     let pool = PgPool::new(&config.database_url);
     if let Some(telegram_bot_token) = config.telegram_bot_token.as_ref() {
-        let bot = TelegramBot::new(telegram_bot_token, &pool, &config);
+        let bot = TelegramBot::new(telegram_bot_token, &pool, &config).await;
         bot.run().await?;
     }
     Ok(())

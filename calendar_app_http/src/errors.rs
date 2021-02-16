@@ -6,7 +6,10 @@ use serde::Serialize;
 use std::{convert::Infallible, fmt::Debug};
 use thiserror::Error;
 use tokio::task::JoinError;
-use warp::{reject::Reject, Rejection, Reply, reject::MissingCookie};
+use warp::{
+    reject::{MissingCookie, Reject},
+    Rejection, Reply,
+};
 
 use stack_string::StackString;
 

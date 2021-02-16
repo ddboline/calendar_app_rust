@@ -1,4 +1,4 @@
-use anyhow::{format_err, Error};
+use anyhow::Error;
 use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use stack_string::StackString;
@@ -7,7 +7,6 @@ use structopt::StructOpt;
 use tokio::{
     fs::{read_to_string, File},
     io::{stdin, stdout, AsyncReadExt, AsyncWrite, AsyncWriteExt},
-    task::spawn_blocking,
 };
 
 use crate::{
@@ -90,7 +89,7 @@ impl CalendarCliOpts {
 
         let config = Config::init_config()?;
         let pool = PgPool::new(&config.database_url);
-        let cal_sync = CalendarSync::new(config, pool);
+        let cal_sync = CalendarSync::new(config, pool).await;
 
         match action {
             CalendarActions::PrintAgenda => {
@@ -127,11 +126,7 @@ impl CalendarCliOpts {
                     {
                         event.delete(&cal_sync.pool).await?;
                     }
-                    let gcal = cal_sync
-                        .gcal
-                        .clone()
-                        .ok_or_else(|| format_err!("No GCAL"))?;
-                    spawn_blocking(move || gcal.delete_gcal_event(&gcal_id, &event_id)).await??
+                    cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id).await?;
                 };
             }
             CalendarActions::ListCalendars => {

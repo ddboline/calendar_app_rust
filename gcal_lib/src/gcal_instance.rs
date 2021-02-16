@@ -1,74 +1,49 @@
 use anyhow::{format_err, Error};
+use async_google_apis_common as common;
 use chrono::{DateTime, Utc};
-use google_calendar3::{CalendarHub, CalendarList, Events};
-pub use google_calendar3::{CalendarListEntry, Event, EventDateTime};
-use hyper::{net::HttpsConnector, Client};
-use hyper_native_tls::NativeTlsClient;
-use log::{debug, error};
-use oauth2::{
-    Authenticator, ConsoleApplicationSecret, DefaultAuthenticatorDelegate, DiskTokenStorage,
-    FlowType,
+use common::{
+    yup_oauth2::{self, InstalledFlowAuthenticator},
+    TlsClient,
 };
-use parking_lot::Mutex;
+use log::{debug, error};
 use stack_string::StackString;
 use std::{
     fs::{create_dir_all, File},
     path::Path,
     sync::Arc,
 };
-use yup_oauth2 as oauth2;
+use tokio::sync::Mutex;
 
-use crate::exponential_retry;
+use crate::calendar_v3_types::{
+    CalendarList, CalendarListListParams, CalendarListService, CalendarScopes, Events,
+    EventsDeleteParams, EventsGetParams, EventsInsertParams, EventsListParams, EventsService,
+    EventsUpdateParams,
+};
+pub use crate::calendar_v3_types::{CalendarListEntry, Event, EventDateTime};
 
-type GCClient = Client;
-type GCAuthenticator = Authenticator<DefaultAuthenticatorDelegate, DiskTokenStorage, Client>;
-type GCCalendar = CalendarHub<GCClient, GCAuthenticator>;
+fn https_client() -> TlsClient {
+    let conn = hyper_rustls::HttpsConnector::with_native_roots();
+    let cl = hyper::Client::builder().build(conn);
+    cl
+}
 
 #[derive(Clone)]
 pub struct GCalendarInstance {
-    pub gcal: Arc<Mutex<GCCalendar>>,
+    cal_list: Arc<CalendarListService>,
+    cal_events: Arc<EventsService>,
 }
 
 impl GCalendarInstance {
-    pub fn new(
+    pub async fn new(
         gcal_token_path: &Path,
         gcal_secret_file: &Path,
         session_name: &str,
     ) -> Result<Self, Error> {
-        Ok(Self {
-            gcal: Arc::new(Mutex::new(Self::create_gcal(
-                gcal_token_path,
-                gcal_secret_file,
-                session_name,
-            )?)),
-        })
-    }
+        println!("{:?}", gcal_secret_file);
+        let https = https_client();
+        let sec = yup_oauth2::read_application_secret(gcal_secret_file).await?;
 
-    /// Creates a cal hub.
-    fn create_gcal(
-        gcal_token_path: &Path,
-        gcal_secret_file: &Path,
-        session_name: &str,
-    ) -> Result<GCCalendar, Error> {
-        let auth = Self::create_drive_auth(gcal_token_path, gcal_secret_file, session_name)?;
-        Ok(CalendarHub::new(
-            Client::with_connector(HttpsConnector::new(NativeTlsClient::new()?)),
-            auth,
-        ))
-    }
-
-    fn create_drive_auth(
-        gcal_token_path: &Path,
-        gcal_secret_file: &Path,
-        session_name: &str,
-    ) -> Result<GCAuthenticator, Error> {
-        let secret_file = File::open(gcal_secret_file)?;
-        let secret: ConsoleApplicationSecret = serde_json::from_reader(secret_file)?;
-        let secret = secret
-            .installed
-            .ok_or_else(|| format_err!("ConsoleApplicationSecret.installed is None"))?;
         let token_file = gcal_token_path.join(format!("{}.json", session_name));
-        let token_file = token_file.to_string_lossy().to_string();
 
         let parent = gcal_token_path;
 
@@ -76,40 +51,52 @@ impl GCalendarInstance {
             create_dir_all(parent)?;
         }
 
-        let auth = Authenticator::new(
-            &secret,
-            DefaultAuthenticatorDelegate,
-            Client::with_connector(HttpsConnector::new(NativeTlsClient::new()?)),
-            DiskTokenStorage::new(&token_file)?,
-            // Some(FlowType::InstalledInteractive),
-            Some(FlowType::InstalledRedirect(8081)),
-        );
+        println!("{:?}", token_file);
+        let auth = InstalledFlowAuthenticator::builder(
+            sec,
+            common::yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
+        )
+        .persist_tokens_to_disk(token_file)
+        .hyper_client(https.clone())
+        .build()
+        .await?;
+        let auth = Arc::new(auth);
 
-        Ok(auth)
-    }
+        let scopes = vec![
+            CalendarScopes::CalendarReadonly,
+            CalendarScopes::CalendarEventsReadonly,
+            CalendarScopes::Calendar, CalendarScopes::CalendarEvents
+        ];
 
-    fn gcal_calendars(&self, next_page_token: Option<&str>) -> Result<CalendarList, Error> {
-        exponential_retry(|| {
-            let gcal = self.gcal.lock();
-            let mut req = gcal
-                .calendar_list()
-                .list()
-                .show_deleted(false)
-                .show_hidden(true);
-            if let Some(t) = next_page_token {
-                req = req.page_token(t);
-            };
-            let (_, cal_list) = req.doit().map_err(|e| format_err!("{:#?}", e))?;
-            Ok(cal_list)
+        let mut cal_list = CalendarListService::new(https.clone(), auth.clone());
+        cal_list.set_scopes(scopes.clone());
+
+        let mut cal_events = EventsService::new(https, auth);
+        cal_events.set_scopes(scopes);
+
+        Ok(Self {
+            cal_list: Arc::new(cal_list),
+            cal_events: Arc::new(cal_events),
         })
     }
 
-    pub fn list_gcal_calendars(&self) -> Result<Vec<CalendarListEntry>, Error> {
+    async fn gcal_calendars(&self, next_page_token: Option<&str>) -> Result<CalendarList, Error> {
+        let mut params = CalendarListListParams::default();
+        params.show_deleted = Some(true);
+        params.show_hidden = Some(true);
+        if let Some(t) = next_page_token {
+            params.page_token = Some(t.into());
+        }
+        self.cal_list.list(&params).await
+    }
+
+    pub async fn list_gcal_calendars(&self) -> Result<Vec<CalendarListEntry>, Error> {
         let mut output = Vec::new();
         let mut next_page_token: Option<StackString> = None;
         loop {
-            let cal_list =
-                self.gcal_calendars(next_page_token.as_ref().map(StackString::as_str))?;
+            let cal_list = self
+                .gcal_calendars(next_page_token.as_ref().map(StackString::as_str))
+                .await?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
@@ -122,34 +109,22 @@ impl GCalendarInstance {
         Ok(output)
     }
 
-    fn gcal_events(
+    async fn gcal_events(
         &self,
         gcal_id: &str,
         min_time: Option<DateTime<Utc>>,
         max_time: Option<DateTime<Utc>>,
         next_page_token: Option<&str>,
     ) -> Result<Events, Error> {
-        exponential_retry(|| {
-            let gcal = self.gcal.lock();
-            let mut req = gcal.events().list(gcal_id);
-            if let Some(min_time) = min_time {
-                req = req.time_min(&min_time.to_rfc3339());
-            };
-            if let Some(max_time) = max_time {
-                req = req.time_max(&max_time.to_rfc3339());
-            };
-            if let Some(next_page_token) = next_page_token {
-                req = req.page_token(next_page_token);
-            };
-            let (_, result) = req.doit().map_err(|e| {
-                debug!("{}", gcal_id);
-                format_err!("{:#?}", e)
-            })?;
-            Ok(result)
-        })
+        let mut params = EventsListParams::default();
+        params.calendar_id = gcal_id.into();
+        params.time_min = min_time;
+        params.time_max = max_time;
+        params.page_token = next_page_token.map(Into::into);
+        self.cal_events.list(&params).await
     }
 
-    pub fn get_gcal_events(
+    pub async fn get_gcal_events(
         &self,
         gcal_id: &str,
         min_time: Option<DateTime<Utc>>,
@@ -158,12 +133,14 @@ impl GCalendarInstance {
         let mut output = Vec::new();
         let mut next_page_token: Option<StackString> = None;
         loop {
-            let cal_list = self.gcal_events(
-                gcal_id,
-                min_time,
-                max_time,
-                next_page_token.as_ref().map(StackString::as_str),
-            )?;
+            let cal_list = self
+                .gcal_events(
+                    gcal_id,
+                    min_time,
+                    max_time,
+                    next_page_token.as_ref().map(StackString::as_str),
+                )
+                .await?;
             if let Some(cal_list) = cal_list.items {
                 output.extend_from_slice(&cal_list);
             }
@@ -176,65 +153,44 @@ impl GCalendarInstance {
         Ok(output)
     }
 
-    fn get_event(gcal: &GCCalendar, gcal_id: &str, gcal_event_id: &str) -> Result<Event, Error> {
-        let (_, result) = gcal
-            .events()
-            .get(gcal_id, gcal_event_id)
-            .doit()
-            .map_err(|e| {
-                debug!("get_event {} {}", gcal_id, gcal_event_id);
-                format_err!("{:#?}", e)
-            })?;
-        Ok(result)
+    pub async fn get_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<Event, Error> {
+        let mut params = EventsGetParams::default();
+        params.calendar_id = gcal_id.into();
+        params.event_id = gcal_event_id.into();
+        self.cal_events.get(&params).await
     }
 
-    pub fn insert_gcal_event(&self, gcal_id: &str, gcal_event: Event) -> Result<Event, Error> {
-        let gcal = self.gcal.lock();
-        let (_, result) = gcal
-            .events()
-            .insert(gcal_event, gcal_id)
-            .supports_attachments(true)
-            .doit()
-            .map_err(|e| {
-                error!("insert {}", gcal_id);
-                format_err!("{:#?}", e)
-            })?;
-        Ok(result)
-    }
-
-    pub fn update_gcal_event(
+    pub async fn insert_gcal_event(
         &self,
         gcal_id: &str,
         gcal_event: Event,
-    ) -> Result<Option<Event>, Error> {
+    ) -> Result<Event, Error> {
+        let mut params = EventsInsertParams::default();
+        params.calendar_id = gcal_id.into();
+        params.supports_attachments = Some(true);
+        self.cal_events.insert(&params, &gcal_event).await
+    }
+
+    pub async fn update_gcal_event(
+        &self,
+        gcal_id: &str,
+        gcal_event: Event,
+    ) -> Result<Event, Error> {
         let event_id = gcal_event
             .id
             .clone()
             .ok_or_else(|| format_err!("No event id"))?;
-        let gcal = self.gcal.lock();
-        if let Ok((_, result)) = gcal.events().update(gcal_event, gcal_id, &event_id).doit() {
-            Ok(Some(result))
-        } else {
-            debug!(
-                "update {} {} {:#?}",
-                gcal_id,
-                event_id,
-                Self::get_event(&gcal, gcal_id, &event_id).unwrap()
-            );
-            Ok(None)
-        }
+        let mut params = EventsUpdateParams::default();
+        params.calendar_id = gcal_id.into();
+        params.event_id = event_id.into();
+        self.cal_events.update(&params, &gcal_event).await
     }
 
-    pub fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
-        let gcal = self.gcal.lock();
-        gcal.events()
-            .delete(gcal_id, gcal_event_id)
-            .doit()
-            .map_err(|e| {
-                debug!("delete {} {}", gcal_id, gcal_event_id);
-                format_err!("{:#?}", e)
-            })?;
-        Ok(())
+    pub async fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
+        let mut params = EventsDeleteParams::default();
+        params.calendar_id = gcal_id.into();
+        params.event_id = gcal_event_id.into();
+        self.cal_events.delete(&params).await
     }
 }
 

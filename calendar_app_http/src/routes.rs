@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::collections::HashMap;
-use tokio::{sync::RwLock, task::spawn_blocking};
+use tokio::sync::RwLock;
 use url::Url;
 use warp::{Rejection, Reply};
 
@@ -39,11 +39,13 @@ pub async fn calendar_index(_: LoggedUser) -> WarpResult<impl Reply> {
 }
 
 pub async fn agenda(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
-    let body = agenda_body(&data.cal_sync).await?;
+    let body = tokio::task::spawn(async move { agenda_body(data.cal_sync).await })
+        .await
+        .unwrap()?;
     Ok(warp::reply::html(body))
 }
 
-async fn agenda_body(cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
@@ -150,12 +152,10 @@ async fn delete_event_body(
     {
         let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&cal_sync.pool).await?;
-        let gcal = cal_sync
+        cal_sync
             .gcal
-            .clone()
-            .ok_or_else(|| format_err!("No GCAL"))?;
-        spawn_blocking(move || gcal.delete_gcal_event(&payload.gcal_id, &payload.event_id))
-            .await??;
+            .delete_gcal_event(&payload.gcal_id, &payload.event_id)
+            .await?;
         body
     } else {
         "Event not deleted".to_string()
@@ -693,11 +693,7 @@ async fn create_calendar_event_body(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    let gcal = cal_sync
-        .gcal
-        .clone()
-        .ok_or_else(|| format_err!("No GCAL"))?;
-    spawn_blocking(move || gcal.insert_gcal_event(&gcal_id, event)).await??;
+    cal_sync.gcal.insert_gcal_event(&gcal_id, event).await?;
 
     Ok("Event Inserted".to_string())
 }

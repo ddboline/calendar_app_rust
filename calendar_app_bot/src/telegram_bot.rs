@@ -36,11 +36,11 @@ pub struct TelegramBot {
 }
 
 impl TelegramBot {
-    pub fn new(bot_token: &str, pool: &PgPool, config: &Config) -> Self {
+    pub async fn new(bot_token: &str, pool: &PgPool, config: &Config) -> Self {
         Self {
             api: Arc::new(Api::new(bot_token)),
             pool: pool.clone(),
-            cal_sync: Arc::new(CalendarSync::new(config.clone(), pool.clone())),
+            cal_sync: Arc::new(CalendarSync::new(config.clone(), pool.clone()).await),
         }
     }
 
