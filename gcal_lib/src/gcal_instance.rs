@@ -1,6 +1,6 @@
 use anyhow::{format_err, Error};
 use async_google_apis_common as common;
-use chrono::{DateTime, Utc};
+use chrono::{DateTime, MAX_DATETIME, MIN_DATETIME, Utc};
 use common::{
     yup_oauth2::{self, InstalledFlowAuthenticator},
     TlsClient,
@@ -12,7 +12,7 @@ use std::{
     path::Path,
     sync::Arc,
 };
-use tokio::sync::Mutex;
+use tokio::sync::Semaphore;
 
 use crate::calendar_v3_types::{
     CalendarList, CalendarListListParams, CalendarListService, CalendarScopes, Events,
@@ -31,6 +31,7 @@ fn https_client() -> TlsClient {
 pub struct GCalendarInstance {
     cal_list: Arc<CalendarListService>,
     cal_events: Arc<EventsService>,
+    rate_limit: Arc<Semaphore>,
 }
 
 impl GCalendarInstance {
@@ -77,6 +78,7 @@ impl GCalendarInstance {
         Ok(Self {
             cal_list: Arc::new(cal_list),
             cal_events: Arc::new(cal_events),
+            rate_limit: Arc::new(Semaphore::new(8)),
         })
     }
 
@@ -87,6 +89,7 @@ impl GCalendarInstance {
         if let Some(t) = next_page_token {
             params.page_token = Some(t.into());
         }
+        let _permit = self.rate_limit.acquire().await?;
         self.cal_list.list(&params).await
     }
 
@@ -118,9 +121,10 @@ impl GCalendarInstance {
     ) -> Result<Events, Error> {
         let mut params = EventsListParams::default();
         params.calendar_id = gcal_id.into();
-        params.time_min = min_time;
-        params.time_max = max_time;
+        params.time_min = Some(min_time.unwrap_or(MIN_DATETIME));
+        params.time_max = Some(max_time.unwrap_or(MAX_DATETIME));
         params.page_token = next_page_token.map(Into::into);
+        let _permit = self.rate_limit.acquire().await?;
         self.cal_events.list(&params).await
     }
 
@@ -157,6 +161,7 @@ impl GCalendarInstance {
         let mut params = EventsGetParams::default();
         params.calendar_id = gcal_id.into();
         params.event_id = gcal_event_id.into();
+        let _permit = self.rate_limit.acquire().await?;
         self.cal_events.get(&params).await
     }
 
@@ -168,6 +173,7 @@ impl GCalendarInstance {
         let mut params = EventsInsertParams::default();
         params.calendar_id = gcal_id.into();
         params.supports_attachments = Some(true);
+        let _permit = self.rate_limit.acquire().await?;
         self.cal_events.insert(&params, &gcal_event).await
     }
 
