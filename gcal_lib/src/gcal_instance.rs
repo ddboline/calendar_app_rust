@@ -1,6 +1,6 @@
 use anyhow::{format_err, Error};
 use async_google_apis_common as common;
-use chrono::{DateTime, MAX_DATETIME, MIN_DATETIME, Utc};
+use chrono::{DateTime, Utc, MAX_DATETIME, MIN_DATETIME};
 use common::{
     yup_oauth2::{self, InstalledFlowAuthenticator},
     TlsClient,
@@ -14,12 +14,15 @@ use std::{
 };
 use tokio::sync::Semaphore;
 
-use crate::calendar_v3_types::{
-    CalendarList, CalendarListListParams, CalendarListService, CalendarScopes, Events,
-    EventsDeleteParams, EventsGetParams, EventsInsertParams, EventsListParams, EventsService,
-    EventsUpdateParams,
-};
 pub use crate::calendar_v3_types::{CalendarListEntry, Event, EventDateTime};
+use crate::{
+    calendar_v3_types::{
+        CalendarList, CalendarListListParams, CalendarListService, CalendarScopes, Events,
+        EventsDeleteParams, EventsGetParams, EventsInsertParams, EventsListParams, EventsService,
+        EventsUpdateParams,
+    },
+    exponential_retry,
+};
 
 fn https_client() -> TlsClient {
     let conn = hyper_rustls::HttpsConnector::with_native_roots();
@@ -66,7 +69,8 @@ impl GCalendarInstance {
         let scopes = vec![
             CalendarScopes::CalendarReadonly,
             CalendarScopes::CalendarEventsReadonly,
-            CalendarScopes::Calendar, CalendarScopes::CalendarEvents
+            CalendarScopes::Calendar,
+            CalendarScopes::CalendarEvents,
         ];
 
         let mut cal_list = CalendarListService::new(https.clone(), auth.clone());
@@ -89,8 +93,11 @@ impl GCalendarInstance {
         if let Some(t) = next_page_token {
             params.page_token = Some(t.into());
         }
-        let _permit = self.rate_limit.acquire().await?;
-        self.cal_list.list(&params).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_list.list(&params).await
+        })
+        .await
     }
 
     pub async fn list_gcal_calendars(&self) -> Result<Vec<CalendarListEntry>, Error> {
@@ -124,8 +131,11 @@ impl GCalendarInstance {
         params.time_min = Some(min_time.unwrap_or(MIN_DATETIME));
         params.time_max = Some(max_time.unwrap_or(MAX_DATETIME));
         params.page_token = next_page_token.map(Into::into);
-        let _permit = self.rate_limit.acquire().await?;
-        self.cal_events.list(&params).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_events.list(&params).await
+        })
+        .await
     }
 
     pub async fn get_gcal_events(
@@ -161,8 +171,11 @@ impl GCalendarInstance {
         let mut params = EventsGetParams::default();
         params.calendar_id = gcal_id.into();
         params.event_id = gcal_event_id.into();
-        let _permit = self.rate_limit.acquire().await?;
-        self.cal_events.get(&params).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_events.get(&params).await
+        })
+        .await
     }
 
     pub async fn insert_gcal_event(
@@ -173,8 +186,11 @@ impl GCalendarInstance {
         let mut params = EventsInsertParams::default();
         params.calendar_id = gcal_id.into();
         params.supports_attachments = Some(true);
-        let _permit = self.rate_limit.acquire().await?;
-        self.cal_events.insert(&params, &gcal_event).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_events.insert(&params, &gcal_event).await
+        })
+        .await
     }
 
     pub async fn update_gcal_event(
@@ -189,14 +205,22 @@ impl GCalendarInstance {
         let mut params = EventsUpdateParams::default();
         params.calendar_id = gcal_id.into();
         params.event_id = event_id.into();
-        self.cal_events.update(&params, &gcal_event).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_events.update(&params, &gcal_event).await
+        })
+        .await
     }
 
     pub async fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
         let mut params = EventsDeleteParams::default();
         params.calendar_id = gcal_id.into();
         params.event_id = gcal_event_id.into();
-        self.cal_events.delete(&params).await
+        exponential_retry(|| async {
+            let _permit = self.rate_limit.acquire().await?;
+            self.cal_events.delete(&params).await
+        })
+        .await
     }
 }
 
