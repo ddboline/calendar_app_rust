@@ -276,10 +276,11 @@ mod tests {
         )
         .await?;
         let events = gcal
-            .get_gcal_events(
+            .gcal_events(
                 "ddboline@gmail.com",
                 Some(Utc::now() - Duration::days(10)),
                 Some(Utc::now() + Duration::days(10)),
+                None,
             )
             .await?;
         println!("{:#?}", events);
