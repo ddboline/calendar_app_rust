@@ -220,7 +220,7 @@ impl GCalendarInstance {
     }
 
     pub async fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
-        let mut params = EventsDeleteParams {
+        let params = EventsDeleteParams {
             calendar_id: gcal_id.into(),
             event_id: gcal_event_id.into(),
             ..EventsDeleteParams::default()
