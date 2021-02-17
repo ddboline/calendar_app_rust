@@ -246,6 +246,7 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
+    use chrono::{Duration, Utc};
 
     use calendar_app_lib::config::Config;
 
@@ -258,7 +259,8 @@ mod tests {
             &config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
-        ).await?;
+        )
+        .await?;
         let cal_list = gcal.list_gcal_calendars().await?;
         assert_eq!(cal_list.len(), 20);
         Ok(())
@@ -271,15 +273,20 @@ mod tests {
             &config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
-        ).await?;
+        )
+        .await?;
         let cal_list = gcal.list_gcal_calendars().await?;
         let cal_id = cal_list[0].id.as_ref().unwrap();
-        let events = gcal.get_gcal_events(cal_id.as_str(), None, None).await?;
+        let events = gcal
+            .get_gcal_events(
+                cal_id.as_str(),
+                Some(Utc::now() - Duration::days(10)),
+                Some(Utc::now() + Duration::days(10)),
+            )
+            .await?;
         println!("{:#?}", events);
         println!("{}", events.len());
         assert!(false);
         Ok(())
     }
-
-
 }
