@@ -275,8 +275,8 @@ mod tests {
         let cal_list = gcal.list_gcal_calendars().await?;
         let cal_id = cal_list[0].id.as_ref().unwrap();
         let events = gcal.get_gcal_events(cal_id.as_str(), None, None).await?;
-        println("{:#?}", events);
-        println("{}", events.len());
+        println!("{:#?}", events);
+        println!("{}", events.len());
         assert!(false);
         Ok(())
     }
