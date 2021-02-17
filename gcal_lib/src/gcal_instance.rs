@@ -275,12 +275,9 @@ mod tests {
             "ddboline@gmail.com",
         )
         .await?;
-        let cal_list = gcal.list_gcal_calendars().await?;
-        let cal_id = cal_list[0].id.as_ref().unwrap();
-        println!("{:#?}", cal_list[0]);
         let events = gcal
             .get_gcal_events(
-                cal_id.as_str(),
+                "ddboline@gmail.com",
                 Some(Utc::now() - Duration::days(10)),
                 Some(Utc::now() + Duration::days(10)),
             )
