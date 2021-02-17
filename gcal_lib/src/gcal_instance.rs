@@ -209,7 +209,7 @@ impl GCalendarInstance {
             .ok_or_else(|| format_err!("No event id"))?;
         let params = EventsUpdateParams {
             calendar_id: gcal_id.into(),
-            event_id: event_id.into(),
+            event_id,
             ..EventsUpdateParams::default()
         };
         exponential_retry(|| async {
