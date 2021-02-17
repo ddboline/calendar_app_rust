@@ -290,4 +290,25 @@ mod tests {
         assert!(events.len() > 0);
         Ok(())
     }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_insert_delete_gcal_event() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let gcal = GCalendarInstance::new(
+            &config.gcal_token_path,
+            &config.gcal_secret_file,
+            "ddboline@gmail.com",
+        )
+        .await?;
+
+        let event = calendar_app_lib::calendar::Event::new("ddboline@gmail.com", "Test Event", Utc::now() + Duration::days(1), Utc::now() + Duration::days(1) + Duration::hours(1));
+        let (cal_id, event) = event.to_gcal_event()?;
+        let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
+        let event_id = event.event_id.clone();
+        let event = calendar_app_lib::calendar::Event::from_gcal_event(&event, cal_id)?;
+        assert_eq!(event.name.as_str(), "Test Event");
+        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str()).await?;
+        Ok(())
+    }
 }
