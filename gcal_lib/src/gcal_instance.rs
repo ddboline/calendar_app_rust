@@ -285,6 +285,7 @@ mod tests {
             )
             .await?;
         println!("{:#?}", events);
+        println!("{}", events.len());
         assert!(events.len() > 0);
         assert!(false);
         Ok(())
