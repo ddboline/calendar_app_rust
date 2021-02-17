@@ -258,7 +258,7 @@ mod tests {
             config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
-        )?;
+        ).await?;
         let cal_list = gcal.list_gcal_calendars().await?;
         println!("{:?}", cal_list);
         assert!(cal_list.len() > 0);
