@@ -647,7 +647,7 @@ impl InsertShortenedLinks {
             let base_hasher = blake3::Hasher::new();
             let output = hash_reader(&base_hasher, original_url.as_bytes())?;
             let len = blake3::OUT_LEN as u64;
-            let output = write_hex_output(output, len)?;
+            let output = write_hex_output(output, len);
 
             let mut short_chars = 4;
 
@@ -656,9 +656,8 @@ impl InsertShortenedLinks {
                     ShortenedLinks::get_by_shortened_url(&output[..short_chars], pool).await?;
                 if shortened.is_empty() {
                     break;
-                } else {
-                    short_chars += 1;
                 }
+                short_chars += 1;
             }
 
             let shortened_url = &output[..short_chars];
@@ -687,7 +686,7 @@ impl InsertShortenedLinks {
     }
 }
 
-fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<StackString, Error> {
+fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> StackString {
     // Encoding multiples of the block size is most efficient.
     let mut block = [0; blake3::BLOCK_LEN];
     let mut result = Vec::new();
@@ -699,7 +698,7 @@ fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> Result<St
         result.push(hex_str.to_string());
         len -= take_bytes;
     }
-    Ok(result.join("").into())
+    result.join("").into()
 }
 
 fn copy_wide(mut reader: impl io::Read, hasher: &mut blake3::Hasher) -> Result<u64, Error> {

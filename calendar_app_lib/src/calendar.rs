@@ -231,11 +231,7 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
                     )
             })
         },
-        |date_time| {
-            DateTime::parse_from_rfc3339(date_time)
-                .ok()
-                .map(|d| d.with_timezone(&Utc))
-        },
+        |date_time| Some(*date_time),
     )
 }
 
@@ -299,11 +295,11 @@ impl Event {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
-                date_time: Some(self.start_time.to_rfc3339()),
+                date_time: Some(self.start_time),
                 ..EventDateTime::default()
             }),
             end: Some(EventDateTime {
-                date_time: Some(self.end_time.to_rfc3339()),
+                date_time: Some(self.end_time),
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),
@@ -371,10 +367,13 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Error;
     use chrono::{Duration, Utc};
     use log::debug;
 
-    use crate::calendar::Event;
+    use gcal_lib::gcal_instance::GCalendarInstance;
+
+    use crate::{calendar::Event, config::Config};
 
     #[test]
     fn test_new_evet() {
@@ -386,5 +385,32 @@ mod tests {
         );
         debug!("{:#?}", event);
         assert_eq!(&event.name, "Test event");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_insert_delete_gcal_event() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let gcal = GCalendarInstance::new(
+            &config.gcal_token_path,
+            &config.gcal_secret_file,
+            "ddboline@gmail.com",
+        )
+        .await?;
+
+        let event = Event::new(
+            "ddboline@gmail.com",
+            "Test Event",
+            Utc::now() + Duration::days(1),
+            Utc::now() + Duration::days(1) + Duration::hours(1),
+        );
+        let (cal_id, event) = event.to_gcal_event()?;
+        let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
+        let event_id = event.id.clone().unwrap();
+        let event = Event::from_gcal_event(&event, cal_id.as_str())?;
+        assert_eq!(event.name.as_str(), "Test Event");
+        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str())
+            .await?;
+        Ok(())
     }
 }
