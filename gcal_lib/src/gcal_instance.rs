@@ -128,8 +128,8 @@ impl GCalendarInstance {
     ) -> Result<Events, Error> {
         let mut params = EventsListParams::default();
         params.calendar_id = gcal_id.into();
-        params.time_min = Some(min_time.unwrap_or(MIN_DATETIME));
-        params.time_max = Some(max_time.unwrap_or(MAX_DATETIME));
+        params.time_min = Some(min_time.unwrap_or(MIN_DATETIME).map(DateTime::to_rfc3339));
+        params.time_max = Some(max_time.unwrap_or(MAX_DATETIME).map(DateTime::to_rfc3339));
         params.page_token = next_page_token.map(Into::into);
         // exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
