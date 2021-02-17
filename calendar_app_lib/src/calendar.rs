@@ -369,7 +369,11 @@ impl Event {
 mod tests {
     use chrono::{Duration, Utc};
     use log::debug;
+    use anyhow::Error;
 
+    use gcal_lib::gcal_instance::GCalendarInstance;
+
+    use crate::config::Config;
     use crate::calendar::Event;
 
     #[test]
@@ -382,5 +386,26 @@ mod tests {
         );
         debug!("{:#?}", event);
         assert_eq!(&event.name, "Test event");
+    }
+
+    #[tokio::test]
+    #[ignore]
+    async fn test_insert_delete_gcal_event() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let gcal = GCalendarInstance::new(
+            &config.gcal_token_path,
+            &config.gcal_secret_file,
+            "ddboline@gmail.com",
+        )
+        .await?;
+
+        let event = Event::new("ddboline@gmail.com", "Test Event", Utc::now() + Duration::days(1), Utc::now() + Duration::days(1) + Duration::hours(1));
+        let (cal_id, event) = event.to_gcal_event()?;
+        let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
+        let event_id = event.id.clone().unwrap();
+        let event = Event::from_gcal_event(&event, cal_id.as_str())?;
+        assert_eq!(event.name.as_str(), "Test Event");
+        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str()).await?;
+        Ok(())
     }
 }
