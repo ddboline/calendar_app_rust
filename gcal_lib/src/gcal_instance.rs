@@ -245,6 +245,8 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Error;
+
     use calendar_app_lib::config::Config;
 
     use crate::gcal_instance::GCalendarInstance;
@@ -252,7 +254,11 @@ mod tests {
     #[tokio::test]
     async fn test_list_calendars() -> Result<(), Error> {
         let config = Config::init_config()?;
-        let gcal = GCalendarInstance::new(config.gcal_token_path, &config.gcal_secret_file, "ddboline@gmail.com")?;
+        let gcal = GCalendarInstance::new(
+            config.gcal_token_path,
+            &config.gcal_secret_file,
+            "ddboline@gmail.com",
+        )?;
         let cal_list = gcal.list_gcal_calendars().await?;
         println!("{:?}", cal_list);
         assert!(cal_list.len() > 0);
