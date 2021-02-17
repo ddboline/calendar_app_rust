@@ -247,6 +247,7 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
 mod tests {
     use anyhow::Error;
     use chrono::{Duration, Utc};
+    use log::debug;
 
     use calendar_app_lib::config::Config;
 
