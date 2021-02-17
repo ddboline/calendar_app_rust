@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{format_err, Error};
 use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use stack_string::StackString;
@@ -126,7 +126,12 @@ impl CalendarCliOpts {
                     {
                         event.delete(&cal_sync.pool).await?;
                     }
-                    cal_sync.gcal.delete_gcal_event(&gcal_id, &event_id).await?;
+                    cal_sync
+                        .gcal
+                        .as_ref()
+                        .ok_or_else(|| format_err!("No gcal instance found"))?
+                        .delete_gcal_event(&gcal_id, &event_id)
+                        .await?;
                 };
             }
             CalendarActions::ListCalendars => {

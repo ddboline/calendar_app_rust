@@ -154,6 +154,8 @@ async fn delete_event_body(
         event.delete(&cal_sync.pool).await?;
         cal_sync
             .gcal
+            .as_ref()
+            .ok_or_else(|| format_err!("No gcal instance found"))?
             .delete_gcal_event(&payload.gcal_id, &payload.event_id)
             .await?;
         body
@@ -693,7 +695,12 @@ async fn create_calendar_event_body(
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
-    cal_sync.gcal.insert_gcal_event(&gcal_id, event).await?;
+    cal_sync
+        .gcal
+        .as_ref()
+        .ok_or_else(|| format_err!("No gcal instance found"))?
+        .insert_gcal_event(&gcal_id, event)
+        .await?;
 
     Ok("Event Inserted".to_string())
 }

@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{format_err, Error};
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
@@ -22,7 +22,7 @@ use crate::{
 #[derive(Clone)]
 pub struct CalendarSync {
     pub config: Config,
-    pub gcal: GCalendarInstance,
+    pub gcal: Option<GCalendarInstance>,
     pub pool: PgPool,
     pub stdout: StdoutChannel,
 }
@@ -35,7 +35,7 @@ impl CalendarSync {
             "ddboline@gmail.com",
         )
         .await
-        .expect("Failed to get gcal instance");
+        .ok();
         Self {
             config,
             gcal,
@@ -45,7 +45,12 @@ impl CalendarSync {
     }
 
     pub async fn sync_calendar_list(&self) -> Result<Vec<InsertCalendarList>, Error> {
-        let calendar_list = self.gcal.list_gcal_calendars().await?;
+        let calendar_list = self
+            .gcal
+            .as_ref()
+            .ok_or_else(|| format_err!("No gcal instance found"))?
+            .list_gcal_calendars()
+            .await?;
 
         #[allow(clippy::filter_map)]
         let futures = calendar_list
@@ -112,7 +117,13 @@ impl CalendarSync {
                 let (gcal_id, event) = event.to_gcal_event()?;
                 if let Some(gcal_event) = event_map.get(event_id) {
                     if !compare_gcal_events(gcal_event, &event) && update {
-                        Ok(Some(self.gcal.update_gcal_event(&gcal_id, event).await?))
+                        Ok(Some(
+                            self.gcal
+                                .as_ref()
+                                .ok_or_else(|| format_err!("No gcal instance found"))?
+                                .update_gcal_event(&gcal_id, event)
+                                .await?,
+                        ))
                     } else {
                         Ok(None)
                     }
@@ -120,6 +131,8 @@ impl CalendarSync {
                     let event_id = item.event_id.clone();
                     Ok(Some(
                         self.gcal
+                            .as_ref()
+                            .ok_or_else(|| format_err!("No gcal instance found"))?
                             .insert_gcal_event(&gcal_id, event)
                             .await
                             .map_err(|e| {
@@ -143,7 +156,12 @@ impl CalendarSync {
         gcal_id: &str,
         edit: bool,
     ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
-        let calendar_events = self.gcal.get_gcal_events(&gcal_id, None, None).await?;
+        let calendar_events = self
+            .gcal
+            .as_ref()
+            .ok_or_else(|| format_err!("No gcal instance found"))?
+            .get_gcal_events(&gcal_id, None, None)
+            .await?;
         let exported = if edit {
             let database_events =
                 CalendarCache::get_by_gcal_id_datetime(gcal_id, None, None, &self.pool).await?;
@@ -165,6 +183,8 @@ impl CalendarSync {
     ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
         let calendar_events = self
             .gcal
+            .as_ref()
+            .ok_or_else(|| format_err!("No gcal instance found"))?
             .get_gcal_events(&gcal_id, Some(Utc::now()), None)
             .await?;
         let exported = if edit {
