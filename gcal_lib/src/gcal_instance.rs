@@ -26,8 +26,7 @@ use crate::{
 
 fn https_client() -> TlsClient {
     let conn = hyper_rustls::HttpsConnector::with_native_roots();
-    let cl = hyper::Client::builder().build(conn);
-    cl
+    hyper::Client::builder().build(conn)
 }
 
 #[derive(Clone)]
@@ -87,12 +86,12 @@ impl GCalendarInstance {
     }
 
     async fn gcal_calendars(&self, next_page_token: Option<&str>) -> Result<CalendarList, Error> {
-        let mut params = CalendarListListParams::default();
-        params.show_deleted = Some(true);
-        params.show_hidden = Some(true);
-        if let Some(t) = next_page_token {
-            params.page_token = Some(t.into());
-        }
+        let params = CalendarListListParams {
+            show_deleted: Some(true),
+            show_hidden: Some(true),
+            page_token: next_page_token.map(|t| t.into()),
+            ..CalendarListListParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_list.list(&params).await
@@ -126,11 +125,13 @@ impl GCalendarInstance {
         max_time: Option<DateTime<Utc>>,
         next_page_token: Option<&str>,
     ) -> Result<Events, Error> {
-        let mut params = EventsListParams::default();
-        params.calendar_id = gcal_id.into();
-        params.time_min = Some(min_time.unwrap_or(MIN_DATETIME).to_rfc3339());
-        params.time_max = Some(max_time.unwrap_or(MAX_DATETIME).to_rfc3339());
-        params.page_token = next_page_token.map(Into::into);
+        let params = EventsListParams {
+            calendar_id: gcal_id.into(),
+            time_min: Some(min_time.unwrap_or(MIN_DATETIME).to_rfc3339()),
+            time_max: Some(max_time.unwrap_or(MAX_DATETIME).to_rfc3339()),
+            page_token: next_page_token.map(Into::into),
+            ..EventsListParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.list(&params).await
@@ -168,9 +169,11 @@ impl GCalendarInstance {
     }
 
     pub async fn get_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<Event, Error> {
-        let mut params = EventsGetParams::default();
-        params.calendar_id = gcal_id.into();
-        params.event_id = gcal_event_id.into();
+        let params = EventsGetParams {
+            calendar_id: gcal_id.into(),
+            event_id: gcal_event_id.into(),
+            ..EventsGetParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.get(&params).await
@@ -183,9 +186,11 @@ impl GCalendarInstance {
         gcal_id: &str,
         gcal_event: Event,
     ) -> Result<Event, Error> {
-        let mut params = EventsInsertParams::default();
-        params.calendar_id = gcal_id.into();
-        params.supports_attachments = Some(true);
+        let params = EventsInsertParams {
+            calendar_id: gcal_id.into(),
+            supports_attachments: Some(true),
+            ..EventsInsertParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.insert(&params, &gcal_event).await
@@ -202,9 +207,11 @@ impl GCalendarInstance {
             .id
             .clone()
             .ok_or_else(|| format_err!("No event id"))?;
-        let mut params = EventsUpdateParams::default();
-        params.calendar_id = gcal_id.into();
-        params.event_id = event_id.into();
+        let params = EventsUpdateParams {
+            calendar_id: gcal_id.into(),
+            event_id: event_id.into(),
+            ..EventsUpdateParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.update(&params, &gcal_event).await
@@ -213,9 +220,11 @@ impl GCalendarInstance {
     }
 
     pub async fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
-        let mut params = EventsDeleteParams::default();
-        params.calendar_id = gcal_id.into();
-        params.event_id = gcal_event_id.into();
+        let mut params = EventsDeleteParams {
+            calendar_id: gcal_id.into(),
+            event_id: gcal_event_id.into(),
+            ..EventsDeleteParams::default()
+        };
         exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.delete(&params).await

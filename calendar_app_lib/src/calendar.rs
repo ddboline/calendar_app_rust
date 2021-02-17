@@ -367,14 +367,13 @@ impl Event {
 
 #[cfg(test)]
 mod tests {
+    use anyhow::Error;
     use chrono::{Duration, Utc};
     use log::debug;
-    use anyhow::Error;
 
     use gcal_lib::gcal_instance::GCalendarInstance;
 
-    use crate::config::Config;
-    use crate::calendar::Event;
+    use crate::{calendar::Event, config::Config};
 
     #[test]
     fn test_new_evet() {
@@ -399,13 +398,19 @@ mod tests {
         )
         .await?;
 
-        let event = Event::new("ddboline@gmail.com", "Test Event", Utc::now() + Duration::days(1), Utc::now() + Duration::days(1) + Duration::hours(1));
+        let event = Event::new(
+            "ddboline@gmail.com",
+            "Test Event",
+            Utc::now() + Duration::days(1),
+            Utc::now() + Duration::days(1) + Duration::hours(1),
+        );
         let (cal_id, event) = event.to_gcal_event()?;
         let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
         let event_id = event.id.clone().unwrap();
         let event = Event::from_gcal_event(&event, cal_id.as_str())?;
         assert_eq!(event.name.as_str(), "Test Event");
-        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str()).await?;
+        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str())
+            .await?;
         Ok(())
     }
 }
