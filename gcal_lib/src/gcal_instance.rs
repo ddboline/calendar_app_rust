@@ -43,7 +43,7 @@ impl GCalendarInstance {
         gcal_secret_file: &Path,
         session_name: &str,
     ) -> Result<Self, Error> {
-        println!("{:?}", gcal_secret_file);
+        debug!("{:?}", gcal_secret_file);
         let https = https_client();
         let sec = yup_oauth2::read_application_secret(gcal_secret_file).await?;
 
@@ -55,7 +55,7 @@ impl GCalendarInstance {
             create_dir_all(parent)?;
         }
 
-        println!("{:?}", token_file);
+        debug!("{:?}", token_file);
         let auth = InstalledFlowAuthenticator::builder(
             sec,
             common::yup_oauth2::InstalledFlowReturnMethod::HTTPRedirect,
@@ -284,8 +284,8 @@ mod tests {
                 Some(Utc::now() + Duration::days(10)),
             )
             .await?;
-        println!("{:#?}", events);
-        println!("{}", events.len());
+        debug!("{:#?}", events);
+        debug!("{}", events.len());
         assert!(events.len() > 0);
         assert!(false);
         Ok(())
