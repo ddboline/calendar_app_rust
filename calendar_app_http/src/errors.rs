@@ -7,7 +7,7 @@ use std::{convert::Infallible, fmt::Debug};
 use thiserror::Error;
 use tokio::task::JoinError;
 use warp::{
-    reject::{MissingCookie, Reject},
+    reject::{InvalidHeader, MissingCookie, Reject},
     Rejection, Reply,
 };
 
