@@ -131,11 +131,11 @@ impl GCalendarInstance {
         params.time_min = Some(min_time.unwrap_or(MIN_DATETIME).to_rfc3339());
         params.time_max = Some(max_time.unwrap_or(MAX_DATETIME).to_rfc3339());
         params.page_token = next_page_token.map(Into::into);
-        // exponential_retry(|| async {
+        exponential_retry(|| async {
             let _permit = self.rate_limit.acquire().await?;
             self.cal_events.list(&params).await
-        // })
-        // .await
+        })
+        .await
     }
 
     pub async fn get_gcal_events(
@@ -276,14 +276,14 @@ mod tests {
         )
         .await?;
         let events = gcal
-            .gcal_events(
+            .get_gcal_events(
                 "ddboline@gmail.com",
                 Some(Utc::now() - Duration::days(10)),
                 Some(Utc::now() + Duration::days(10)),
-                None,
             )
             .await?;
         println!("{:#?}", events);
+        assert!(events.len() > 0);
         assert!(false);
         Ok(())
     }
