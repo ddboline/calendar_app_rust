@@ -288,7 +288,6 @@ mod tests {
         debug!("{:#?}", events);
         debug!("{}", events.len());
         assert!(events.len() > 0);
-        assert!(false);
         Ok(())
     }
 }
