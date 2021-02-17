@@ -255,7 +255,7 @@ mod tests {
     async fn test_list_calendars() -> Result<(), Error> {
         let config = Config::init_config()?;
         let gcal = GCalendarInstance::new(
-            config.gcal_token_path,
+            &config.gcal_token_path,
             &config.gcal_secret_file,
             "ddboline@gmail.com",
         ).await?;
