@@ -242,3 +242,20 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
         && (event0.description == event1.description)
         && (event0.location == event1.location)
 }
+
+#[cfg(test)]
+mod tests {
+    use calendar_app_lib::config::Config;
+
+    use crate::gcal_instance::GCalendarInstance;
+
+    #[tokio::test]
+    async fn test_list_calendars() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let gcal = GCalendarInstance::new(config.gcal_token_path, &config.gcal_secret_file, "ddboline@gmail.com")?;
+        let cal_list = gcal.list_gcal_calendars().await?;
+        println!("{:?}", cal_list);
+        assert!(cal_list.len() > 0);
+        Ok(())
+    }
+}
