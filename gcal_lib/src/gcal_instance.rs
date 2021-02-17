@@ -260,8 +260,26 @@ mod tests {
             "ddboline@gmail.com",
         ).await?;
         let cal_list = gcal.list_gcal_calendars().await?;
-        println!("{:?}", cal_list);
-        assert!(cal_list.len() > 0);
+        assert_eq!(cal_list.len(), 20);
         Ok(())
     }
+
+    #[tokio::test]
+    async fn test_get_gcal_events() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let gcal = GCalendarInstance::new(
+            &config.gcal_token_path,
+            &config.gcal_secret_file,
+            "ddboline@gmail.com",
+        ).await?;
+        let cal_list = gcal.list_gcal_calendars().await?;
+        let cal_id = cal_list[0].id.as_ref().unwrap();
+        let events = gcal.get_gcal_events(cal_id.as_str(), None, None).await?;
+        println("{:#?}", events);
+        println("{}", events.len());
+        assert!(false);
+        Ok(())
+    }
+
+
 }
