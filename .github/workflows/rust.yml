@@ -25,6 +25,9 @@ jobs:
     - uses: actions/checkout@v2
     - name: Install deps
       run: |
+        mkdir -p ${HOME}/.config/calendar_app_rust ${HOME}/.gcal && \
+        echo ${{secrets.CLIENT_SECRETS_JSON}} > ${HOME}/.config/calendar_app_rust/client_secrets.json && \
+        echo ${{secrets.DDBOLINE_AT_GMAIL_COM_JSON}} > ${HOME}/.gcal/ddboline\@gmail.com && \
         sudo apt-get update && \
         sudo apt-get install libpq-dev && \
         rustup update && \
@@ -38,9 +41,6 @@ jobs:
 
     - name: Run tests / generate coverage report
       run: |
-        mkdir -p ${HOME}/.config/calendar_app_rust
-        echo ${{secrets.CLIENT_SECRETS_JSON}} > ${GCAL_SECRET_FILE} && \
-        echo ${{secrets.DDBOLINE_AT_GMAIL_COM_JSON}} > ${GCAL_TOKEN_PATH} && \
         diesel database setup && \
         cargo test --all --verbose && \
         cargo install cargo-tarpaulin && \
