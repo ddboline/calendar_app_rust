@@ -3539,14 +3539,16 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC)
+                    .to_string()
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC)
+                    .to_string()
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {
