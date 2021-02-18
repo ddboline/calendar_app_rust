@@ -268,6 +268,14 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
             } else {
                 "".to_string()
             };
+            let start_time = match cal_sync.config.default_time_zone {
+                Some(tz) => {
+                    let tz: Tz = tz.into();
+                    event.start_time.with_timezone(&tz).to_string()
+                },
+                None => event.start_time.with_timezone(&Local).to_string(),
+            };
+
             format!(r#"
                     <tr text-style="center">
                     <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
@@ -277,7 +285,7 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
                     </tr>
                 "#,
                 name=event.name,
-                start=event.start_time.with_timezone(&Local),
+                start=start_time,
                 end=event.end_time.with_timezone(&Local),
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
