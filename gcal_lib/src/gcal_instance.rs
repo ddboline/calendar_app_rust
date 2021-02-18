@@ -263,7 +263,6 @@ mod tests {
     use crate::gcal_instance::GCalendarInstance;
 
     #[tokio::test]
-    #[ignore]
     async fn test_list_calendars() -> Result<(), Error> {
         let config = Config::init_config()?;
         let gcal = GCalendarInstance::new(

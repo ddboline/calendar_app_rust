@@ -38,12 +38,17 @@ jobs:
 
     - name: Run tests / generate coverage report
       run: |
+        mkdir -p ${HOME}/.config/calendar_app_rust
+        echo ${{secrets.CLIENT_SECRETS_JSON}} > ${GCAL_SECRET_FILE} && \
+        echo ${{secrets.DDBOLINE_AT_GMAIL_COM_JSON}} > ${GCAL_TOKEN_PATH} && \
         diesel database setup && \
         cargo test --all --verbose && \
         cargo install cargo-tarpaulin && \
         cargo tarpaulin --verbose --all-features --workspace --out Xml
       env:
         DATABASE_URL: postgresql://postgres:2UtcMAAvNuBHPqK9@localhost:5432/calendar_app_cache
+        GCAL_SECRET_FILE: ${HOME}/.config/calendar_app_rust/client_secrets.json
+        GCAL_TOKEN_PATH: ${HOME}/.gcal
 
     - name: Upload to codecov.io
       uses: codecov/codecov-action@v1.0.2

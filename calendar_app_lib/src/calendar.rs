@@ -388,7 +388,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_insert_delete_gcal_event() -> Result<(), Error> {
         let config = Config::init_config()?;
         let gcal = GCalendarInstance::new(
