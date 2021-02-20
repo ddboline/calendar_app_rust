@@ -40,7 +40,7 @@ jobs:
       run: |
         mkdir -p /tmp/.config/calendar_app_rust /tmp/.gcal && \
         echo -n "${{secrets.CLIENT_SECRETS_JSON}}" > /tmp/.config/calendar_app_rust/client_secrets.json && \
-        echo -n "${{secrets.DDBOLINE_AT_GMAIL_COM_JSON}}" > /tmp/.gcal/ddboline@gmail.com && \
+        echo -n "${{secrets.DDBOLINE_AT_GMAIL_COM_JSON}}" > /tmp/.gcal/ddboline@gmail.com.json && \
         diesel database setup && \
         cargo test --all --verbose && \
         cargo install cargo-tarpaulin && \
