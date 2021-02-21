@@ -277,7 +277,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_gcal_events() -> Result<(), Error> {
         let config = Config::init_config()?;
         let gcal = GCalendarInstance::new(
