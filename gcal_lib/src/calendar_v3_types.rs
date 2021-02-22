@@ -2742,7 +2742,7 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.show_deleted {
@@ -2812,7 +2812,7 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.max_attendees {
@@ -3313,7 +3313,7 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.q {
@@ -3362,7 +3362,7 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.max_attendees {
@@ -3669,7 +3669,7 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.page_token {
@@ -3690,7 +3690,7 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.show_deleted {
