@@ -3024,7 +3024,7 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.order_by {
@@ -3101,7 +3101,7 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         Ok(())
@@ -3251,14 +3251,14 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.always_include_email {
@@ -3421,7 +3421,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMin is set, timeMax must be greater
     /// than timeMin.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<String>,
+    pub time_max: Option<DateTime<Utc>>,
     /// DateTime: Lower bound (exclusive) for an event's end time to filter by.
     /// Optional. The default is not to filter by end time. Must be an RFC3339
     /// timestamp with mandatory time zone offset, for example,
@@ -3429,7 +3429,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMax is set, timeMin must be smaller
     /// than timeMax.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<String>,
+    pub time_min: Option<DateTime<Utc>>,
     /// Specifies event ID in the iCalendar format to be included in the
     /// response. Optional.
     #[serde(rename = "iCalUID")]
@@ -3539,14 +3539,14 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {

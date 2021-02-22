@@ -127,8 +127,8 @@ impl GCalendarInstance {
     ) -> Result<Events, Error> {
         let params = EventsListParams {
             calendar_id: gcal_id.into(),
-            time_min: Some(min_time.unwrap_or(MIN_DATETIME).to_rfc3339()),
-            time_max: Some(max_time.unwrap_or(MAX_DATETIME).to_rfc3339()),
+            time_min: Some(min_time.unwrap_or(MIN_DATETIME)),
+            time_max: Some(max_time.unwrap_or(MAX_DATETIME)),
             page_token: next_page_token.map(Into::into),
             ..EventsListParams::default()
         };
