@@ -23,6 +23,7 @@ use crate::{
     },
     exponential_retry,
 };
+use crate::rate_limiter::RateLimiter;
 
 fn https_client() -> TlsClient {
     let conn = hyper_rustls::HttpsConnector::with_native_roots();
@@ -33,7 +34,7 @@ fn https_client() -> TlsClient {
 pub struct GCalendarInstance {
     cal_list: Arc<CalendarListService>,
     cal_events: Arc<EventsService>,
-    rate_limit: Arc<Semaphore>,
+    rate_limit: Arc<RateLimiter>,
 }
 
 impl GCalendarInstance {
@@ -81,7 +82,7 @@ impl GCalendarInstance {
         Ok(Self {
             cal_list: Arc::new(cal_list),
             cal_events: Arc::new(cal_events),
-            rate_limit: Arc::new(Semaphore::new(8)),
+            rate_limit: Arc::new(RateLimiter::new(600, 60000)),
         })
     }
 
@@ -93,7 +94,7 @@ impl GCalendarInstance {
             ..CalendarListListParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_list.list(&params).await
         })
         .await
@@ -133,7 +134,7 @@ impl GCalendarInstance {
             ..EventsListParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_events.list(&params).await
         })
         .await
@@ -175,7 +176,7 @@ impl GCalendarInstance {
             ..EventsGetParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_events.get(&params).await
         })
         .await
@@ -192,7 +193,7 @@ impl GCalendarInstance {
             ..EventsInsertParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_events.insert(&params, &gcal_event).await
         })
         .await
@@ -213,7 +214,7 @@ impl GCalendarInstance {
             ..EventsUpdateParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_events.update(&params, &gcal_event).await
         })
         .await
@@ -226,7 +227,7 @@ impl GCalendarInstance {
             ..EventsDeleteParams::default()
         };
         exponential_retry(|| async {
-            let _permit = self.rate_limit.acquire().await?;
+            self.rate_limit.acquire().await;
             self.cal_events.delete(&params).await
         })
         .await

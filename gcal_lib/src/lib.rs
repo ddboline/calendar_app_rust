@@ -13,6 +13,7 @@
 
 pub mod calendar_v3_types;
 pub mod gcal_instance;
+pub mod rate_limiter;
 
 use anyhow::{format_err, Error};
 use log::error;
