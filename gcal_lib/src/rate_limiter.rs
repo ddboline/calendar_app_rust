@@ -43,17 +43,16 @@ impl RateLimiter {
             }
             if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
                 return;
-            } else {
-                self.current_count.fetch_add(1, Ordering::SeqCst);
-                let remaining = self.until.load(Ordering::SeqCst) as i64 - Utc::now().timestamp_millis();
-                if remaining > 0 {
-                    self.number_of_waits.fetch_add(1, Ordering::SeqCst);
-                    sleep(Duration::from_millis(remaining as u64)).await;
-                    self.total_wait_ms.fetch_add(remaining as usize, Ordering::SeqCst);
-                }
-                if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
-                    return;
-                }
+            }
+            self.current_count.fetch_add(1, Ordering::SeqCst);
+            let remaining = self.until.load(Ordering::SeqCst) as i64 - Utc::now().timestamp_millis();
+            if remaining > 0 {
+                self.number_of_waits.fetch_add(1, Ordering::SeqCst);
+                sleep(Duration::from_millis(remaining as u64)).await;
+                self.total_wait_ms.fetch_add(remaining as usize, Ordering::SeqCst);
+            }
+            if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
+                return;
             }
         }
     }
