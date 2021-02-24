@@ -12,7 +12,6 @@ use std::{
     path::Path,
     sync::Arc,
 };
-use tokio::sync::Semaphore;
 
 pub use crate::calendar_v3_types::{CalendarListEntry, Event, EventDateTime};
 use crate::{
@@ -22,8 +21,8 @@ use crate::{
         EventsUpdateParams,
     },
     exponential_retry,
+    rate_limiter::RateLimiter,
 };
-use crate::rate_limiter::RateLimiter;
 
 fn https_client() -> TlsClient {
     let conn = hyper_rustls::HttpsConnector::with_native_roots();

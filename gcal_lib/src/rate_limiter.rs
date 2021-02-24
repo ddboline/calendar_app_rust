@@ -1,9 +1,10 @@
-use tokio::sync::{Semaphore, SemaphorePermit, TryAcquireError};
-use std::sync::atomic::{AtomicUsize, AtomicIsize, Ordering};
 use anyhow::Error;
 use chrono::Utc;
-use tokio::task::JoinHandle;
-use tokio::time::{Duration, sleep};
+use std::sync::atomic::{AtomicIsize, AtomicUsize, Ordering};
+use tokio::{
+    task::JoinHandle,
+    time::{sleep, Duration},
+};
 
 pub struct RateLimiter {
     max_per_unit_time: usize,
@@ -37,19 +38,23 @@ impl RateLimiter {
     pub async fn acquire(&self) {
         loop {
             if Utc::now().timestamp_millis() as usize > self.until.load(Ordering::SeqCst) {
-                let new = (Utc::now() + chrono::Duration::milliseconds(self.unit_time_ms as i64)).timestamp_millis() as usize;
+                let new = (Utc::now() + chrono::Duration::milliseconds(self.unit_time_ms as i64))
+                    .timestamp_millis() as usize;
                 self.until.store(new, Ordering::SeqCst);
-                self.current_count.store(self.max_per_unit_time as isize, Ordering::SeqCst);
+                self.current_count
+                    .store(self.max_per_unit_time as isize, Ordering::SeqCst);
             }
             if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
                 return;
             }
             self.current_count.fetch_add(1, Ordering::SeqCst);
-            let remaining = self.until.load(Ordering::SeqCst) as i64 - Utc::now().timestamp_millis();
+            let current = Utc::now().timestamp_millis();
+            let remaining = self.until.load(Ordering::SeqCst) as i64 - current;
             if remaining > 0 {
                 self.number_of_waits.fetch_add(1, Ordering::SeqCst);
                 sleep(Duration::from_millis(remaining as u64)).await;
-                self.total_wait_ms.fetch_add(remaining as usize, Ordering::SeqCst);
+                self.total_wait_ms
+                    .fetch_add(remaining as usize, Ordering::SeqCst);
             }
             if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
                 return;
