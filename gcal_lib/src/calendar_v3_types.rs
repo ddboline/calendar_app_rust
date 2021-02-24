@@ -34,45 +34,92 @@ pub enum CalendarScopes {
     ///
     /// URL: https://www.googleapis.com/auth/calendar.readonly
     CalendarReadonly,
-    /// View your Calendar settings
+    /// View events on all your calendars
     ///
-    /// URL: https://www.googleapis.com/auth/calendar.settings.readonly
-    CalendarSettingsReadonly,
+    /// URL: https://www.googleapis.com/auth/calendar.events.readonly
+    CalendarEventsReadonly,
     /// See, edit, share, and permanently delete all the calendars you can
     /// access using Google Calendar
     ///
     /// URL: https://www.googleapis.com/auth/calendar
     Calendar,
-    /// View events on all your calendars
-    ///
-    /// URL: https://www.googleapis.com/auth/calendar.events.readonly
-    CalendarEventsReadonly,
     /// View and edit events on all your calendars
     ///
     /// URL: https://www.googleapis.com/auth/calendar.events
     CalendarEvents,
+    /// View your Calendar settings
+    ///
+    /// URL: https://www.googleapis.com/auth/calendar.settings.readonly
+    CalendarSettingsReadonly,
 }
 
 impl std::convert::AsRef<str> for CalendarScopes {
     fn as_ref(&self) -> &'static str {
         match self {
             CalendarScopes::CalendarReadonly => "https://www.googleapis.com/auth/calendar.readonly",
-            CalendarScopes::CalendarSettingsReadonly => {
-                "https://www.googleapis.com/auth/calendar.settings.readonly"
-            }
-            CalendarScopes::Calendar => "https://www.googleapis.com/auth/calendar",
             CalendarScopes::CalendarEventsReadonly => {
                 "https://www.googleapis.com/auth/calendar.events.readonly"
             }
+            CalendarScopes::Calendar => "https://www.googleapis.com/auth/calendar",
             CalendarScopes::CalendarEvents => "https://www.googleapis.com/auth/calendar.events",
+            CalendarScopes::CalendarSettingsReadonly => {
+                "https://www.googleapis.com/auth/calendar.settings.readonly"
+            }
         }
     }
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FreeBusyRequestItem {
-    /// The identifier of a calendar or a group.
+pub struct EventAttendee {
+    /// Whether this entry represents the calendar on which this copy of the
+    /// event appears. Read-only. The default is False.
+    #[serde(rename = "self")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_self: Option<bool>,
+    /// Number of additional guests. Optional. The default is 0.
+    #[serde(rename = "additionalGuests")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub additional_guests: Option<i32>,
+    /// The attendee's name, if available. Optional.
+    #[serde(rename = "displayName")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+    /// The attendee's response status. Possible values are:   - "needsAction" -
+    /// The attendee has not responded to the invitation.  - "declined" - The
+    /// attendee has declined the invitation.  - "tentative" - The attendee has
+    /// tentatively accepted the invitation.  - "accepted" - The attendee has
+    /// accepted the invitation.
+    #[serde(rename = "responseStatus")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub response_status: Option<String>,
+    /// The attendee's response comment. Optional.
+    #[serde(rename = "comment")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub comment: Option<String>,
+    /// Whether the attendee is the organizer of the event. Read-only. The
+    /// default is False.
+    #[serde(rename = "organizer")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub organizer: Option<bool>,
+    /// Whether this is an optional attendee. Optional. The default is False.
+    #[serde(rename = "optional")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub optional: Option<bool>,
+    /// Whether the attendee is a resource. Can only be set when the attendee is
+    /// added to the event for the first time. Subsequent modifications are
+    /// ignored. Optional. The default is False.
+    #[serde(rename = "resource")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource: Option<bool>,
+    /// The attendee's email address, if available. This field must be present
+    /// when adding an attendee. It must be a valid email address as per
+    /// RFC5322. Required when adding an attendee.
+    #[serde(rename = "email")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
+    /// The attendee's Profile ID, if available. It corresponds to the id field
+    /// in the People collection of the Google+ API
     #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
@@ -81,15 +128,19 @@ pub struct FreeBusyRequestItem {
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct FreeBusyRequest {
-    /// Maximal number of calendars for which FreeBusy information is to be
-    /// provided. Optional. Maximum value is 50.
-    #[serde(rename = "calendarExpansionMax")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub calendar_expansion_max: Option<i32>,
     /// Time zone used in the response. Optional. The default is UTC.
     #[serde(rename = "timeZone")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time_zone: Option<String>,
+    /// DateTime: The end of the interval for the query formatted as per
+    /// RFC3339.
+    #[serde(rename = "timeMax")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_max: Option<DateTime<Utc>>,
+    /// List of calendars and/or groups to query.
+    #[serde(rename = "items")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<FreeBusyRequestItem>>,
     /// Maximal number of calendar identifiers to be provided for a single
     /// group. Optional. An error is returned for a group with more members than
     /// this value. Maximum value is 100.
@@ -101,260 +152,193 @@ pub struct FreeBusyRequest {
     #[serde(rename = "timeMin")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub time_min: Option<DateTime<Utc>>,
-    /// List of calendars and/or groups to query.
-    #[serde(rename = "items")]
+    /// Maximal number of calendars for which FreeBusy information is to be
+    /// provided. Optional. Maximum value is 50.
+    #[serde(rename = "calendarExpansionMax")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<FreeBusyRequestItem>>,
-    /// DateTime: The end of the interval for the query formatted as per
-    /// RFC3339.
-    #[serde(rename = "timeMax")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub calendar_expansion_max: Option<i32>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Settings {
-    /// Token used at a later point in time to retrieve only the entries that
-    /// have changed since this result was returned. Omitted if further results
-    /// are available, in which case nextPageToken is provided.
-    #[serde(rename = "nextSyncToken")]
+pub struct ConferenceProperties {
+    /// The types of conference solutions that are supported for this calendar.
+    /// The possible values are:   - "eventHangout"  - "eventNamedHangout"  -
+    /// "hangoutsMeet"  Optional.
+    #[serde(rename = "allowedConferenceSolutionTypes")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_sync_token: Option<String>,
-    /// Type of the collection ("calendar#settings").
+    pub allowed_conference_solution_types: Option<Vec<String>>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventReminder {
+    /// The method used by this reminder. Possible values are:   - "email" -
+    /// Reminders are sent via email.  - "popup" - Reminders are sent via a UI
+    /// popup.   Required when adding a reminder.
+    #[serde(rename = "method")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub method: Option<String>,
+    /// Number of minutes before the start of the event when the reminder should
+    /// trigger. Valid values are between 0 and 40320 (4 weeks in minutes).
+    /// Required when adding a reminder.
+    #[serde(rename = "minutes")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub minutes: Option<i32>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Channel {
+    /// The type of delivery mechanism used for this channel. Valid values are
+    /// "web_hook" (or "webhook"). Both values refer to a channel where Http
+    /// requests are used to deliver messages.
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub typ: Option<String>,
+    /// The address where notifications are delivered for this channel.
+    #[serde(rename = "address")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub address: Option<String>,
+    /// A Boolean value to indicate whether payload is wanted. Optional.
+    #[serde(rename = "payload")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub payload: Option<bool>,
+    /// A version-specific identifier for the watched resource.
+    #[serde(rename = "resourceUri")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource_uri: Option<String>,
+    /// An arbitrary string delivered to the target address with each
+    /// notification delivered over this channel. Optional.
+    #[serde(rename = "token")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub token: Option<String>,
+    /// An opaque ID that identifies the resource being watched on this channel.
+    /// Stable across different API versions.
+    #[serde(rename = "resourceId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub resource_id: Option<String>,
+    /// i64: Date and time of notification channel expiration, expressed as a
+    /// Unix timestamp, in milliseconds. Optional.
+    #[serde(rename = "expiration")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub expiration: Option<String>,
+    /// Additional parameters controlling delivery channel behavior. Optional.
+    #[serde(rename = "params")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub params: Option<HashMap<String, String>>,
+    /// A UUID or similar unique string that identifies this channel.
+    #[serde(rename = "id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// Identifies this as a notification channel used to watch for changes to a
+    /// resource, which is "api#channel".
     #[serde(rename = "kind")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub kind: Option<String>,
-    /// Token used to access the next page of this result. Omitted if no further
-    /// results are available, in which case nextSyncToken is provided.
-    #[serde(rename = "nextPageToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_page_token: Option<String>,
-    /// List of user settings.
-    #[serde(rename = "items")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<Setting>>,
-    /// Etag of the collection.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EntryPoint {
-    /// The PIN to access the conference. The maximum length is 128 characters.
-    /// When creating new conference data, populate only the subset of
-    /// {meetingCode, accessCode, passcode, password, pin} fields that match the
-    /// terminology that the conference provider uses. Only the populated fields
-    /// should be displayed. Optional.
-    #[serde(rename = "pin")]
+pub struct CreateConferenceRequest {
+    #[serde(rename = "conferenceSolutionKey")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pin: Option<String>,
-    /// The passcode to access the conference. The maximum length is 128
-    /// characters. When creating new conference data, populate only the subset
-    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
-    /// the terminology that the conference provider uses. Only the populated
-    /// fields should be displayed.
-    #[serde(rename = "passcode")]
+    pub conference_solution_key: Option<ConferenceSolutionKey>,
+    /// The client-generated unique ID for this request. Clients should
+    /// regenerate this ID for every new request. If an ID provided is the same
+    /// as for the previous request, the request is ignored.
+    #[serde(rename = "requestId")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub passcode: Option<String>,
-    /// The meeting code to access the conference. The maximum length is 128
-    /// characters. When creating new conference data, populate only the subset
-    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
-    /// the terminology that the conference provider uses. Only the populated
-    /// fields should be displayed. Optional.
-    #[serde(rename = "meetingCode")]
+    pub request_id: Option<String>,
+    #[serde(rename = "status")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub meeting_code: Option<String>,
-    /// The label for the URI. Visible to end users. Not localized. The maximum
-    /// length is 512 characters. Examples:   - for video:
-    /// meet.google.com/aaa-bbbb-ccc - for phone: +1 123 268 2601 - for sip:
-    /// 12345678@altostrat.com - for more: should not be filled   Optional.
-    #[serde(rename = "label")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub label: Option<String>,
-    /// Features of the entry point, such as being toll or toll-free. One entry
-    /// point can have multiple features. However, toll and toll-free cannot be
-    /// both set on the same entry point.
-    #[serde(rename = "entryPointFeatures")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub entry_point_features: Option<Vec<String>>,
-    /// The CLDR/ISO 3166 region code for the country associated with this phone
-    /// access. Example: "SE" for Sweden. Calendar backend will populate this
-    /// field only for EntryPointType.PHONE.
-    #[serde(rename = "regionCode")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub region_code: Option<String>,
-    /// The access code to access the conference. The maximum length is 128
-    /// characters. When creating new conference data, populate only the subset
-    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
-    /// the terminology that the conference provider uses. Only the populated
-    /// fields should be displayed. Optional.
-    #[serde(rename = "accessCode")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub access_code: Option<String>,
-    /// The type of the conference entry point. Possible values are:   - "video"
-    /// - joining a conference over HTTP. A conference can have zero or one
-    /// video entry point. - "phone" - joining a conference by dialing a phone
-    /// number. A conference can have zero or more phone entry points. - "sip" -
-    /// joining a conference over SIP. A conference can have zero or one sip
-    /// entry point. - "more" - further conference joining instructions, for
-    /// example additional phone numbers. A conference can have zero or one more
-    /// entry point. A conference with only a more entry point is not a valid
-    /// conference.
-    #[serde(rename = "entryPointType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub entry_point_type: Option<String>,
-    /// The password to access the conference. The maximum length is 128
-    /// characters. When creating new conference data, populate only the subset
-    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
-    /// the terminology that the conference provider uses. Only the populated
-    /// fields should be displayed. Optional.
-    #[serde(rename = "password")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub password: Option<String>,
-    /// The URI of the entry point. The maximum length is 1300 characters.
-    /// Format:   - for video, http: or https: schema is required. - for phone,
-    /// tel: schema is required. The URI should include the entire dial sequence
-    /// (e.g., tel:+12345678900,,,123456789;1234). - for sip, sip: schema is
-    /// required, e.g., sip:12345678@myprovider.com. - for more, http: or https:
-    /// schema is required.
-    #[serde(rename = "uri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub uri: Option<String>,
+    pub status: Option<ConferenceRequestStatus>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ConferenceSolution {
-    #[serde(rename = "key")]
+pub struct ConferenceData {
+    /// The signature of the conference data. Generated on server side. Must be
+    /// preserved while copying the conference data between events, otherwise
+    /// the conference data will not be copied. Unset for a conference with a
+    /// failed create request. Optional for a conference with a pending create
+    /// request.
+    #[serde(rename = "signature")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub key: Option<ConferenceSolutionKey>,
-    /// The user-visible icon for this solution.
-    #[serde(rename = "iconUri")]
+    pub signature: Option<String>,
+    /// Information about individual conference entry points, such as URLs or
+    /// phone numbers. All of them must belong to the same conference. Either
+    /// conferenceSolution and at least one entryPoint, or createRequest is
+    /// required.
+    #[serde(rename = "entryPoints")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_uri: Option<String>,
-    /// The user-visible name of this solution. Not localized.
-    #[serde(rename = "name")]
+    pub entry_points: Option<Vec<EntryPoint>>,
+    #[serde(rename = "createRequest")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub name: Option<String>,
-}
-
-/// The notifications that the authenticated user is receiving for this
-/// calendar.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarListEntryNotificationSettings {
-    /// The list of notifications set for this calendar.
-    #[serde(rename = "notifications")]
+    pub create_request: Option<CreateConferenceRequest>,
+    #[serde(rename = "conferenceSolution")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub notifications: Option<Vec<CalendarNotification>>,
+    pub conference_solution: Option<ConferenceSolution>,
+    #[serde(rename = "parameters")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub parameters: Option<ConferenceParameters>,
+    /// The ID of the conference. Can be used by developers to keep track of
+    /// conferences, should not be displayed to users. Values for solution
+    /// types:   - "eventHangout": unset. - "eventNamedHangout": the name of the
+    /// Hangout. - "hangoutsMeet": the 10-letter meeting code, for example
+    /// "aaa-bbbb-ccc". - "addOn": defined by 3P conference provider.  Optional.
+    #[serde(rename = "conferenceId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conference_id: Option<String>,
+    /// Additional notes (such as instructions from the domain administrator,
+    /// legal notices) to display to the user. Can contain HTML. The maximum
+    /// length is 2048 characters. Optional.
+    #[serde(rename = "notes")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notes: Option<String>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarListEntry {
-    /// The default reminders that the authenticated user has for this calendar.
-    #[serde(rename = "defaultReminders")]
+pub struct Setting {
+    /// Type of the resource ("calendar#setting").
+    #[serde(rename = "kind")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_reminders: Option<Vec<EventReminder>>,
-    /// The color of the calendar. This is an ID referring to an entry in the
-    /// calendar section of the colors definition (see the colors endpoint).
-    /// This property is superseded by the backgroundColor and foregroundColor
-    /// properties and can be ignored when using these properties. Optional.
-    #[serde(rename = "colorId")]
+    pub kind: Option<String>,
+    /// The id of the user setting.
+    #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub color_id: Option<String>,
+    pub id: Option<String>,
+    /// Value of the user setting. The format of the value depends on the ID of
+    /// the setting. It must always be a UTF-8 string of length up to 1024
+    /// characters.
+    #[serde(rename = "value")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
     /// ETag of the resource.
     #[serde(rename = "etag")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    /// The main color of the calendar in the hexadecimal format "#0088aa". This
-    /// property supersedes the index-based colorId property. To set or change
-    /// this property, you need to specify colorRgbFormat=true in the parameters
-    /// of the insert, update and patch methods. Optional.
-    #[serde(rename = "backgroundColor")]
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Error {
+    /// Specific reason for the error. Some of the possible values are:   -
+    /// "groupTooBig" - The group of users requested is too large for a single
+    /// query.  - "tooManyCalendarsRequested" - The number of calendars
+    /// requested is too large for a single query.  - "notFound" - The requested
+    /// resource was not found.  - "internalError" - The API service has
+    /// encountered an internal error.  Additional error types may be added in
+    /// the future, so clients should gracefully handle additional error
+    /// statuses not included in this list.
+    #[serde(rename = "reason")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub background_color: Option<String>,
-    /// Whether the calendar content shows up in the calendar UI. Optional. The
-    /// default is False.
-    #[serde(rename = "selected")]
+    pub reason: Option<String>,
+    /// Domain, or broad category, of the error.
+    #[serde(rename = "domain")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub selected: Option<bool>,
-    /// The effective access role that the authenticated user has on the
-    /// calendar. Read-only. Possible values are:   - "freeBusyReader" -
-    /// Provides read access to free/busy information.  - "reader" - Provides
-    /// read access to the calendar. Private events will appear to users with
-    /// reader access, but event details will be hidden.  - "writer" - Provides
-    /// read and write access to the calendar. Private events will appear to
-    /// users with writer access, and event details will be visible.  - "owner"
-    /// - Provides ownership of the calendar. This role has all of the
-    /// permissions of the writer role with the additional ability to see and
-    /// manipulate ACLs.
-    #[serde(rename = "accessRole")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub access_role: Option<String>,
-    /// Whether this calendar list entry has been deleted from the calendar
-    /// list. Read-only. Optional. The default is False.
-    #[serde(rename = "deleted")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub deleted: Option<bool>,
-    /// Whether the calendar has been hidden from the list. Optional. The
-    /// attribute is only returned when the calendar is hidden, in which case
-    /// the value is true.
-    #[serde(rename = "hidden")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub hidden: Option<bool>,
-    /// Type of the resource ("calendar#calendarListEntry").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// The notifications that the authenticated user is receiving for this
-    /// calendar.
-    #[serde(rename = "notificationSettings")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub notification_settings: Option<CalendarListEntryNotificationSettings>,
-    /// Whether the calendar is the primary calendar of the authenticated user.
-    /// Read-only. Optional. The default is False.
-    #[serde(rename = "primary")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub primary: Option<bool>,
-    #[serde(rename = "conferenceProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_properties: Option<ConferenceProperties>,
-    /// The summary that the authenticated user has set for this calendar.
-    /// Optional.
-    #[serde(rename = "summaryOverride")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub summary_override: Option<String>,
-    /// Geographic location of the calendar as free-form text. Optional.
-    /// Read-only.
-    #[serde(rename = "location")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
-    /// The time zone of the calendar. Optional. Read-only.
-    #[serde(rename = "timeZone")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    /// Title of the calendar. Read-only.
-    #[serde(rename = "summary")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub summary: Option<String>,
-    /// Description of the calendar. Optional. Read-only.
-    #[serde(rename = "description")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    /// The foreground color of the calendar in the hexadecimal format
-    /// "#ffffff". This property supersedes the index-based colorId property. To
-    /// set or change this property, you need to specify colorRgbFormat=true in
-    /// the parameters of the insert, update and patch methods. Optional.
-    #[serde(rename = "foregroundColor")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub foreground_color: Option<String>,
-    /// Identifier of the calendar.
-    #[serde(rename = "id")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
+    pub domain: Option<String>,
 }
 
 ///
@@ -363,170 +347,6 @@ pub struct ConferenceParametersAddOnParameters {
     #[serde(rename = "parameters")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub parameters: Option<HashMap<String, String>>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventDateTime {
-    /// The date, in the format "yyyy-mm-dd", if this is an all-day event.
-    #[serde(rename = "date")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub date: Option<String>,
-    /// The time zone in which the time is specified. (Formatted as an IANA Time
-    /// Zone Database name, e.g. "Europe/Zurich".) For recurring events this
-    /// field is required and specifies the time zone in which the recurrence is
-    /// expanded. For single events this field is optional and indicates a
-    /// custom time zone for the event start/end.
-    #[serde(rename = "timeZone")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    /// DateTime: The time, as a combined date-time value (formatted according
-    /// to RFC3339). A time zone offset is required unless a time zone is
-    /// explicitly specified in timeZone.
-    #[serde(rename = "dateTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub date_time: Option<DateTime<Utc>>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventAttachment {
-    /// ID of the attached file. Read-only. For Google Drive files, this is the
-    /// ID of the corresponding Files resource entry in the Drive API.
-    #[serde(rename = "fileId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub file_id: Option<String>,
-    /// Internet media type (MIME type) of the attachment.
-    #[serde(rename = "mimeType")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub mime_type: Option<String>,
-    /// URL link to the attachment's icon. Read-only.
-    #[serde(rename = "iconLink")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_link: Option<String>,
-    /// URL link to the attachment. For adding Google Drive file attachments use
-    /// the same format as in alternateLink property of the Files resource in
-    /// the Drive API. Required when adding an attachment.
-    #[serde(rename = "fileUrl")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub file_url: Option<String>,
-    /// Attachment title.
-    #[serde(rename = "title")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Events {
-    /// DateTime: Last modification time of the calendar (as a RFC3339
-    /// timestamp). Read-only.
-    #[serde(rename = "updated")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
-    /// Title of the calendar. Read-only.
-    #[serde(rename = "summary")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub summary: Option<String>,
-    /// The time zone of the calendar. Read-only.
-    #[serde(rename = "timeZone")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    /// The default reminders on the calendar for the authenticated user. These
-    /// reminders apply to all events on this calendar that do not explicitly
-    /// override them (i.e. do not have reminders.useDefault set to True).
-    #[serde(rename = "defaultReminders")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub default_reminders: Option<Vec<EventReminder>>,
-    /// Type of the collection ("calendar#events").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// Token used at a later point in time to retrieve only the entries that
-    /// have changed since this result was returned. Omitted if further results
-    /// are available, in which case nextPageToken is provided.
-    #[serde(rename = "nextSyncToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_sync_token: Option<String>,
-    /// List of events on the calendar.
-    #[serde(rename = "items")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<Event>>,
-    /// The user's access role for this calendar. Read-only. Possible values
-    /// are:   - "none" - The user has no access.  - "freeBusyReader" - The user
-    /// has read access to free/busy information.  - "reader" - The user has
-    /// read access to the calendar. Private events will appear to users with
-    /// reader access, but event details will be hidden.  - "writer" - The user
-    /// has read and write access to the calendar. Private events will appear to
-    /// users with writer access, and event details will be visible.  - "owner"
-    /// - The user has ownership of the calendar. This role has all of the
-    /// permissions of the writer role with the additional ability to see and
-    /// manipulate ACLs.
-    #[serde(rename = "accessRole")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub access_role: Option<String>,
-    /// ETag of the collection.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    /// Description of the calendar. Read-only.
-    #[serde(rename = "description")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    /// Token used to access the next page of this result. Omitted if no further
-    /// results are available, in which case nextSyncToken is provided.
-    #[serde(rename = "nextPageToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_page_token: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarNotification {
-    /// The method used to deliver the notification. The possible value is:   -
-    /// "email" - Notifications are sent via email.   Required when adding a
-    /// notification.
-    #[serde(rename = "method")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub method: Option<String>,
-    /// The type of notification. Possible values are:   - "eventCreation" -
-    /// Notification sent when a new event is put on the calendar.  -
-    /// "eventChange" - Notification sent when an event is changed.  -
-    /// "eventCancellation" - Notification sent when an event is cancelled.  -
-    /// "eventResponse" - Notification sent when an attendee responds to the
-    /// event invitation.  - "agenda" - An agenda with the events of the day
-    /// (sent out in the morning).   Required when adding a notification.
-    #[serde(rename = "type")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub typ: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Acl {
-    /// Token used to access the next page of this result. Omitted if no further
-    /// results are available, in which case nextSyncToken is provided.
-    #[serde(rename = "nextPageToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_page_token: Option<String>,
-    /// Token used at a later point in time to retrieve only the entries that
-    /// have changed since this result was returned. Omitted if further results
-    /// are available, in which case nextPageToken is provided.
-    #[serde(rename = "nextSyncToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_sync_token: Option<String>,
-    /// ETag of the collection.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    /// List of rules on the access control list.
-    #[serde(rename = "items")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<AclRule>>,
-    /// Type of the collection ("calendar#acl").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
 }
 
 ///
@@ -540,32 +360,60 @@ pub struct ConferenceSolutionKey {
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct TimePeriod {
-    /// DateTime: The (exclusive) end of the time period.
-    #[serde(rename = "end")]
+pub struct EventDateTime {
+    /// DateTime: The time, as a combined date-time value (formatted according
+    /// to RFC3339). A time zone offset is required unless a time zone is
+    /// explicitly specified in timeZone.
+    #[serde(rename = "dateTime")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<DateTime<Utc>>,
-    /// DateTime: The (inclusive) start of the time period.
-    #[serde(rename = "start")]
+    pub date_time: Option<DateTime<Utc>>,
+    /// The time zone in which the time is specified. (Formatted as an IANA Time
+    /// Zone Database name, e.g. "Europe/Zurich".) For recurring events this
+    /// field is required and specifies the time zone in which the recurrence is
+    /// expanded. For single events this field is optional and indicates a
+    /// custom time zone for the event start/end.
+    #[serde(rename = "timeZone")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub start: Option<DateTime<Utc>>,
+    pub time_zone: Option<String>,
+    /// The date, in the format "yyyy-mm-dd", if this is an all-day event.
+    #[serde(rename = "date")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub date: Option<String>,
 }
 
-/// Source from which the event was created. For example, a web page, an email
-/// message or any document identifiable by an URL with HTTP or HTTPS scheme.
-/// Can only be seen or modified by the creator of the event.
+///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventSource {
-    /// Title of the source; for example a title of a web page or an email
-    /// subject.
-    #[serde(rename = "title")]
+pub struct ConferenceParameters {
+    #[serde(rename = "addOnParameters")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub title: Option<String>,
-    /// URL of the source pointing to a resource. The URL scheme must be HTTP or
-    /// HTTPS.
-    #[serde(rename = "url")]
+    pub add_on_parameters: Option<ConferenceParametersAddOnParameters>,
+}
+
+/// The organizer of the event. If the organizer is also an attendee, this is
+/// indicated with a separate entry in attendees with the organizer field set to
+/// True. To change the organizer, use the move operation. Read-only, except
+/// when importing an event.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventOrganizer {
+    /// The organizer's name, if available.
+    #[serde(rename = "displayName")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub url: Option<String>,
+    pub display_name: Option<String>,
+    /// The organizer's Profile ID, if available. It corresponds to the id field
+    /// in the People collection of the Google+ API
+    #[serde(rename = "id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// Whether the organizer corresponds to the calendar on which this copy of
+    /// the event appears. Read-only. The default is False.
+    #[serde(rename = "self")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub is_self: Option<bool>,
+    /// The organizer's email address, if available. It must be a valid email
+    /// address as per RFC5322.
+    #[serde(rename = "email")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub email: Option<String>,
 }
 
 /// Extended properties of the event.
@@ -591,24 +439,14 @@ pub struct EventGadget {
     #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub typ: Option<String>,
-    /// The gadget's width in pixels. The width must be an integer greater than
-    /// 0. Optional. Deprecated.
-    #[serde(rename = "width")]
+    /// The gadget's URL. The URL scheme must be HTTPS. Deprecated.
+    #[serde(rename = "link")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub width: Option<i32>,
-    /// The gadget's height in pixels. The height must be an integer greater
-    /// than 0. Optional. Deprecated.
-    #[serde(rename = "height")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub height: Option<i32>,
+    pub link: Option<String>,
     /// Preferences.
     #[serde(rename = "preferences")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub preferences: Option<HashMap<String, String>>,
-    /// The gadget's icon URL. The URL scheme must be HTTPS. Deprecated.
-    #[serde(rename = "iconLink")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub icon_link: Option<String>,
     /// The gadget's display mode. Deprecated. Possible values are:   - "icon" -
     /// The gadget displays next to the event's title in the calendar view.  -
     /// "chip" - The gadget displays when the event is clicked.
@@ -619,52 +457,37 @@ pub struct EventGadget {
     #[serde(rename = "title")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub title: Option<String>,
-    /// The gadget's URL. The URL scheme must be HTTPS. Deprecated.
-    #[serde(rename = "link")]
+    /// The gadget's width in pixels. The width must be an integer greater than
+    /// 0. Optional. Deprecated.
+    #[serde(rename = "width")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub link: Option<String>,
+    pub width: Option<i32>,
+    /// The gadget's height in pixels. The height must be an integer greater
+    /// than 0. Optional. Deprecated.
+    #[serde(rename = "height")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub height: Option<i32>,
+    /// The gadget's icon URL. The URL scheme must be HTTPS. Deprecated.
+    #[serde(rename = "iconLink")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon_link: Option<String>,
 }
 
-/// The organizer of the event. If the organizer is also an attendee, this is
-/// indicated with a separate entry in attendees with the organizer field set to
-/// True. To change the organizer, use the move operation. Read-only, except
-/// when importing an event.
+/// Source from which the event was created. For example, a web page, an email
+/// message or any document identifiable by an URL with HTTP or HTTPS scheme.
+/// Can only be seen or modified by the creator of the event.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventOrganizer {
-    /// Whether the organizer corresponds to the calendar on which this copy of
-    /// the event appears. Read-only. The default is False.
-    #[serde(rename = "self")]
+pub struct EventSource {
+    /// URL of the source pointing to a resource. The URL scheme must be HTTP or
+    /// HTTPS.
+    #[serde(rename = "url")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_self: Option<bool>,
-    /// The organizer's Profile ID, if available. It corresponds to the id field
-    /// in the People collection of the Google+ API
-    #[serde(rename = "id")]
+    pub url: Option<String>,
+    /// Title of the source; for example a title of a web page or an email
+    /// subject.
+    #[serde(rename = "title")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The organizer's email address, if available. It must be a valid email
-    /// address as per RFC5322.
-    #[serde(rename = "email")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    /// The organizer's name, if available.
-    #[serde(rename = "displayName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-}
-
-/// Information about the event's reminders for the authenticated user.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventReminders {
-    /// Whether the default reminders of the calendar apply to the event.
-    #[serde(rename = "useDefault")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub use_default: Option<bool>,
-    /// If the event doesn't use the default reminders, this lists the reminders
-    /// specific to the event, or, if not set, indicates that no reminders are
-    /// set for this event. The maximum number of override reminders is 5.
-    #[serde(rename = "overrides")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub overrides: Option<Vec<EventReminder>>,
+    pub title: Option<String>,
 }
 
 /// The creator of the event. Read-only.
@@ -675,10 +498,6 @@ pub struct EventCreator {
     #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    /// The creator's name, if available.
-    #[serde(rename = "displayName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
     /// Whether the creator corresponds to the calendar on which this copy of
     /// the event appears. Read-only. The default is False.
     #[serde(rename = "self")]
@@ -688,28 +507,48 @@ pub struct EventCreator {
     #[serde(rename = "email")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub email: Option<String>,
+    /// The creator's name, if available.
+    #[serde(rename = "displayName")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub display_name: Option<String>,
+}
+
+/// Information about the event's reminders for the authenticated user.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventReminders {
+    /// If the event doesn't use the default reminders, this lists the reminders
+    /// specific to the event, or, if not set, indicates that no reminders are
+    /// set for this event. The maximum number of override reminders is 5.
+    #[serde(rename = "overrides")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub overrides: Option<Vec<EventReminder>>,
+    /// Whether the default reminders of the calendar apply to the event.
+    #[serde(rename = "useDefault")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub use_default: Option<bool>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Event {
-    /// If set to True, Event propagation is disabled. Note that it is not the
-    /// same thing as Private event properties. Optional. Immutable. The default
-    /// is False.
-    #[serde(rename = "privateCopy")]
+    /// The organizer of the event. If the organizer is also an attendee, this
+    /// is indicated with a separate entry in attendees with the organizer field
+    /// set to True. To change the organizer, use the move operation. Read-only,
+    /// except when importing an event.
+    #[serde(rename = "organizer")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub private_copy: Option<bool>,
-    /// The attendees of the event. See the Events with attendees guide for more
-    /// information on scheduling events with other calendar users. Service
-    /// accounts need to use domain-wide delegation of authority to populate the
-    /// attendee list.
-    #[serde(rename = "attendees")]
+    pub organizer: Option<EventOrganizer>,
+    /// An absolute link to this event in the Google Calendar Web UI. Read-only.
+    #[serde(rename = "htmlLink")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attendees: Option<Vec<EventAttendee>>,
-    /// Title of the event.
-    #[serde(rename = "summary")]
+    pub html_link: Option<String>,
+    /// ETag of the resource.
+    #[serde(rename = "etag")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub summary: Option<String>,
+    pub etag: Option<String>,
+    #[serde(rename = "originalStartTime")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub original_start_time: Option<EventDateTime>,
     /// List of RRULE, EXRULE, RDATE and EXDATE lines for a recurring event, as
     /// specified in RFC5545. Note that DTSTART and DTEND lines are not allowed
     /// in this field; event start and end times are specified in the start and
@@ -718,71 +557,76 @@ pub struct Event {
     #[serde(rename = "recurrence")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub recurrence: Option<Vec<String>>,
-    /// Whether attendees other than the organizer can invite others to the
-    /// event. Optional. The default is True.
-    #[serde(rename = "guestsCanInviteOthers")]
+    /// Whether anyone can invite themselves to the event (currently works for
+    /// Google+ events only). Optional. The default is False.
+    #[serde(rename = "anyoneCanAddSelf")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub guests_can_invite_others: Option<bool>,
-    /// Whether the event blocks time on the calendar. Optional. Possible values
-    /// are:   - "opaque" - Default value. The event does block time on the
-    /// calendar. This is equivalent to setting Show me as to Busy in the
-    /// Calendar UI.  - "transparent" - The event does not block time on the
-    /// calendar. This is equivalent to setting Show me as to Available in the
-    /// Calendar UI.
-    #[serde(rename = "transparency")]
+    pub anyone_can_add_self: Option<bool>,
+    /// If set to True, Event propagation is disabled. Note that it is not the
+    /// same thing as Private event properties. Optional. Immutable. The default
+    /// is False.
+    #[serde(rename = "privateCopy")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub transparency: Option<String>,
-    /// Description of the event. Can contain HTML. Optional.
-    #[serde(rename = "description")]
+    pub private_copy: Option<bool>,
+    /// Whether attendees may have been omitted from the event's representation.
+    /// When retrieving an event, this may be due to a restriction specified by
+    /// the maxAttendee query parameter. When updating an event, this can be
+    /// used to only update the participant's response. Optional. The default is
+    /// False.
+    #[serde(rename = "attendeesOmitted")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    /// DateTime: Last modification time of the event (as a RFC3339 timestamp).
+    pub attendees_omitted: Option<bool>,
+    #[serde(rename = "conferenceData")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conference_data: Option<ConferenceData>,
+    /// DateTime: Creation time of the event (as a RFC3339 timestamp).
     /// Read-only.
-    #[serde(rename = "updated")]
+    #[serde(rename = "created")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
+    pub created: Option<DateTime<Utc>>,
+    /// Extended properties of the event.
+    #[serde(rename = "extendedProperties")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub extended_properties: Option<EventExtendedProperties>,
+    /// An absolute link to the Google+ hangout associated with this event.
+    /// Read-only.
+    #[serde(rename = "hangoutLink")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hangout_link: Option<String>,
+    /// A gadget that extends this event. Gadgets are deprecated; this structure
+    /// is instead only used for returning birthday calendar metadata.
+    #[serde(rename = "gadget")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gadget: Option<EventGadget>,
+    /// Geographic location of the event as free-form text. Optional.
+    #[serde(rename = "location")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    /// Whether this is a locked event copy where no changes can be made to the
+    /// main event fields "summary", "description", "location", "start", "end"
+    /// or "recurrence". The default is False. Read-Only.
+    #[serde(rename = "locked")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub locked: Option<bool>,
+    /// Whether attendees other than the organizer can modify the event.
+    /// Optional. The default is False.
+    #[serde(rename = "guestsCanModify")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub guests_can_modify: Option<bool>,
+    #[serde(rename = "start")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<EventDateTime>,
+    /// For an instance of a recurring event, this is the id of the recurring
+    /// event to which this instance belongs. Immutable.
+    #[serde(rename = "recurringEventId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recurring_event_id: Option<String>,
     /// Source from which the event was created. For example, a web page, an
     /// email message or any document identifiable by an URL with HTTP or HTTPS
     /// scheme. Can only be seen or modified by the creator of the event.
     #[serde(rename = "source")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub source: Option<EventSource>,
-    /// ETag of the resource.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    /// Whether attendees other than the organizer can see who the event's
-    /// attendees are. Optional. The default is True.
-    #[serde(rename = "guestsCanSeeOtherGuests")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub guests_can_see_other_guests: Option<bool>,
-    /// An absolute link to this event in the Google Calendar Web UI. Read-only.
-    #[serde(rename = "htmlLink")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub html_link: Option<String>,
-    /// Extended properties of the event.
-    #[serde(rename = "extendedProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub extended_properties: Option<EventExtendedProperties>,
-    #[serde(rename = "end")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<EventDateTime>,
-    #[serde(rename = "start")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub start: Option<EventDateTime>,
-    /// Whether attendees other than the organizer can modify the event.
-    /// Optional. The default is False.
-    #[serde(rename = "guestsCanModify")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub guests_can_modify: Option<bool>,
-    /// Type of the resource ("calendar#event").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// Geographic location of the event as free-form text. Optional.
-    #[serde(rename = "location")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub location: Option<String>,
     /// Opaque identifier of the event. When creating new single or recurring
     /// events, you can specify their IDs. Provided IDs must follow these rules:
     /// - characters allowed in the ID are those used in base32hex encoding,
@@ -800,44 +644,40 @@ pub struct Event {
     #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
-    /// Whether attendees may have been omitted from the event's representation.
-    /// When retrieving an event, this may be due to a restriction specified by
-    /// the maxAttendee query parameter. When updating an event, this can be
-    /// used to only update the participant's response. Optional. The default is
-    /// False.
-    #[serde(rename = "attendeesOmitted")]
+    #[serde(rename = "end")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub attendees_omitted: Option<bool>,
-    /// DateTime: Creation time of the event (as a RFC3339 timestamp).
+    pub end: Option<EventDateTime>,
+    /// DateTime: Last modification time of the event (as a RFC3339 timestamp).
     /// Read-only.
-    #[serde(rename = "created")]
+    #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<DateTime<Utc>>,
-    /// File attachments for the event. Currently only Google Drive attachments
-    /// are supported. In order to modify attachments the supportsAttachments
-    /// request parameter should be set to true. There can be at most 25
-    /// attachments per event,
-    #[serde(rename = "attachments")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub attachments: Option<Vec<EventAttachment>>,
-    /// A gadget that extends this event. Gadgets are deprecated; this structure
-    /// is instead only used for returning birthday calendar metadata.
-    #[serde(rename = "gadget")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub gadget: Option<EventGadget>,
-    #[serde(rename = "originalStartTime")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub original_start_time: Option<EventDateTime>,
+    pub updated: Option<DateTime<Utc>>,
     /// The color of the event. This is an ID referring to an entry in the event
     /// section of the colors definition (see the  colors endpoint). Optional.
     #[serde(rename = "colorId")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub color_id: Option<String>,
-    /// Whether anyone can invite themselves to the event (currently works for
-    /// Google+ events only). Optional. The default is False.
-    #[serde(rename = "anyoneCanAddSelf")]
+    /// Whether the event blocks time on the calendar. Optional. Possible values
+    /// are:   - "opaque" - Default value. The event does block time on the
+    /// calendar. This is equivalent to setting Show me as to Busy in the
+    /// Calendar UI.  - "transparent" - The event does not block time on the
+    /// calendar. This is equivalent to setting Show me as to Available in the
+    /// Calendar UI.
+    #[serde(rename = "transparency")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub anyone_can_add_self: Option<bool>,
+    pub transparency: Option<String>,
+    /// Specific type of the event. Read-only. Possible values are:   -
+    /// "default" - A regular event or not further specified.  - "outOfOffice" -
+    /// An out-of-office event.
+    #[serde(rename = "eventType")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub event_type: Option<String>,
+    /// Whether the end time is actually unspecified. An end time is still
+    /// provided for compatibility reasons, even if this attribute is set to
+    /// True. The default is False.
+    #[serde(rename = "endTimeUnspecified")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end_time_unspecified: Option<bool>,
     /// Visibility of the event. Optional. Possible values are:   - "default" -
     /// Uses the default visibility for events on the calendar. This is the
     /// default value.  - "public" - The event is public and event details are
@@ -848,47 +688,23 @@ pub struct Event {
     #[serde(rename = "visibility")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub visibility: Option<String>,
-    /// Whether this is a locked event copy where no changes can be made to the
-    /// main event fields "summary", "description", "location", "start", "end"
-    /// or "recurrence". The default is False. Read-Only.
-    #[serde(rename = "locked")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub locked: Option<bool>,
-    /// Event unique identifier as defined in RFC5545. It is used to uniquely
-    /// identify events accross calendaring systems and must be supplied when
-    /// importing events via the import method. Note that the icalUID and the id
-    /// are not identical and only one of them should be supplied at event
-    /// creation time. One difference in their semantics is that in recurring
-    /// events, all occurrences of one event have different ids while they all
-    /// share the same icalUIDs.
-    #[serde(rename = "iCalUID")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub i_cal_u_i_d: Option<String>,
-    /// The organizer of the event. If the organizer is also an attendee, this
-    /// is indicated with a separate entry in attendees with the organizer field
-    /// set to True. To change the organizer, use the move operation. Read-only,
-    /// except when importing an event.
-    #[serde(rename = "organizer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub organizer: Option<EventOrganizer>,
-    /// Information about the event's reminders for the authenticated user.
-    #[serde(rename = "reminders")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reminders: Option<EventReminders>,
-    /// Sequence number as per iCalendar.
-    #[serde(rename = "sequence")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub sequence: Option<i32>,
     /// The creator of the event. Read-only.
     #[serde(rename = "creator")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub creator: Option<EventCreator>,
-    /// Specific type of the event. Read-only. Possible values are:   -
-    /// "default" - A regular event or not further specified.  - "outOfOffice" -
-    /// An out-of-office event.
-    #[serde(rename = "eventType")]
+    /// Type of the resource ("calendar#event").
+    #[serde(rename = "kind")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub event_type: Option<String>,
+    pub kind: Option<String>,
+    /// Title of the event.
+    #[serde(rename = "summary")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// Whether attendees other than the organizer can invite others to the
+    /// event. Optional. The default is True.
+    #[serde(rename = "guestsCanInviteOthers")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub guests_can_invite_others: Option<bool>,
     /// Status of the event. Optional. Possible values are:   - "confirmed" -
     /// The event is confirmed. This is the default status.  - "tentative" - The
     /// event is tentatively confirmed.  - "cancelled" - The event is cancelled
@@ -917,46 +733,185 @@ pub struct Event {
     #[serde(rename = "status")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub status: Option<String>,
-    /// Whether the end time is actually unspecified. An end time is still
-    /// provided for compatibility reasons, even if this attribute is set to
-    /// True. The default is False.
-    #[serde(rename = "endTimeUnspecified")]
+    /// Information about the event's reminders for the authenticated user.
+    #[serde(rename = "reminders")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub end_time_unspecified: Option<bool>,
-    #[serde(rename = "conferenceData")]
+    pub reminders: Option<EventReminders>,
+    /// Sequence number as per iCalendar.
+    #[serde(rename = "sequence")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_data: Option<ConferenceData>,
-    /// An absolute link to the Google+ hangout associated with this event.
-    /// Read-only.
-    #[serde(rename = "hangoutLink")]
+    pub sequence: Option<i32>,
+    /// File attachments for the event. Currently only Google Drive attachments
+    /// are supported. In order to modify attachments the supportsAttachments
+    /// request parameter should be set to true. There can be at most 25
+    /// attachments per event,
+    #[serde(rename = "attachments")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub hangout_link: Option<String>,
-    /// For an instance of a recurring event, this is the id of the recurring
-    /// event to which this instance belongs. Immutable.
-    #[serde(rename = "recurringEventId")]
+    pub attachments: Option<Vec<EventAttachment>>,
+    /// Event unique identifier as defined in RFC5545. It is used to uniquely
+    /// identify events accross calendaring systems and must be supplied when
+    /// importing events via the import method. Note that the icalUID and the id
+    /// are not identical and only one of them should be supplied at event
+    /// creation time. One difference in their semantics is that in recurring
+    /// events, all occurrences of one event have different ids while they all
+    /// share the same icalUIDs.
+    #[serde(rename = "iCalUID")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub recurring_event_id: Option<String>,
+    pub i_cal_u_i_d: Option<String>,
+    /// The attendees of the event. See the Events with attendees guide for more
+    /// information on scheduling events with other calendar users. Service
+    /// accounts need to use domain-wide delegation of authority to populate the
+    /// attendee list.
+    #[serde(rename = "attendees")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub attendees: Option<Vec<EventAttendee>>,
+    /// Whether attendees other than the organizer can see who the event's
+    /// attendees are. Optional. The default is True.
+    #[serde(rename = "guestsCanSeeOtherGuests")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub guests_can_see_other_guests: Option<bool>,
+    /// Description of the event. Can contain HTML. Optional.
+    #[serde(rename = "description")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ConferenceParameters {
-    #[serde(rename = "addOnParameters")]
+pub struct CalendarList {
+    /// Token used to access the next page of this result. Omitted if no further
+    /// results are available, in which case nextSyncToken is provided.
+    #[serde(rename = "nextPageToken")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub add_on_parameters: Option<ConferenceParametersAddOnParameters>,
+    pub next_page_token: Option<String>,
+    /// ETag of the collection.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Calendars that are present on the user's calendar list.
+    #[serde(rename = "items")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<CalendarListEntry>>,
+    /// Token used at a later point in time to retrieve only the entries that
+    /// have changed since this result was returned. Omitted if further results
+    /// are available, in which case nextPageToken is provided.
+    #[serde(rename = "nextSyncToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_sync_token: Option<String>,
+    /// Type of the collection ("calendar#calendarList").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FreeBusyGroup {
-    /// Optional error(s) (if computation for the group failed).
-    #[serde(rename = "errors")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub errors: Option<Vec<Error>>,
-    /// List of calendars' identifiers within a group.
+pub struct FreeBusyResponse {
+    /// List of free/busy information for calendars.
     #[serde(rename = "calendars")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub calendars: Option<Vec<String>>,
+    pub calendars: Option<HashMap<String, FreeBusyCalendar>>,
+    /// Type of the resource ("calendar#freeBusy").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Expansion of groups.
+    #[serde(rename = "groups")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub groups: Option<HashMap<String, FreeBusyGroup>>,
+    /// DateTime: The end of the interval.
+    #[serde(rename = "timeMax")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_max: Option<DateTime<Utc>>,
+    /// DateTime: The start of the interval.
+    #[serde(rename = "timeMin")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_min: Option<DateTime<Utc>>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EntryPoint {
+    /// The URI of the entry point. The maximum length is 1300 characters.
+    /// Format:   - for video, http: or https: schema is required. - for phone,
+    /// tel: schema is required. The URI should include the entire dial sequence
+    /// (e.g., tel:+12345678900,,,123456789;1234). - for sip, sip: schema is
+    /// required, e.g., sip:12345678@myprovider.com. - for more, http: or https:
+    /// schema is required.
+    #[serde(rename = "uri")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub uri: Option<String>,
+    /// The label for the URI. Visible to end users. Not localized. The maximum
+    /// length is 512 characters. Examples:   - for video:
+    /// meet.google.com/aaa-bbbb-ccc - for phone: +1 123 268 2601 - for sip:
+    /// 12345678@altostrat.com - for more: should not be filled   Optional.
+    #[serde(rename = "label")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub label: Option<String>,
+    /// The passcode to access the conference. The maximum length is 128
+    /// characters. When creating new conference data, populate only the subset
+    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
+    /// the terminology that the conference provider uses. Only the populated
+    /// fields should be displayed.
+    #[serde(rename = "passcode")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub passcode: Option<String>,
+    /// Features of the entry point, such as being toll or toll-free. One entry
+    /// point can have multiple features. However, toll and toll-free cannot be
+    /// both set on the same entry point.
+    #[serde(rename = "entryPointFeatures")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entry_point_features: Option<Vec<String>>,
+    /// The type of the conference entry point. Possible values are:   - "video"
+    /// - joining a conference over HTTP. A conference can have zero or one
+    /// video entry point. - "phone" - joining a conference by dialing a phone
+    /// number. A conference can have zero or more phone entry points. - "sip" -
+    /// joining a conference over SIP. A conference can have zero or one sip
+    /// entry point. - "more" - further conference joining instructions, for
+    /// example additional phone numbers. A conference can have zero or one more
+    /// entry point. A conference with only a more entry point is not a valid
+    /// conference.
+    #[serde(rename = "entryPointType")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub entry_point_type: Option<String>,
+    /// The PIN to access the conference. The maximum length is 128 characters.
+    /// When creating new conference data, populate only the subset of
+    /// {meetingCode, accessCode, passcode, password, pin} fields that match the
+    /// terminology that the conference provider uses. Only the populated fields
+    /// should be displayed. Optional.
+    #[serde(rename = "pin")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub pin: Option<String>,
+    /// The access code to access the conference. The maximum length is 128
+    /// characters. When creating new conference data, populate only the subset
+    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
+    /// the terminology that the conference provider uses. Only the populated
+    /// fields should be displayed. Optional.
+    #[serde(rename = "accessCode")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_code: Option<String>,
+    /// The CLDR/ISO 3166 region code for the country associated with this phone
+    /// access. Example: "SE" for Sweden. Calendar backend will populate this
+    /// field only for EntryPointType.PHONE.
+    #[serde(rename = "regionCode")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub region_code: Option<String>,
+    /// The meeting code to access the conference. The maximum length is 128
+    /// characters. When creating new conference data, populate only the subset
+    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
+    /// the terminology that the conference provider uses. Only the populated
+    /// fields should be displayed. Optional.
+    #[serde(rename = "meetingCode")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub meeting_code: Option<String>,
+    /// The password to access the conference. The maximum length is 128
+    /// characters. When creating new conference data, populate only the subset
+    /// of {meetingCode, accessCode, passcode, password, pin} fields that match
+    /// the terminology that the conference provider uses. Only the populated
+    /// fields should be displayed. Optional.
+    #[serde(rename = "password")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub password: Option<String>,
 }
 
 /// The scope of the rule.
@@ -984,18 +939,6 @@ pub struct AclRule {
     #[serde(rename = "scope")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub scope: Option<AclRuleScope>,
-    /// Type of the resource ("calendar#aclRule").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// Identifier of the ACL rule.
-    #[serde(rename = "id")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// ETag of the resource.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
     /// The role assigned to the scope. Possible values are:   - "none" -
     /// Provides no access.  - "freeBusyReader" - Provides read access to
     /// free/busy information.  - "reader" - Provides read access to the
@@ -1008,29 +951,243 @@ pub struct AclRule {
     #[serde(rename = "role")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub role: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Setting {
     /// ETag of the resource.
     #[serde(rename = "etag")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub etag: Option<String>,
-    /// Value of the user setting. The format of the value depends on the ID of
-    /// the setting. It must always be a UTF-8 string of length up to 1024
-    /// characters.
-    #[serde(rename = "value")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub value: Option<String>,
-    /// Type of the resource ("calendar#setting").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// The id of the user setting.
+    /// Identifier of the ACL rule.
     #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+    /// Type of the resource ("calendar#aclRule").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+
+/// The notifications that the authenticated user is receiving for this
+/// calendar.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarListEntryNotificationSettings {
+    /// The list of notifications set for this calendar.
+    #[serde(rename = "notifications")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notifications: Option<Vec<CalendarNotification>>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarListEntry {
+    /// Type of the resource ("calendar#calendarListEntry").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Whether the calendar has been hidden from the list. Optional. The
+    /// attribute is only returned when the calendar is hidden, in which case
+    /// the value is true.
+    #[serde(rename = "hidden")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub hidden: Option<bool>,
+    /// ETag of the resource.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Description of the calendar. Optional. Read-only.
+    #[serde(rename = "description")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Identifier of the calendar.
+    #[serde(rename = "id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
+    /// The color of the calendar. This is an ID referring to an entry in the
+    /// calendar section of the colors definition (see the colors endpoint).
+    /// This property is superseded by the backgroundColor and foregroundColor
+    /// properties and can be ignored when using these properties. Optional.
+    #[serde(rename = "colorId")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub color_id: Option<String>,
+    /// Whether this calendar list entry has been deleted from the calendar
+    /// list. Read-only. Optional. The default is False.
+    #[serde(rename = "deleted")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub deleted: Option<bool>,
+    /// Whether the calendar is the primary calendar of the authenticated user.
+    /// Read-only. Optional. The default is False.
+    #[serde(rename = "primary")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub primary: Option<bool>,
+    /// Whether the calendar content shows up in the calendar UI. Optional. The
+    /// default is False.
+    #[serde(rename = "selected")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub selected: Option<bool>,
+    /// The main color of the calendar in the hexadecimal format "#0088aa". This
+    /// property supersedes the index-based colorId property. To set or change
+    /// this property, you need to specify colorRgbFormat=true in the parameters
+    /// of the insert, update and patch methods. Optional.
+    #[serde(rename = "backgroundColor")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub background_color: Option<String>,
+    /// The foreground color of the calendar in the hexadecimal format
+    /// "#ffffff". This property supersedes the index-based colorId property. To
+    /// set or change this property, you need to specify colorRgbFormat=true in
+    /// the parameters of the insert, update and patch methods. Optional.
+    #[serde(rename = "foregroundColor")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub foreground_color: Option<String>,
+    /// The default reminders that the authenticated user has for this calendar.
+    #[serde(rename = "defaultReminders")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_reminders: Option<Vec<EventReminder>>,
+    /// The effective access role that the authenticated user has on the
+    /// calendar. Read-only. Possible values are:   - "freeBusyReader" -
+    /// Provides read access to free/busy information.  - "reader" - Provides
+    /// read access to the calendar. Private events will appear to users with
+    /// reader access, but event details will be hidden.  - "writer" - Provides
+    /// read and write access to the calendar. Private events will appear to
+    /// users with writer access, and event details will be visible.  - "owner"
+    /// - Provides ownership of the calendar. This role has all of the
+    /// permissions of the writer role with the additional ability to see and
+    /// manipulate ACLs.
+    #[serde(rename = "accessRole")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_role: Option<String>,
+    /// Title of the calendar. Read-only.
+    #[serde(rename = "summary")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// Geographic location of the calendar as free-form text. Optional.
+    /// Read-only.
+    #[serde(rename = "location")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub location: Option<String>,
+    #[serde(rename = "conferenceProperties")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conference_properties: Option<ConferenceProperties>,
+    /// The notifications that the authenticated user is receiving for this
+    /// calendar.
+    #[serde(rename = "notificationSettings")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub notification_settings: Option<CalendarListEntryNotificationSettings>,
+    /// The summary that the authenticated user has set for this calendar.
+    /// Optional.
+    #[serde(rename = "summaryOverride")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary_override: Option<String>,
+    /// The time zone of the calendar. Optional. Read-only.
+    #[serde(rename = "timeZone")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ConferenceRequestStatus {
+    /// The current status of the conference create request. Read-only. The
+    /// possible values are:   - "pending": the conference create request is
+    /// still being processed. - "success": the conference create request
+    /// succeeded, the entry points are populated. - "failure": the conference
+    /// create request failed, there are no entry points.
+    #[serde(rename = "statusCode")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub status_code: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct FreeBusyCalendar {
+    /// List of time ranges during which this calendar should be regarded as
+    /// busy.
+    #[serde(rename = "busy")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub busy: Option<Vec<TimePeriod>>,
+    /// Optional error(s) (if computation for the calendar failed).
+    #[serde(rename = "errors")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub errors: Option<Vec<Error>>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Colors {
+    /// A global palette of event colors, mapping from the color ID to its
+    /// definition. An event resource may refer to one of these color IDs in its
+    /// color field. Read-only.
+    #[serde(rename = "event")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub event: Option<HashMap<String, ColorDefinition>>,
+    /// DateTime: Last modification time of the color palette (as a RFC3339
+    /// timestamp). Read-only.
+    #[serde(rename = "updated")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<DateTime<Utc>>,
+    /// A global palette of calendar colors, mapping from the color ID to its
+    /// definition. A calendarListEntry resource refers to one of these color
+    /// IDs in its color field. Read-only.
+    #[serde(rename = "calendar")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calendar: Option<HashMap<String, ColorDefinition>>,
+    /// Type of the resource ("calendar#colors").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Acl {
+    /// List of rules on the access control list.
+    #[serde(rename = "items")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<AclRule>>,
+    /// Token used to access the next page of this result. Omitted if no further
+    /// results are available, in which case nextSyncToken is provided.
+    #[serde(rename = "nextPageToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
+    /// Token used at a later point in time to retrieve only the entries that
+    /// have changed since this result was returned. Omitted if further results
+    /// are available, in which case nextPageToken is provided.
+    #[serde(rename = "nextSyncToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_sync_token: Option<String>,
+    /// ETag of the collection.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Type of the collection ("calendar#acl").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Settings {
+    /// Type of the collection ("calendar#settings").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// Etag of the collection.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Token used at a later point in time to retrieve only the entries that
+    /// have changed since this result was returned. Omitted if further results
+    /// are available, in which case nextPageToken is provided.
+    #[serde(rename = "nextSyncToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_sync_token: Option<String>,
+    /// Token used to access the next page of this result. Omitted if no further
+    /// results are available, in which case nextSyncToken is provided.
+    #[serde(rename = "nextPageToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
+    /// List of user settings.
+    #[serde(rename = "items")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<Setting>>,
 }
 
 ///
@@ -1049,220 +1206,20 @@ pub struct ColorDefinition {
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FreeBusyCalendar {
-    /// Optional error(s) (if computation for the calendar failed).
-    #[serde(rename = "errors")]
+pub struct CalendarNotification {
+    /// The type of notification. Possible values are:   - "eventCreation" -
+    /// Notification sent when a new event is put on the calendar.  -
+    /// "eventChange" - Notification sent when an event is changed.  -
+    /// "eventCancellation" - Notification sent when an event is cancelled.  -
+    /// "eventResponse" - Notification sent when an attendee responds to the
+    /// event invitation.  - "agenda" - An agenda with the events of the day
+    /// (sent out in the morning).   Required when adding a notification.
+    #[serde(rename = "type")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub errors: Option<Vec<Error>>,
-    /// List of time ranges during which this calendar should be regarded as
-    /// busy.
-    #[serde(rename = "busy")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub busy: Option<Vec<TimePeriod>>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Error {
-    /// Domain, or broad category, of the error.
-    #[serde(rename = "domain")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub domain: Option<String>,
-    /// Specific reason for the error. Some of the possible values are:   -
-    /// "groupTooBig" - The group of users requested is too large for a single
-    /// query.  - "tooManyCalendarsRequested" - The number of calendars
-    /// requested is too large for a single query.  - "notFound" - The requested
-    /// resource was not found.  - "internalError" - The API service has
-    /// encountered an internal error.  Additional error types may be added in
-    /// the future, so clients should gracefully handle additional error
-    /// statuses not included in this list.
-    #[serde(rename = "reason")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub reason: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventAttendee {
-    /// The attendee's email address, if available. This field must be present
-    /// when adding an attendee. It must be a valid email address as per
-    /// RFC5322. Required when adding an attendee.
-    #[serde(rename = "email")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub email: Option<String>,
-    /// Number of additional guests. Optional. The default is 0.
-    #[serde(rename = "additionalGuests")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub additional_guests: Option<i32>,
-    /// Whether this entry represents the calendar on which this copy of the
-    /// event appears. Read-only. The default is False.
-    #[serde(rename = "self")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_self: Option<bool>,
-    /// Whether the attendee is the organizer of the event. Read-only. The
-    /// default is False.
-    #[serde(rename = "organizer")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub organizer: Option<bool>,
-    /// The attendee's Profile ID, if available. It corresponds to the id field
-    /// in the People collection of the Google+ API
-    #[serde(rename = "id")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// The attendee's response comment. Optional.
-    #[serde(rename = "comment")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub comment: Option<String>,
-    /// Whether this is an optional attendee. Optional. The default is False.
-    #[serde(rename = "optional")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub optional: Option<bool>,
-    /// The attendee's response status. Possible values are:   - "needsAction" -
-    /// The attendee has not responded to the invitation.  - "declined" - The
-    /// attendee has declined the invitation.  - "tentative" - The attendee has
-    /// tentatively accepted the invitation.  - "accepted" - The attendee has
-    /// accepted the invitation.
-    #[serde(rename = "responseStatus")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub response_status: Option<String>,
-    /// Whether the attendee is a resource. Can only be set when the attendee is
-    /// added to the event for the first time. Subsequent modifications are
-    /// ignored. Optional. The default is False.
-    #[serde(rename = "resource")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resource: Option<bool>,
-    /// The attendee's name, if available. Optional.
-    #[serde(rename = "displayName")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub display_name: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarList {
-    /// ETag of the collection.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    /// Calendars that are present on the user's calendar list.
-    #[serde(rename = "items")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub items: Option<Vec<CalendarListEntry>>,
-    /// Token used at a later point in time to retrieve only the entries that
-    /// have changed since this result was returned. Omitted if further results
-    /// are available, in which case nextPageToken is provided.
-    #[serde(rename = "nextSyncToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_sync_token: Option<String>,
-    /// Token used to access the next page of this result. Omitted if no further
-    /// results are available, in which case nextSyncToken is provided.
-    #[serde(rename = "nextPageToken")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub next_page_token: Option<String>,
-    /// Type of the collection ("calendar#calendarList").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ConferenceData {
-    #[serde(rename = "createRequest")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub create_request: Option<CreateConferenceRequest>,
-    /// The signature of the conference data. Generated on server side. Must be
-    /// preserved while copying the conference data between events, otherwise
-    /// the conference data will not be copied. Unset for a conference with a
-    /// failed create request. Optional for a conference with a pending create
-    /// request.
-    #[serde(rename = "signature")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub signature: Option<String>,
-    /// Additional notes (such as instructions from the domain administrator,
-    /// legal notices) to display to the user. Can contain HTML. The maximum
-    /// length is 2048 characters. Optional.
-    #[serde(rename = "notes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub notes: Option<String>,
-    /// Information about individual conference entry points, such as URLs or
-    /// phone numbers. All of them must belong to the same conference. Either
-    /// conferenceSolution and at least one entryPoint, or createRequest is
-    /// required.
-    #[serde(rename = "entryPoints")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub entry_points: Option<Vec<EntryPoint>>,
-    /// The ID of the conference. Can be used by developers to keep track of
-    /// conferences, should not be displayed to users. Values for solution
-    /// types:   - "eventHangout": unset. - "eventNamedHangout": the name of the
-    /// Hangout. - "hangoutsMeet": the 10-letter meeting code, for example
-    /// "aaa-bbbb-ccc". - "addOn": defined by 3P conference provider.  Optional.
-    #[serde(rename = "conferenceId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_id: Option<String>,
-    #[serde(rename = "parameters")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub parameters: Option<ConferenceParameters>,
-    #[serde(rename = "conferenceSolution")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_solution: Option<ConferenceSolution>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Colors {
-    /// A global palette of event colors, mapping from the color ID to its
-    /// definition. An event resource may refer to one of these color IDs in its
-    /// color field. Read-only.
-    #[serde(rename = "event")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub event: Option<HashMap<String, ColorDefinition>>,
-    /// DateTime: Last modification time of the color palette (as a RFC3339
-    /// timestamp). Read-only.
-    #[serde(rename = "updated")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
-    /// Type of the resource ("calendar#colors").
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// A global palette of calendar colors, mapping from the color ID to its
-    /// definition. A calendarListEntry resource refers to one of these color
-    /// IDs in its color field. Read-only.
-    #[serde(rename = "calendar")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub calendar: Option<HashMap<String, ColorDefinition>>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CreateConferenceRequest {
-    #[serde(rename = "status")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub status: Option<ConferenceRequestStatus>,
-    #[serde(rename = "conferenceSolutionKey")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_solution_key: Option<ConferenceSolutionKey>,
-    /// The client-generated unique ID for this request. Clients should
-    /// regenerate this ID for every new request. If an ID provided is the same
-    /// as for the previous request, the request is ignored.
-    #[serde(rename = "requestId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub request_id: Option<String>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventReminder {
-    /// Number of minutes before the start of the event when the reminder should
-    /// trigger. Valid values are between 0 and 40320 (4 weeks in minutes).
-    /// Required when adding a reminder.
-    #[serde(rename = "minutes")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub minutes: Option<i32>,
-    /// The method used by this reminder. Possible values are:   - "email" -
-    /// Reminders are sent via email.  - "popup" - Reminders are sent via a UI
-    /// popup.   Required when adding a reminder.
+    pub typ: Option<String>,
+    /// The method used to deliver the notification. The possible value is:   -
+    /// "email" - Notifications are sent via email.   Required when adding a
+    /// notification.
     #[serde(rename = "method")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub method: Option<String>,
@@ -1270,31 +1227,143 @@ pub struct EventReminder {
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ConferenceRequestStatus {
-    /// The current status of the conference create request. Read-only. The
-    /// possible values are:   - "pending": the conference create request is
-    /// still being processed. - "success": the conference create request
-    /// succeeded, the entry points are populated. - "failure": the conference
-    /// create request failed, there are no entry points.
-    #[serde(rename = "statusCode")]
+pub struct FreeBusyGroup {
+    /// Optional error(s) (if computation for the group failed).
+    #[serde(rename = "errors")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub status_code: Option<String>,
+    pub errors: Option<Vec<Error>>,
+    /// List of calendars' identifiers within a group.
+    #[serde(rename = "calendars")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub calendars: Option<Vec<String>>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ConferenceProperties {
-    /// The types of conference solutions that are supported for this calendar.
-    /// The possible values are:   - "eventHangout"  - "eventNamedHangout"  -
-    /// "hangoutsMeet"  Optional.
-    #[serde(rename = "allowedConferenceSolutionTypes")]
+pub struct FreeBusyRequestItem {
+    /// The identifier of a calendar or a group.
+    #[serde(rename = "id")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub allowed_conference_solution_types: Option<Vec<String>>,
+    pub id: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct TimePeriod {
+    /// DateTime: The (inclusive) start of the time period.
+    #[serde(rename = "start")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub start: Option<DateTime<Utc>>,
+    /// DateTime: The (exclusive) end of the time period.
+    #[serde(rename = "end")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub end: Option<DateTime<Utc>>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ConferenceSolution {
+    #[serde(rename = "key")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub key: Option<ConferenceSolutionKey>,
+    /// The user-visible name of this solution. Not localized.
+    #[serde(rename = "name")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+    /// The user-visible icon for this solution.
+    #[serde(rename = "iconUri")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub icon_uri: Option<String>,
+}
+
+///
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct Events {
+    /// Title of the calendar. Read-only.
+    #[serde(rename = "summary")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub summary: Option<String>,
+    /// Token used to access the next page of this result. Omitted if no further
+    /// results are available, in which case nextSyncToken is provided.
+    #[serde(rename = "nextPageToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_page_token: Option<String>,
+    /// Description of the calendar. Read-only.
+    #[serde(rename = "description")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// The user's access role for this calendar. Read-only. Possible values
+    /// are:   - "none" - The user has no access.  - "freeBusyReader" - The user
+    /// has read access to free/busy information.  - "reader" - The user has
+    /// read access to the calendar. Private events will appear to users with
+    /// reader access, but event details will be hidden.  - "writer" - The user
+    /// has read and write access to the calendar. Private events will appear to
+    /// users with writer access, and event details will be visible.  - "owner"
+    /// - The user has ownership of the calendar. This role has all of the
+    /// permissions of the writer role with the additional ability to see and
+    /// manipulate ACLs.
+    #[serde(rename = "accessRole")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub access_role: Option<String>,
+    /// The time zone of the calendar. Read-only.
+    #[serde(rename = "timeZone")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    /// List of events on the calendar.
+    #[serde(rename = "items")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub items: Option<Vec<Event>>,
+    /// DateTime: Last modification time of the calendar (as a RFC3339
+    /// timestamp). Read-only.
+    #[serde(rename = "updated")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub updated: Option<DateTime<Utc>>,
+    /// Token used at a later point in time to retrieve only the entries that
+    /// have changed since this result was returned. Omitted if further results
+    /// are available, in which case nextPageToken is provided.
+    #[serde(rename = "nextSyncToken")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub next_sync_token: Option<String>,
+    /// ETag of the collection.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Type of the collection ("calendar#events").
+    #[serde(rename = "kind")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub kind: Option<String>,
+    /// The default reminders on the calendar for the authenticated user. These
+    /// reminders apply to all events on this calendar that do not explicitly
+    /// override them (i.e. do not have reminders.useDefault set to True).
+    #[serde(rename = "defaultReminders")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub default_reminders: Option<Vec<EventReminder>>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct Calendar {
+    #[serde(rename = "conferenceProperties")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub conference_properties: Option<ConferenceProperties>,
+    /// The time zone of the calendar. (Formatted as an IANA Time Zone Database
+    /// name, e.g. "Europe/Zurich".) Optional.
+    #[serde(rename = "timeZone")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub time_zone: Option<String>,
+    /// ETag of the resource.
+    #[serde(rename = "etag")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub etag: Option<String>,
+    /// Description of the calendar. Optional.
+    #[serde(rename = "description")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub description: Option<String>,
+    /// Identifier of the calendar. To retrieve IDs call the calendarList.list()
+    /// method.
+    #[serde(rename = "id")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
     /// Type of the resource ("calendar#calendar").
     #[serde(rename = "kind")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1303,105 +1372,38 @@ pub struct Calendar {
     #[serde(rename = "location")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub location: Option<String>,
-    /// ETag of the resource.
-    #[serde(rename = "etag")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub etag: Option<String>,
-    /// Identifier of the calendar. To retrieve IDs call the calendarList.list()
-    /// method.
-    #[serde(rename = "id")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
     /// Title of the calendar.
     #[serde(rename = "summary")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub summary: Option<String>,
-    /// The time zone of the calendar. (Formatted as an IANA Time Zone Database
-    /// name, e.g. "Europe/Zurich".) Optional.
-    #[serde(rename = "timeZone")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_zone: Option<String>,
-    /// Description of the calendar. Optional.
-    #[serde(rename = "description")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub description: Option<String>,
-    #[serde(rename = "conferenceProperties")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub conference_properties: Option<ConferenceProperties>,
 }
 
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FreeBusyResponse {
-    /// Type of the resource ("calendar#freeBusy").
-    #[serde(rename = "kind")]
+pub struct EventAttachment {
+    /// URL link to the attachment's icon. Read-only.
+    #[serde(rename = "iconLink")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// Expansion of groups.
-    #[serde(rename = "groups")]
+    pub icon_link: Option<String>,
+    /// ID of the attached file. Read-only. For Google Drive files, this is the
+    /// ID of the corresponding Files resource entry in the Drive API.
+    #[serde(rename = "fileId")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub groups: Option<HashMap<String, FreeBusyGroup>>,
-    /// DateTime: The end of the interval.
-    #[serde(rename = "timeMax")]
+    pub file_id: Option<String>,
+    /// Internet media type (MIME type) of the attachment.
+    #[serde(rename = "mimeType")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTime<Utc>>,
-    /// DateTime: The start of the interval.
-    #[serde(rename = "timeMin")]
+    pub mime_type: Option<String>,
+    /// URL link to the attachment. For adding Google Drive file attachments use
+    /// the same format as in alternateLink property of the Files resource in
+    /// the Drive API. Required when adding an attachment.
+    #[serde(rename = "fileUrl")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_min: Option<DateTime<Utc>>,
-    /// List of free/busy information for calendars.
-    #[serde(rename = "calendars")]
+    pub file_url: Option<String>,
+    /// Attachment title.
+    #[serde(rename = "title")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub calendars: Option<HashMap<String, FreeBusyCalendar>>,
-}
-
-///
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct Channel {
-    /// The type of delivery mechanism used for this channel.
-    #[serde(rename = "type")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub typ: Option<String>,
-    /// Additional parameters controlling delivery channel behavior. Optional.
-    #[serde(rename = "params")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub params: Option<HashMap<String, String>>,
-    /// The address where notifications are delivered for this channel.
-    #[serde(rename = "address")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub address: Option<String>,
-    /// A Boolean value to indicate whether payload is wanted. Optional.
-    #[serde(rename = "payload")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub payload: Option<bool>,
-    /// An opaque ID that identifies the resource being watched on this channel.
-    /// Stable across different API versions.
-    #[serde(rename = "resourceId")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resource_id: Option<String>,
-    /// Identifies this as a notification channel used to watch for changes to a
-    /// resource, which is "api#channel".
-    #[serde(rename = "kind")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub kind: Option<String>,
-    /// A version-specific identifier for the watched resource.
-    #[serde(rename = "resourceUri")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub resource_uri: Option<String>,
-    /// A UUID or similar unique string that identifies this channel.
-    #[serde(rename = "id")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub id: Option<String>,
-    /// i64: Date and time of notification channel expiration, expressed as a
-    /// Unix timestamp, in milliseconds. Optional.
-    #[serde(rename = "expiration")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub expiration: Option<String>,
-    /// An arbitrary string delivered to the target address with each
-    /// notification delivered over this channel. Optional.
-    #[serde(rename = "token")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub token: Option<String>,
+    pub title: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -1477,102 +1479,29 @@ impl std::fmt::Display for CalendarListWatchMinAccessRole {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum EventsUpdateSendUpdates {
+pub enum EventsListOrderBy {
     Undefined,
-    /// Notifications are sent to all guests.
-    #[serde(rename = "all")]
-    All,
-    /// Notifications are sent to non-Google Calendar guests only.
-    #[serde(rename = "externalOnly")]
-    ExternalOnly,
-    /// No notifications are sent. This value should only be used for migration
-    /// use cases (note that in most migration cases the import method should be
-    /// used).
-    #[serde(rename = "none")]
-    None,
+    /// Order by the start date/time (ascending). This is only available when
+    /// querying single events (i.e. the parameter singleEvents is True)
+    #[serde(rename = "startTime")]
+    StartTime,
+    /// Order by last modification time (ascending).
+    #[serde(rename = "updated")]
+    Updated,
 }
 
-impl std::default::Default for EventsUpdateSendUpdates {
-    fn default() -> EventsUpdateSendUpdates {
-        EventsUpdateSendUpdates::Undefined
+impl std::default::Default for EventsListOrderBy {
+    fn default() -> EventsListOrderBy {
+        EventsListOrderBy::Undefined
     }
 }
 
-impl std::fmt::Display for EventsUpdateSendUpdates {
+impl std::fmt::Display for EventsListOrderBy {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            EventsUpdateSendUpdates::Undefined => write!(f, "undefined"),
-            EventsUpdateSendUpdates::All => write!(f, "all"),
-            EventsUpdateSendUpdates::ExternalOnly => write!(f, "externalOnly"),
-            EventsUpdateSendUpdates::None => write!(f, "none"),
-        };
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum EventsQuickAddSendUpdates {
-    Undefined,
-    /// Notifications are sent to all guests.
-    #[serde(rename = "all")]
-    All,
-    /// Notifications are sent to non-Google Calendar guests only.
-    #[serde(rename = "externalOnly")]
-    ExternalOnly,
-    /// No notifications are sent. This value should only be used for migration
-    /// use cases (note that in most migration cases the import method should be
-    /// used).
-    #[serde(rename = "none")]
-    None,
-}
-
-impl std::default::Default for EventsQuickAddSendUpdates {
-    fn default() -> EventsQuickAddSendUpdates {
-        EventsQuickAddSendUpdates::Undefined
-    }
-}
-
-impl std::fmt::Display for EventsQuickAddSendUpdates {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            EventsQuickAddSendUpdates::Undefined => write!(f, "undefined"),
-            EventsQuickAddSendUpdates::All => write!(f, "all"),
-            EventsQuickAddSendUpdates::ExternalOnly => write!(f, "externalOnly"),
-            EventsQuickAddSendUpdates::None => write!(f, "none"),
-        };
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum EventsMoveSendUpdates {
-    Undefined,
-    /// Notifications are sent to all guests.
-    #[serde(rename = "all")]
-    All,
-    /// Notifications are sent to non-Google Calendar guests only.
-    #[serde(rename = "externalOnly")]
-    ExternalOnly,
-    /// No notifications are sent. This value should only be used for migration
-    /// use cases (note that in most migration cases the import method should be
-    /// used).
-    #[serde(rename = "none")]
-    None,
-}
-
-impl std::default::Default for EventsMoveSendUpdates {
-    fn default() -> EventsMoveSendUpdates {
-        EventsMoveSendUpdates::Undefined
-    }
-}
-
-impl std::fmt::Display for EventsMoveSendUpdates {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            EventsMoveSendUpdates::Undefined => write!(f, "undefined"),
-            EventsMoveSendUpdates::All => write!(f, "all"),
-            EventsMoveSendUpdates::ExternalOnly => write!(f, "externalOnly"),
-            EventsMoveSendUpdates::None => write!(f, "none"),
+            EventsListOrderBy::Undefined => write!(f, "undefined"),
+            EventsListOrderBy::StartTime => write!(f, "startTime"),
+            EventsListOrderBy::Updated => write!(f, "updated"),
         };
         Ok(())
     }
@@ -1613,6 +1542,74 @@ impl std::fmt::Display for EventsPatchSendUpdates {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum EventsInsertSendUpdates {
+    Undefined,
+    /// Notifications are sent to all guests.
+    #[serde(rename = "all")]
+    All,
+    /// Notifications are sent to non-Google Calendar guests only.
+    #[serde(rename = "externalOnly")]
+    ExternalOnly,
+    /// No notifications are sent. This value should only be used for migration
+    /// use cases (note that in most migration cases the import method should be
+    /// used).
+    #[serde(rename = "none")]
+    None,
+}
+
+impl std::default::Default for EventsInsertSendUpdates {
+    fn default() -> EventsInsertSendUpdates {
+        EventsInsertSendUpdates::Undefined
+    }
+}
+
+impl std::fmt::Display for EventsInsertSendUpdates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            EventsInsertSendUpdates::Undefined => write!(f, "undefined"),
+            EventsInsertSendUpdates::All => write!(f, "all"),
+            EventsInsertSendUpdates::ExternalOnly => write!(f, "externalOnly"),
+            EventsInsertSendUpdates::None => write!(f, "none"),
+        };
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum EventsUpdateSendUpdates {
+    Undefined,
+    /// Notifications are sent to all guests.
+    #[serde(rename = "all")]
+    All,
+    /// Notifications are sent to non-Google Calendar guests only.
+    #[serde(rename = "externalOnly")]
+    ExternalOnly,
+    /// No notifications are sent. This value should only be used for migration
+    /// use cases (note that in most migration cases the import method should be
+    /// used).
+    #[serde(rename = "none")]
+    None,
+}
+
+impl std::default::Default for EventsUpdateSendUpdates {
+    fn default() -> EventsUpdateSendUpdates {
+        EventsUpdateSendUpdates::Undefined
+    }
+}
+
+impl std::fmt::Display for EventsUpdateSendUpdates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            EventsUpdateSendUpdates::Undefined => write!(f, "undefined"),
+            EventsUpdateSendUpdates::All => write!(f, "all"),
+            EventsUpdateSendUpdates::ExternalOnly => write!(f, "externalOnly"),
+            EventsUpdateSendUpdates::None => write!(f, "none"),
+        };
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub enum EventsWatchOrderBy {
     Undefined,
     /// Order by the start date/time (ascending). This is only available when
@@ -1636,6 +1633,40 @@ impl std::fmt::Display for EventsWatchOrderBy {
             EventsWatchOrderBy::Undefined => write!(f, "undefined"),
             EventsWatchOrderBy::StartTime => write!(f, "startTime"),
             EventsWatchOrderBy::Updated => write!(f, "updated"),
+        };
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+pub enum EventsMoveSendUpdates {
+    Undefined,
+    /// Notifications are sent to all guests.
+    #[serde(rename = "all")]
+    All,
+    /// Notifications are sent to non-Google Calendar guests only.
+    #[serde(rename = "externalOnly")]
+    ExternalOnly,
+    /// No notifications are sent. This value should only be used for migration
+    /// use cases (note that in most migration cases the import method should be
+    /// used).
+    #[serde(rename = "none")]
+    None,
+}
+
+impl std::default::Default for EventsMoveSendUpdates {
+    fn default() -> EventsMoveSendUpdates {
+        EventsMoveSendUpdates::Undefined
+    }
+}
+
+impl std::fmt::Display for EventsMoveSendUpdates {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let s = match self {
+            EventsMoveSendUpdates::Undefined => write!(f, "undefined"),
+            EventsMoveSendUpdates::All => write!(f, "all"),
+            EventsMoveSendUpdates::ExternalOnly => write!(f, "externalOnly"),
+            EventsMoveSendUpdates::None => write!(f, "none"),
         };
         Ok(())
     }
@@ -1676,7 +1707,7 @@ impl std::fmt::Display for EventsDeleteSendUpdates {
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum EventsInsertSendUpdates {
+pub enum EventsQuickAddSendUpdates {
     Undefined,
     /// Notifications are sent to all guests.
     #[serde(rename = "all")]
@@ -1691,48 +1722,19 @@ pub enum EventsInsertSendUpdates {
     None,
 }
 
-impl std::default::Default for EventsInsertSendUpdates {
-    fn default() -> EventsInsertSendUpdates {
-        EventsInsertSendUpdates::Undefined
+impl std::default::Default for EventsQuickAddSendUpdates {
+    fn default() -> EventsQuickAddSendUpdates {
+        EventsQuickAddSendUpdates::Undefined
     }
 }
 
-impl std::fmt::Display for EventsInsertSendUpdates {
+impl std::fmt::Display for EventsQuickAddSendUpdates {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let s = match self {
-            EventsInsertSendUpdates::Undefined => write!(f, "undefined"),
-            EventsInsertSendUpdates::All => write!(f, "all"),
-            EventsInsertSendUpdates::ExternalOnly => write!(f, "externalOnly"),
-            EventsInsertSendUpdates::None => write!(f, "none"),
-        };
-        Ok(())
-    }
-}
-
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub enum EventsListOrderBy {
-    Undefined,
-    /// Order by the start date/time (ascending). This is only available when
-    /// querying single events (i.e. the parameter singleEvents is True)
-    #[serde(rename = "startTime")]
-    StartTime,
-    /// Order by last modification time (ascending).
-    #[serde(rename = "updated")]
-    Updated,
-}
-
-impl std::default::Default for EventsListOrderBy {
-    fn default() -> EventsListOrderBy {
-        EventsListOrderBy::Undefined
-    }
-}
-
-impl std::fmt::Display for EventsListOrderBy {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let s = match self {
-            EventsListOrderBy::Undefined => write!(f, "undefined"),
-            EventsListOrderBy::StartTime => write!(f, "startTime"),
-            EventsListOrderBy::Updated => write!(f, "updated"),
+            EventsQuickAddSendUpdates::Undefined => write!(f, "undefined"),
+            EventsQuickAddSendUpdates::All => write!(f, "all"),
+            EventsQuickAddSendUpdates::ExternalOnly => write!(f, "externalOnly"),
+            EventsQuickAddSendUpdates::None => write!(f, "none"),
         };
         Ok(())
     }
@@ -1762,73 +1764,139 @@ impl std::fmt::Display for CalendarParamsAlt {
     }
 }
 
-/// Parameters for the `acl.list` method.
+/// Parameters for the `colors.get` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct AclListParams {
+pub struct ColorsGetParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Whether to include deleted ACLs in the result. Deleted ACLs are
-    /// represented by role equal to "none". Deleted ACLs will always be
-    /// included if syncToken is provided. Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then. All entries
-    /// deleted since the previous list request will always be in the result set
-    /// and it is not allowed to set showDeleted to False.
-    // If the syncToken expires, the server will respond with a 410 GONE response code and the
-    // client should clear its storage and perform a full synchronization without any syncToken.
-    // Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
+}
+
+impl std::fmt::Display for ColorsGetParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `channels.stop` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct ChannelsStopParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+}
+
+impl std::fmt::Display for ChannelsStopParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.insert` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsInsertParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+}
+
+impl std::fmt::Display for CalendarsInsertParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.update` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsUpdateParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
 }
 
-impl std::fmt::Display for AclListParams {
+impl std::fmt::Display for CalendarsUpdateParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.show_deleted {
-            write!(
-                f,
-                "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.get` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsGetParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+}
+
+impl std::fmt::Display for CalendarsGetParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.delete` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsDeleteParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+}
+
+impl std::fmt::Display for CalendarsDeleteParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.patch` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsPatchParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+}
+
+impl std::fmt::Display for CalendarsPatchParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendars.clear` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarsClearParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+}
+
+impl std::fmt::Display for CalendarsClearParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
 }
@@ -1839,14 +1907,14 @@ pub struct AclDeleteParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// ACL rule identifier.
-    #[serde(rename = "ruleId")]
-    pub rule_id: String,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
+    /// ACL rule identifier.
+    #[serde(rename = "ruleId")]
+    pub rule_id: String,
 }
 
 impl std::fmt::Display for AclDeleteParams {
@@ -1855,24 +1923,28 @@ impl std::fmt::Display for AclDeleteParams {
     }
 }
 
-/// Parameters for the `acl.insert` method.
+/// Parameters for the `acl.patch` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct AclInsertParams {
+pub struct AclPatchParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
+    /// Whether to send notifications about the calendar sharing change. Note
+    /// that there are no notifications on access removal. Optional. The default
+    /// is True.
+    #[serde(rename = "sendNotifications")]
+    pub send_notifications: Option<bool>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// Whether to send notifications about the calendar sharing change.
-    /// Optional. The default is True.
-    #[serde(rename = "sendNotifications")]
-    pub send_notifications: Option<bool>,
+    /// ACL rule identifier.
+    #[serde(rename = "ruleId")]
+    pub rule_id: String,
 }
 
-impl std::fmt::Display for AclInsertParams {
+impl std::fmt::Display for AclPatchParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(ref v) = self.send_notifications {
             write!(
@@ -1891,6 +1963,11 @@ pub struct AclUpdateParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
     /// Whether to send notifications about the calendar sharing change. Note
     /// that there are no notifications on access removal. Optional. The default
     /// is True.
@@ -1899,11 +1976,6 @@ pub struct AclUpdateParams {
     /// ACL rule identifier.
     #[serde(rename = "ruleId")]
     pub rule_id: String,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
 }
 
 impl std::fmt::Display for AclUpdateParams {
@@ -1912,6 +1984,77 @@ impl std::fmt::Display for AclUpdateParams {
             write!(
                 f,
                 "&sendNotifications={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `acl.list` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct AclListParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+    /// Whether to include deleted ACLs in the result. Deleted ACLs are
+    /// represented by role equal to "none". Deleted ACLs will always be
+    /// included if syncToken is provided. Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then. All entries
+    /// deleted since the previous list request will always be in the result set
+    /// and it is not allowed to set showDeleted to False.
+    // If the syncToken expires, the server will respond with a 410 GONE response code and the
+    // client should clear its storage and perform a full synchronization without any syncToken.
+    // Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+}
+
+impl std::fmt::Display for AclListParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.show_deleted {
+            write!(
+                f,
+                "&showDeleted={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -1941,28 +2084,24 @@ impl std::fmt::Display for AclGetParams {
     }
 }
 
-/// Parameters for the `acl.patch` method.
+/// Parameters for the `acl.insert` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct AclPatchParams {
+pub struct AclInsertParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// ACL rule identifier.
-    #[serde(rename = "ruleId")]
-    pub rule_id: String,
+    /// Whether to send notifications about the calendar sharing change.
+    /// Optional. The default is True.
+    #[serde(rename = "sendNotifications")]
+    pub send_notifications: Option<bool>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// Whether to send notifications about the calendar sharing change. Note
-    /// that there are no notifications on access removal. Optional. The default
-    /// is True.
-    #[serde(rename = "sendNotifications")]
-    pub send_notifications: Option<bool>,
 }
 
-impl std::fmt::Display for AclPatchParams {
+impl std::fmt::Display for AclInsertParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(ref v) = self.send_notifications {
             write!(
@@ -1981,24 +2120,24 @@ pub struct AclWatchParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
     /// Whether to include deleted ACLs in the result. Deleted ACLs are
     /// represented by role equal to "none". Deleted ACLs will always be
     /// included if syncToken is provided. Optional. The default is False.
     #[serde(rename = "showDeleted")]
     pub show_deleted: Option<bool>,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
     /// Token obtained from the nextSyncToken field returned on the last page of
     /// results from the previous list request. It makes the result of this list
     /// request contain only entries that have changed since then. All entries
@@ -2014,6 +2153,211 @@ pub struct AclWatchParams {
 
 impl std::fmt::Display for AclWatchParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.show_deleted {
+            write!(
+                f,
+                "&showDeleted={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendarList.list` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarListListParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// The minimum access role for the user in the returned entries. Optional.
+    /// The default is no restriction.
+    #[serde(rename = "minAccessRole")]
+    pub min_access_role: Option<CalendarListListMinAccessRole>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// Whether to show hidden entries. Optional. The default is False.
+    #[serde(rename = "showHidden")]
+    pub show_hidden: Option<bool>,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then. If only
+    /// read-only fields such as calendar properties or ACLs have changed, the
+    /// entry won't be returned. All entries deleted and hidden since the
+    /// previous list request will always be in the result set and it is not
+    /// allowed to set showDeleted neither showHidden to False.
+    // To ensure client state consistency minAccessRole query parameter cannot be specified together
+    // with nextSyncToken. If the syncToken expires, the server will respond with a 410 GONE
+    // response code and the client should clear its storage and perform a full synchronization
+    // without any syncToken. Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+    /// Whether to include deleted calendar list entries in the result.
+    /// Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
+}
+
+impl std::fmt::Display for CalendarListListParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.min_access_role {
+            write!(
+                f,
+                "&minAccessRole={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.show_hidden {
+            write!(
+                f,
+                "&showHidden={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.show_deleted {
+            write!(
+                f,
+                "&showDeleted={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendarList.insert` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarListInsertParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Whether to use the foregroundColor and backgroundColor fields to write
+    /// the calendar colors (RGB). If this feature is used, the index-based
+    /// colorId field will be set to the best matching option automatically.
+    /// Optional. The default is False.
+    #[serde(rename = "colorRgbFormat")]
+    pub color_rgb_format: Option<bool>,
+}
+
+impl std::fmt::Display for CalendarListInsertParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.color_rgb_format {
+            write!(
+                f,
+                "&colorRgbFormat={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `calendarList.watch` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct CalendarListWatchParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then. If only
+    /// read-only fields such as calendar properties or ACLs have changed, the
+    /// entry won't be returned. All entries deleted and hidden since the
+    /// previous list request will always be in the result set and it is not
+    /// allowed to set showDeleted neither showHidden to False.
+    // To ensure client state consistency minAccessRole query parameter cannot be specified together
+    // with nextSyncToken. If the syncToken expires, the server will respond with a 410 GONE
+    // response code and the client should clear its storage and perform a full synchronization
+    // without any syncToken. Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+    /// The minimum access role for the user in the returned entries. Optional.
+    /// The default is no restriction.
+    #[serde(rename = "minAccessRole")]
+    pub min_access_role: Option<CalendarListWatchMinAccessRole>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// Whether to include deleted calendar list entries in the result.
+    /// Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Whether to show hidden entries. Optional. The default is False.
+    #[serde(rename = "showHidden")]
+    pub show_hidden: Option<bool>,
+}
+
+impl std::fmt::Display for CalendarListWatchParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.min_access_role {
+            write!(
+                f,
+                "&minAccessRole={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
@@ -2035,10 +2379,10 @@ impl std::fmt::Display for AclWatchParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        if let Some(ref v) = self.sync_token {
+        if let Some(ref v) = self.show_hidden {
             write!(
                 f,
-                "&syncToken={}",
+                "&showHidden={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2129,122 +2473,6 @@ impl std::fmt::Display for CalendarListDeleteParams {
     }
 }
 
-/// Parameters for the `calendarList.insert` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarListInsertParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Whether to use the foregroundColor and backgroundColor fields to write
-    /// the calendar colors (RGB). If this feature is used, the index-based
-    /// colorId field will be set to the best matching option automatically.
-    /// Optional. The default is False.
-    #[serde(rename = "colorRgbFormat")]
-    pub color_rgb_format: Option<bool>,
-}
-
-impl std::fmt::Display for CalendarListInsertParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.color_rgb_format {
-            write!(
-                f,
-                "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendarList.list` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarListListParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Whether to show hidden entries. Optional. The default is False.
-    #[serde(rename = "showHidden")]
-    pub show_hidden: Option<bool>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// The minimum access role for the user in the returned entries. Optional.
-    /// The default is no restriction.
-    #[serde(rename = "minAccessRole")]
-    pub min_access_role: Option<CalendarListListMinAccessRole>,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then. If only
-    /// read-only fields such as calendar properties or ACLs have changed, the
-    /// entry won't be returned. All entries deleted and hidden since the
-    /// previous list request will always be in the result set and it is not
-    /// allowed to set showDeleted neither showHidden to False.
-    // To ensure client state consistency minAccessRole query parameter cannot be specified together
-    // with nextSyncToken. If the syncToken expires, the server will respond with a 410 GONE
-    // response code and the client should clear its storage and perform a full synchronization
-    // without any syncToken. Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Whether to include deleted calendar list entries in the result.
-    /// Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
-}
-
-impl std::fmt::Display for CalendarListListParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.show_hidden {
-            write!(
-                f,
-                "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.min_access_role {
-            write!(
-                f,
-                "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_deleted {
-            write!(
-                f,
-                "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
 /// Parameters for the `calendarList.get` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CalendarListGetParams {
@@ -2259,109 +2487,6 @@ pub struct CalendarListGetParams {
 }
 
 impl std::fmt::Display for CalendarListGetParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendarList.watch` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarListWatchParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// Whether to include deleted calendar list entries in the result.
-    /// Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
-    /// The minimum access role for the user in the returned entries. Optional.
-    /// The default is no restriction.
-    #[serde(rename = "minAccessRole")]
-    pub min_access_role: Option<CalendarListWatchMinAccessRole>,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then. If only
-    /// read-only fields such as calendar properties or ACLs have changed, the
-    /// entry won't be returned. All entries deleted and hidden since the
-    /// previous list request will always be in the result set and it is not
-    /// allowed to set showDeleted neither showHidden to False.
-    // To ensure client state consistency minAccessRole query parameter cannot be specified together
-    // with nextSyncToken. If the syncToken expires, the server will respond with a 410 GONE
-    // response code and the client should clear its storage and perform a full synchronization
-    // without any syncToken. Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Whether to show hidden entries. Optional. The default is False.
-    #[serde(rename = "showHidden")]
-    pub show_hidden: Option<bool>,
-}
-
-impl std::fmt::Display for CalendarListWatchParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_deleted {
-            write!(
-                f,
-                "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.min_access_role {
-            write!(
-                f,
-                "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_hidden {
-            write!(
-                f,
-                "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
-/// Parameters for the `freebusy.query` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct FreebusyQueryParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-}
-
-impl std::fmt::Display for FreebusyQueryParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
@@ -2384,64 +2509,69 @@ impl std::fmt::Display for SettingsGetParams {
     }
 }
 
-/// Parameters for the `settings.list` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct SettingsListParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then.
-    // If the syncToken expires, the server will respond with a 410 GONE response code and the
-    // client should clear its storage and perform a full synchronization without any syncToken.
-    // Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
-}
-
-impl std::fmt::Display for SettingsListParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
 /// Parameters for the `settings.watch` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct SettingsWatchParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then.
+    // If the syncToken expires, the server will respond with a 410 GONE response code and the
+    // client should clear its storage and perform a full synchronization without any syncToken.
+    // Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+}
+
+impl std::fmt::Display for SettingsWatchParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `settings.list` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct SettingsListParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Maximum number of entries returned on one result page. By default the
+    /// value is 100 entries. The page size can never be larger than 250
+    /// entries. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
     /// Token obtained from the nextSyncToken field returned on the last page of
     /// results from the previous list request. It makes the result of this list
     /// request contain only entries that have changed since then.
@@ -2454,15 +2584,17 @@ pub struct SettingsWatchParams {
     /// Token specifying which result page to return. Optional.
     #[serde(rename = "pageToken")]
     pub page_token: Option<String>,
-    /// Maximum number of entries returned on one result page. By default the
-    /// value is 100 entries. The page size can never be larger than 250
-    /// entries. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
 }
 
-impl std::fmt::Display for SettingsWatchParams {
+impl std::fmt::Display for SettingsListParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
@@ -2477,6 +2609,226 @@ impl std::fmt::Display for SettingsWatchParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
+        Ok(())
+    }
+}
+
+/// Parameters for the `events.list` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventsListParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// DateTime: Upper bound (exclusive) for an event's start time to filter
+    /// by. Optional. The default is not to filter by start time. Must be an
+    /// RFC3339 timestamp with mandatory time zone offset, for example,
+    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
+    /// provided but are ignored. If timeMin is set, timeMax must be greater
+    /// than timeMin.
+    #[serde(rename = "timeMax")]
+    pub time_max: Option<DateTime<Utc>>,
+    /// Whether to include deleted events (with status equals "cancelled") in
+    /// the result. Cancelled instances of recurring events (but not the
+    /// underlying recurring event) will still be included if showDeleted and
+    /// singleEvents are both False. If showDeleted and singleEvents are both
+    /// True, only single instances of deleted events (but not the underlying
+    /// recurring events) are returned. Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
+    /// Extended properties constraint specified as propertyName=value. Matches
+    /// only shared properties. This parameter might be repeated multiple times
+    /// to return events that match all given constraints.
+    #[serde(rename = "sharedExtendedProperty")]
+    pub shared_extended_property: Option<String>,
+    /// Specifies event ID in the iCalendar format to be included in the
+    /// response. Optional.
+    #[serde(rename = "iCalUID")]
+    pub i_cal_u_i_d: Option<String>,
+    /// Deprecated and ignored. A value will always be returned in the email
+    /// field for the organizer, creator and attendees, even if no real email
+    /// address is available (i.e. a generated, non-working value will be
+    /// provided).
+    #[serde(rename = "alwaysIncludeEmail")]
+    pub always_include_email: Option<bool>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then. All events
+    /// deleted since the previous list request will always be in the result set
+    /// and it is not allowed to set showDeleted to False.
+    // There are several query parameters that cannot be specified together with nextSyncToken to
+    // ensure consistency of the client state.
+
+    // These are:
+    // - iCalUID
+    // - orderBy
+    // - privateExtendedProperty
+    // - q
+    // - sharedExtendedProperty
+    // - timeMin
+    // - timeMax
+    // - updatedMin If the syncToken expires, the server will respond with a 410 GONE response code
+    //   and the client should clear its storage and perform a full synchronization without any
+    //   syncToken.
+    // Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+    /// Extended properties constraint specified as propertyName=value. Matches
+    /// only private properties. This parameter might be repeated multiple times
+    /// to return events that match all given constraints.
+    #[serde(rename = "privateExtendedProperty")]
+    pub private_extended_property: Option<String>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+    /// Time zone used in the response. Optional. The default is the time zone
+    /// of the calendar.
+    #[serde(rename = "timeZone")]
+    pub time_zone: Option<String>,
+    /// Whether to include hidden invitations in the result. Optional. The
+    /// default is False.
+    #[serde(rename = "showHiddenInvitations")]
+    pub show_hidden_invitations: Option<bool>,
+    /// DateTime: Lower bound (exclusive) for an event's end time to filter by.
+    /// Optional. The default is not to filter by end time. Must be an RFC3339
+    /// timestamp with mandatory time zone offset, for example,
+    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
+    /// provided but are ignored. If timeMax is set, timeMin must be smaller
+    /// than timeMax.
+    #[serde(rename = "timeMin")]
+    pub time_min: Option<DateTime<Utc>>,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
+    /// Whether to expand recurring events into instances and only return single
+    /// one-off events and instances of recurring events, but not the underlying
+    /// recurring events themselves. Optional. The default is False.
+    #[serde(rename = "singleEvents")]
+    pub single_events: Option<bool>,
+    /// Maximum number of events returned on one result page. The number of
+    /// events in the resulting page may be less than this value, or none at
+    /// all, even if there are more events matching the query. Incomplete pages
+    /// can be detected by a non-empty nextPageToken field in the response. By
+    /// default the value is 250 events. The page size can never be larger than
+    /// 2500 events. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Free text search terms to find events that match these terms in any
+    /// field, except for extended properties. Optional.
+    #[serde(rename = "q")]
+    pub q: Option<String>,
+    /// The order of the events returned in the result. Optional. The default is
+    /// an unspecified, stable order.
+    #[serde(rename = "orderBy")]
+    pub order_by: Option<EventsListOrderBy>,
+    /// DateTime: Lower bound for an event's last modification time (as a
+    /// RFC3339 timestamp) to filter by. When specified, entries deleted since
+    /// this time will always be included regardless of showDeleted. Optional.
+    /// The default is not to filter by last modification time.
+    #[serde(rename = "updatedMin")]
+    pub updated_min: Option<DateTime<Utc>>,
+}
+
+impl std::fmt::Display for EventsListParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.time_max {
+            write!(
+                f,
+                "&timeMax={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.show_deleted {
+            write!(
+                f,
+                "&showDeleted={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.shared_extended_property {
+            write!(
+                f,
+                "&sharedExtendedProperty={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.i_cal_u_i_d {
+            write!(
+                f,
+                "&iCalUID={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.always_include_email {
+            write!(
+                f,
+                "&alwaysIncludeEmail={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.private_extended_property {
+            write!(
+                f,
+                "&privateExtendedProperty={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_zone {
+            write!(
+                f,
+                "&timeZone={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.show_hidden_invitations {
+            write!(
+                f,
+                "&showHiddenInvitations={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_min {
+            write!(
+                f,
+                "&timeMin={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_attendees {
+            write!(
+                f,
+                "&maxAttendees={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.single_events {
+            write!(
+                f,
+                "&singleEvents={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
@@ -2484,30 +2836,47 @@ impl std::fmt::Display for SettingsWatchParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
+        if let Some(ref v) = self.q {
+            write!(
+                f,
+                "&q={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.order_by {
+            write!(
+                f,
+                "&orderBy={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.updated_min {
+            write!(
+                f,
+                "&updatedMin={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
         Ok(())
     }
 }
 
-/// Parameters for the `channels.stop` method.
+/// Parameters for the `events.patch` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ChannelsStopParams {
+pub struct EventsPatchParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-}
-
-impl std::fmt::Display for ChannelsStopParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `events.update` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsUpdateParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
+    /// Whether API client performing operation supports event attachments.
+    /// Optional. The default is False.
+    #[serde(rename = "supportsAttachments")]
+    pub supports_attachments: Option<bool>,
+    /// Deprecated and ignored. A value will always be returned in the email
+    /// field for the organizer, creator and attendees, even if no real email
+    /// address is available (i.e. a generated, non-working value will be
+    /// provided).
+    #[serde(rename = "alwaysIncludeEmail")]
+    pub always_include_email: Option<bool>,
     /// Version number of conference data supported by the API client. Version 0
     /// assumes no conference data support and ignores conference data in the
     /// event's body. Version 1 enables support for copying of ConferenceData as
@@ -2515,12 +2884,6 @@ pub struct EventsUpdateParams {
     /// conferenceData. The default is 0.
     #[serde(rename = "conferenceDataVersion")]
     pub conference_data_version: Option<i32>,
-    /// Deprecated and ignored. A value will always be returned in the email
-    /// field for the organizer, creator and attendees, even if no real email
-    /// address is available (i.e. a generated, non-working value will be
-    /// provided).
-    #[serde(rename = "alwaysIncludeEmail")]
-    pub always_include_email: Option<bool>,
     /// The maximum number of attendees to include in the response. If there are
     /// more than the specified number of attendees, only the participant is
     /// returned. Optional.
@@ -2536,27 +2899,23 @@ pub struct EventsUpdateParams {
     // default is false.
     #[serde(rename = "sendNotifications")]
     pub send_notifications: Option<bool>,
-    /// Guests who should receive notifications about the event update (for
-    /// example, title changes, etc.).
-    #[serde(rename = "sendUpdates")]
-    pub send_updates: Option<EventsUpdateSendUpdates>,
-    /// Whether API client performing operation supports event attachments.
-    /// Optional. The default is False.
-    #[serde(rename = "supportsAttachments")]
-    pub supports_attachments: Option<bool>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
+    /// Guests who should receive notifications about the event update (for
+    /// example, title changes, etc.).
+    #[serde(rename = "sendUpdates")]
+    pub send_updates: Option<EventsPatchSendUpdates>,
 }
 
-impl std::fmt::Display for EventsUpdateParams {
+impl std::fmt::Display for EventsPatchParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.conference_data_version {
+        if let Some(ref v) = self.supports_attachments {
             write!(
                 f,
-                "&conferenceDataVersion={}",
+                "&supportsAttachments={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2564,6 +2923,13 @@ impl std::fmt::Display for EventsUpdateParams {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.conference_data_version {
+            write!(
+                f,
+                "&conferenceDataVersion={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2581,6 +2947,58 @@ impl std::fmt::Display for EventsUpdateParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
+        if let Some(ref v) = self.send_updates {
+            write!(
+                f,
+                "&sendUpdates={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `events.insert` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventsInsertParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Whether to send notifications about the creation of the new event. Note
+    /// that some emails might still be sent. The default is false.
+    #[serde(rename = "sendUpdates")]
+    pub send_updates: Option<EventsInsertSendUpdates>,
+    /// Whether API client performing operation supports event attachments.
+    /// Optional. The default is False.
+    #[serde(rename = "supportsAttachments")]
+    pub supports_attachments: Option<bool>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+    /// Version number of conference data supported by the API client. Version 0
+    /// assumes no conference data support and ignores conference data in the
+    /// event's body. Version 1 enables support for copying of ConferenceData as
+    /// well as for creating new conferences using the createRequest field of
+    /// conferenceData. The default is 0.
+    #[serde(rename = "conferenceDataVersion")]
+    pub conference_data_version: Option<i32>,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
+    /// Deprecated. Please use sendUpdates instead.
+
+    // Whether to send notifications about the creation of the new event. Note that some emails
+    // might still be sent even if you set the value to false. The default is false.
+    #[serde(rename = "sendNotifications")]
+    pub send_notifications: Option<bool>,
+}
+
+impl std::fmt::Display for EventsInsertParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
@@ -2595,54 +3013,10 @@ impl std::fmt::Display for EventsUpdateParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        Ok(())
-    }
-}
-
-/// Parameters for the `events.get` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsGetParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Event identifier.
-    #[serde(rename = "eventId")]
-    pub event_id: String,
-    /// Time zone used in the response. Optional. The default is the time zone
-    /// of the calendar.
-    #[serde(rename = "timeZone")]
-    pub time_zone: Option<String>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-    /// Deprecated and ignored. A value will always be returned in the email
-    /// field for the organizer, creator and attendees, even if no real email
-    /// address is available (i.e. a generated, non-working value will be
-    /// provided).
-    #[serde(rename = "alwaysIncludeEmail")]
-    pub always_include_email: Option<bool>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-}
-
-impl std::fmt::Display for EventsGetParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.time_zone {
+        if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
-                "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.always_include_email {
-            write!(
-                f,
-                "&alwaysIncludeEmail={}",
+                "&conferenceDataVersion={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2650,50 +3024,6 @@ impl std::fmt::Display for EventsGetParams {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
-/// Parameters for the `events.quickAdd` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsQuickAddParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Guests who should receive notifications about the creation of the new
-    /// event.
-    #[serde(rename = "sendUpdates")]
-    pub send_updates: Option<EventsQuickAddSendUpdates>,
-    /// The text describing the event to be created.
-    #[serde(rename = "text")]
-    pub text: String,
-    /// Deprecated. Please use sendUpdates instead.
-
-    // Whether to send notifications about the creation of the event. Note that some emails might
-    // still be sent even if you set the value to false. The default is false.
-    #[serde(rename = "sendNotifications")]
-    pub send_notifications: Option<bool>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for EventsQuickAddParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "&text={}",
-            percent_encode(format!("{}", self.text).as_bytes(), NON_ALPHANUMERIC).to_string()
-        )?;
-        if let Some(ref v) = self.send_updates {
-            write!(
-                f,
-                "&sendUpdates={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2708,15 +3038,357 @@ impl std::fmt::Display for EventsQuickAddParams {
     }
 }
 
+/// Parameters for the `events.update` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventsUpdateParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Whether API client performing operation supports event attachments.
+    /// Optional. The default is False.
+    #[serde(rename = "supportsAttachments")]
+    pub supports_attachments: Option<bool>,
+    /// Event identifier.
+    #[serde(rename = "eventId")]
+    pub event_id: String,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
+    /// Deprecated and ignored. A value will always be returned in the email
+    /// field for the organizer, creator and attendees, even if no real email
+    /// address is available (i.e. a generated, non-working value will be
+    /// provided).
+    #[serde(rename = "alwaysIncludeEmail")]
+    pub always_include_email: Option<bool>,
+    /// Version number of conference data supported by the API client. Version 0
+    /// assumes no conference data support and ignores conference data in the
+    /// event's body. Version 1 enables support for copying of ConferenceData as
+    /// well as for creating new conferences using the createRequest field of
+    /// conferenceData. The default is 0.
+    #[serde(rename = "conferenceDataVersion")]
+    pub conference_data_version: Option<i32>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+    /// Deprecated. Please use sendUpdates instead.
+
+    // Whether to send notifications about the event update (for example, description changes,
+    // etc.). Note that some emails might still be sent even if you set the value to false. The
+    // default is false.
+    #[serde(rename = "sendNotifications")]
+    pub send_notifications: Option<bool>,
+    /// Guests who should receive notifications about the event update (for
+    /// example, title changes, etc.).
+    #[serde(rename = "sendUpdates")]
+    pub send_updates: Option<EventsUpdateSendUpdates>,
+}
+
+impl std::fmt::Display for EventsUpdateParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.supports_attachments {
+            write!(
+                f,
+                "&supportsAttachments={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_attendees {
+            write!(
+                f,
+                "&maxAttendees={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.always_include_email {
+            write!(
+                f,
+                "&alwaysIncludeEmail={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.conference_data_version {
+            write!(
+                f,
+                "&conferenceDataVersion={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.send_notifications {
+            write!(
+                f,
+                "&sendNotifications={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.send_updates {
+            write!(
+                f,
+                "&sendUpdates={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
+/// Parameters for the `events.watch` method.
+#[derive(Serialize, Deserialize, Debug, Clone, Default)]
+pub struct EventsWatchParams {
+    /// General attributes applying to any API call
+    #[serde(flatten)]
+    pub calendar_params: Option<CalendarParams>,
+    /// Whether to include hidden invitations in the result. Optional. The
+    /// default is False.
+    #[serde(rename = "showHiddenInvitations")]
+    pub show_hidden_invitations: Option<bool>,
+    /// Maximum number of events returned on one result page. The number of
+    /// events in the resulting page may be less than this value, or none at
+    /// all, even if there are more events matching the query. Incomplete pages
+    /// can be detected by a non-empty nextPageToken field in the response. By
+    /// default the value is 250 events. The page size can never be larger than
+    /// 2500 events. Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
+    /// Extended properties constraint specified as propertyName=value. Matches
+    /// only shared properties. This parameter might be repeated multiple times
+    /// to return events that match all given constraints.
+    #[serde(rename = "sharedExtendedProperty")]
+    pub shared_extended_property: Option<String>,
+    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
+    /// method. If you want to access the primary calendar of the currently
+    /// logged in user, use the "primary" keyword.
+    #[serde(rename = "calendarId")]
+    pub calendar_id: String,
+    /// Whether to expand recurring events into instances and only return single
+    /// one-off events and instances of recurring events, but not the underlying
+    /// recurring events themselves. Optional. The default is False.
+    #[serde(rename = "singleEvents")]
+    pub single_events: Option<bool>,
+    /// Time zone used in the response. Optional. The default is the time zone
+    /// of the calendar.
+    #[serde(rename = "timeZone")]
+    pub time_zone: Option<String>,
+    /// Specifies event ID in the iCalendar format to be included in the
+    /// response. Optional.
+    #[serde(rename = "iCalUID")]
+    pub i_cal_u_i_d: Option<String>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// DateTime: Lower bound (exclusive) for an event's end time to filter by.
+    /// Optional. The default is not to filter by end time. Must be an RFC3339
+    /// timestamp with mandatory time zone offset, for example,
+    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
+    /// provided but are ignored. If timeMax is set, timeMin must be smaller
+    /// than timeMax.
+    #[serde(rename = "timeMin")]
+    pub time_min: Option<DateTime<Utc>>,
+    /// Free text search terms to find events that match these terms in any
+    /// field, except for extended properties. Optional.
+    #[serde(rename = "q")]
+    pub q: Option<String>,
+    /// Extended properties constraint specified as propertyName=value. Matches
+    /// only private properties. This parameter might be repeated multiple times
+    /// to return events that match all given constraints.
+    #[serde(rename = "privateExtendedProperty")]
+    pub private_extended_property: Option<String>,
+    /// DateTime: Lower bound for an event's last modification time (as a
+    /// RFC3339 timestamp) to filter by. When specified, entries deleted since
+    /// this time will always be included regardless of showDeleted. Optional.
+    /// The default is not to filter by last modification time.
+    #[serde(rename = "updatedMin")]
+    pub updated_min: Option<DateTime<Utc>>,
+    /// The order of the events returned in the result. Optional. The default is
+    /// an unspecified, stable order.
+    #[serde(rename = "orderBy")]
+    pub order_by: Option<EventsWatchOrderBy>,
+    /// Whether to include deleted events (with status equals "cancelled") in
+    /// the result. Cancelled instances of recurring events (but not the
+    /// underlying recurring event) will still be included if showDeleted and
+    /// singleEvents are both False. If showDeleted and singleEvents are both
+    /// True, only single instances of deleted events (but not the underlying
+    /// recurring events) are returned. Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
+    /// Token obtained from the nextSyncToken field returned on the last page of
+    /// results from the previous list request. It makes the result of this list
+    /// request contain only entries that have changed since then. All events
+    /// deleted since the previous list request will always be in the result set
+    /// and it is not allowed to set showDeleted to False.
+    // There are several query parameters that cannot be specified together with nextSyncToken to
+    // ensure consistency of the client state.
+
+    // These are:
+    // - iCalUID
+    // - orderBy
+    // - privateExtendedProperty
+    // - q
+    // - sharedExtendedProperty
+    // - timeMin
+    // - timeMax
+    // - updatedMin If the syncToken expires, the server will respond with a 410 GONE response code
+    //   and the client should clear its storage and perform a full synchronization without any
+    //   syncToken.
+    // Learn more about incremental synchronization.
+    // Optional. The default is to return all entries.
+    #[serde(rename = "syncToken")]
+    pub sync_token: Option<String>,
+    /// DateTime: Upper bound (exclusive) for an event's start time to filter
+    /// by. Optional. The default is not to filter by start time. Must be an
+    /// RFC3339 timestamp with mandatory time zone offset, for example,
+    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
+    /// provided but are ignored. If timeMin is set, timeMax must be greater
+    /// than timeMin.
+    #[serde(rename = "timeMax")]
+    pub time_max: Option<DateTime<Utc>>,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
+    /// Deprecated and ignored. A value will always be returned in the email
+    /// field for the organizer, creator and attendees, even if no real email
+    /// address is available (i.e. a generated, non-working value will be
+    /// provided).
+    #[serde(rename = "alwaysIncludeEmail")]
+    pub always_include_email: Option<bool>,
+}
+
+impl std::fmt::Display for EventsWatchParams {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.show_hidden_invitations {
+            write!(
+                f,
+                "&showHiddenInvitations={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.shared_extended_property {
+            write!(
+                f,
+                "&sharedExtendedProperty={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.single_events {
+            write!(
+                f,
+                "&singleEvents={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_zone {
+            write!(
+                f,
+                "&timeZone={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.i_cal_u_i_d {
+            write!(
+                f,
+                "&iCalUID={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_min {
+            write!(
+                f,
+                "&timeMin={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.q {
+            write!(
+                f,
+                "&q={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.private_extended_property {
+            write!(
+                f,
+                "&privateExtendedProperty={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.updated_min {
+            write!(
+                f,
+                "&updatedMin={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.order_by {
+            write!(
+                f,
+                "&orderBy={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.show_deleted {
+            write!(
+                f,
+                "&showDeleted={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.sync_token {
+            write!(
+                f,
+                "&syncToken={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_max {
+            write!(
+                f,
+                "&timeMax={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.max_attendees {
+            write!(
+                f,
+                "&maxAttendees={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.always_include_email {
+            write!(
+                f,
+                "&alwaysIncludeEmail={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        Ok(())
+    }
+}
+
 /// Parameters for the `events.move` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct EventsMoveParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Event identifier.
-    #[serde(rename = "eventId")]
-    pub event_id: String,
     /// Calendar identifier of the source calendar where the event currently is
     /// on.
     #[serde(rename = "calendarId")]
@@ -2731,6 +3403,9 @@ pub struct EventsMoveParams {
     // emails might still be sent even if you set the value to false. The default is false.
     #[serde(rename = "sendNotifications")]
     pub send_notifications: Option<bool>,
+    /// Event identifier.
+    #[serde(rename = "eventId")]
+    pub event_id: String,
     /// Calendar identifier of the target calendar where the event is to be
     /// moved to.
     #[serde(rename = "destination")]
@@ -2763,22 +3438,12 @@ impl std::fmt::Display for EventsMoveParams {
     }
 }
 
-/// Parameters for the `events.patch` method.
+/// Parameters for the `events.import` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsPatchParams {
+pub struct EventsImportParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Event identifier.
-    #[serde(rename = "eventId")]
-    pub event_id: String,
-    /// Deprecated. Please use sendUpdates instead.
-
-    // Whether to send notifications about the event update (for example, description changes,
-    // etc.). Note that some emails might still be sent even if you set the value to false. The
-    // default is false.
-    #[serde(rename = "sendNotifications")]
-    pub send_notifications: Option<bool>,
     /// Version number of conference data supported by the API client. Version 0
     /// assumes no conference data support and ignores conference data in the
     /// event's body. Version 1 enables support for copying of ConferenceData as
@@ -2786,66 +3451,23 @@ pub struct EventsPatchParams {
     /// conferenceData. The default is 0.
     #[serde(rename = "conferenceDataVersion")]
     pub conference_data_version: Option<i32>,
-    /// Guests who should receive notifications about the event update (for
-    /// example, title changes, etc.).
-    #[serde(rename = "sendUpdates")]
-    pub send_updates: Option<EventsPatchSendUpdates>,
-    /// Deprecated and ignored. A value will always be returned in the email
-    /// field for the organizer, creator and attendees, even if no real email
-    /// address is available (i.e. a generated, non-working value will be
-    /// provided).
-    #[serde(rename = "alwaysIncludeEmail")]
-    pub always_include_email: Option<bool>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-    /// Whether API client performing operation supports event attachments.
-    /// Optional. The default is False.
-    #[serde(rename = "supportsAttachments")]
-    pub supports_attachments: Option<bool>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
+    /// Whether API client performing operation supports event attachments.
+    /// Optional. The default is False.
+    #[serde(rename = "supportsAttachments")]
+    pub supports_attachments: Option<bool>,
 }
 
-impl std::fmt::Display for EventsPatchParams {
+impl std::fmt::Display for EventsImportParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.send_notifications {
-            write!(
-                f,
-                "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.send_updates {
-            write!(
-                f,
-                "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.always_include_email {
-            write!(
-                f,
-                "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_attendees {
-            write!(
-                f,
-                "&maxAttendees={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -2860,149 +3482,43 @@ impl std::fmt::Display for EventsPatchParams {
     }
 }
 
-/// Parameters for the `events.watch` method.
+/// Parameters for the `events.get` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsWatchParams {
+pub struct EventsGetParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Specifies event ID in the iCalendar format to be included in the
-    /// response. Optional.
-    #[serde(rename = "iCalUID")]
-    pub i_cal_u_i_d: Option<String>,
-    /// DateTime: Lower bound for an event's last modification time (as a
-    /// RFC3339 timestamp) to filter by. When specified, entries deleted since
-    /// this time will always be included regardless of showDeleted. Optional.
-    /// The default is not to filter by last modification time.
-    #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTime<Utc>>,
-    /// Free text search terms to find events that match these terms in any
-    /// field, except for extended properties. Optional.
-    #[serde(rename = "q")]
-    pub q: Option<String>,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
     /// Deprecated and ignored. A value will always be returned in the email
     /// field for the organizer, creator and attendees, even if no real email
     /// address is available (i.e. a generated, non-working value will be
     /// provided).
     #[serde(rename = "alwaysIncludeEmail")]
     pub always_include_email: Option<bool>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-    /// DateTime: Upper bound (exclusive) for an event's start time to filter
-    /// by. Optional. The default is not to filter by start time. Must be an
-    /// RFC3339 timestamp with mandatory time zone offset, for example,
-    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
-    /// provided but are ignored. If timeMin is set, timeMax must be greater
-    /// than timeMin.
-    #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
-    /// The order of the events returned in the result. Optional. The default is
-    /// an unspecified, stable order.
-    #[serde(rename = "orderBy")]
-    pub order_by: Option<EventsWatchOrderBy>,
-    /// Maximum number of events returned on one result page. The number of
-    /// events in the resulting page may be less than this value, or none at
-    /// all, even if there are more events matching the query. Incomplete pages
-    /// can be detected by a non-empty nextPageToken field in the response. By
-    /// default the value is 250 events. The page size can never be larger than
-    /// 2500 events. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Whether to include deleted events (with status equals "cancelled") in
-    /// the result. Cancelled instances of recurring events (but not the
-    /// underlying recurring event) will still be included if showDeleted and
-    /// singleEvents are both False. If showDeleted and singleEvents are both
-    /// True, only single instances of deleted events (but not the underlying
-    /// recurring events) are returned. Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
-    /// Whether to expand recurring events into instances and only return single
-    /// one-off events and instances of recurring events, but not the underlying
-    /// recurring events themselves. Optional. The default is False.
-    #[serde(rename = "singleEvents")]
-    pub single_events: Option<bool>,
+    /// Event identifier.
+    #[serde(rename = "eventId")]
+    pub event_id: String,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then. All events
-    /// deleted since the previous list request will always be in the result set
-    /// and it is not allowed to set showDeleted to False.
-    // There are several query parameters that cannot be specified together with nextSyncToken to
-    // ensure consistency of the client state.
-
-    // These are:
-    // - iCalUID
-    // - orderBy
-    // - privateExtendedProperty
-    // - q
-    // - sharedExtendedProperty
-    // - timeMin
-    // - timeMax
-    // - updatedMin If the syncToken expires, the server will respond with a 410 GONE response code
-    //   and the client should clear its storage and perform a full synchronization without any
-    //   syncToken.
-    // Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
-    /// Extended properties constraint specified as propertyName=value. Matches
-    /// only private properties. This parameter might be repeated multiple times
-    /// to return events that match all given constraints.
-    #[serde(rename = "privateExtendedProperty")]
-    pub private_extended_property: Option<String>,
     /// Time zone used in the response. Optional. The default is the time zone
     /// of the calendar.
     #[serde(rename = "timeZone")]
     pub time_zone: Option<String>,
-    /// Extended properties constraint specified as propertyName=value. Matches
-    /// only shared properties. This parameter might be repeated multiple times
-    /// to return events that match all given constraints.
-    #[serde(rename = "sharedExtendedProperty")]
-    pub shared_extended_property: Option<String>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// Whether to include hidden invitations in the result. Optional. The
-    /// default is False.
-    #[serde(rename = "showHiddenInvitations")]
-    pub show_hidden_invitations: Option<bool>,
-    /// DateTime: Lower bound (exclusive) for an event's end time to filter by.
-    /// Optional. The default is not to filter by end time. Must be an RFC3339
-    /// timestamp with mandatory time zone offset, for example,
-    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
-    /// provided but are ignored. If timeMax is set, timeMin must be smaller
-    /// than timeMax.
-    #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
 }
 
-impl std::fmt::Display for EventsWatchParams {
+impl std::fmt::Display for EventsGetParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.i_cal_u_i_d {
+        if let Some(ref v) = self.max_attendees {
             write!(
                 f,
-                "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.updated_min {
-            write!(
-                f,
-                "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.q {
-            write!(
-                f,
-                "&q={}",
+                "&maxAttendees={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3013,94 +3529,10 @@ impl std::fmt::Display for EventsWatchParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        if let Some(ref v) = self.max_attendees {
-            write!(
-                f,
-                "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_max {
-            write!(
-                f,
-                "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.order_by {
-            write!(
-                f,
-                "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_deleted {
-            write!(
-                f,
-                "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.single_events {
-            write!(
-                f,
-                "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.private_extended_property {
-            write!(
-                f,
-                "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.shared_extended_property {
-            write!(
-                f,
-                "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_hidden_invitations {
-            write!(
-                f,
-                "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_min {
-            write!(
-                f,
-                "&timeMin={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3117,14 +3549,14 @@ pub struct EventsDeleteParams {
     /// Guests who should receive notifications about the deletion of the event.
     #[serde(rename = "sendUpdates")]
     pub send_updates: Option<EventsDeleteSendUpdates>,
-    /// Event identifier.
-    #[serde(rename = "eventId")]
-    pub event_id: String,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
+    /// Event identifier.
+    #[serde(rename = "eventId")]
+    pub event_id: String,
     /// Deprecated. Please use sendUpdates instead.
 
     // Whether to send notifications about the deletion of the event. Note that some emails might
@@ -3159,52 +3591,52 @@ pub struct EventsInstancesParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
-    /// Time zone used in the response. Optional. The default is the time zone
-    /// of the calendar.
-    #[serde(rename = "timeZone")]
-    pub time_zone: Option<String>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-    /// Maximum number of events returned on one result page. By default the
-    /// value is 250 events. The page size can never be larger than 2500 events.
-    /// Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// Whether to include deleted events (with status equals "cancelled") in
-    /// the result. Cancelled instances of recurring events will still be
-    /// included if singleEvents is False. Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
     /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
     /// method. If you want to access the primary calendar of the currently
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// DateTime: Upper bound (exclusive) for an event's start time to filter
-    /// by. Optional. The default is not to filter by start time. Must be an
-    /// RFC3339 timestamp with mandatory time zone offset.
-    #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
-    /// DateTime: Lower bound (inclusive) for an event's end time to filter by.
-    /// Optional. The default is not to filter by end time. Must be an RFC3339
-    /// timestamp with mandatory time zone offset.
-    #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
-    /// Recurring event identifier.
-    #[serde(rename = "eventId")]
-    pub event_id: String,
+    /// Maximum number of events returned on one result page. By default the
+    /// value is 250 events. The page size can never be larger than 2500 events.
+    /// Optional.
+    #[serde(rename = "maxResults")]
+    pub max_results: Option<i32>,
     /// Deprecated and ignored. A value will always be returned in the email
     /// field for the organizer, creator and attendees, even if no real email
     /// address is available (i.e. a generated, non-working value will be
     /// provided).
     #[serde(rename = "alwaysIncludeEmail")]
     pub always_include_email: Option<bool>,
+    /// Time zone used in the response. Optional. The default is the time zone
+    /// of the calendar.
+    #[serde(rename = "timeZone")]
+    pub time_zone: Option<String>,
+    /// Recurring event identifier.
+    #[serde(rename = "eventId")]
+    pub event_id: String,
+    /// DateTime: Upper bound (exclusive) for an event's start time to filter
+    /// by. Optional. The default is not to filter by start time. Must be an
+    /// RFC3339 timestamp with mandatory time zone offset.
+    #[serde(rename = "timeMax")]
+    pub time_max: Option<DateTime<Utc>>,
+    /// Token specifying which result page to return. Optional.
+    #[serde(rename = "pageToken")]
+    pub page_token: Option<String>,
+    /// The maximum number of attendees to include in the response. If there are
+    /// more than the specified number of attendees, only the participant is
+    /// returned. Optional.
+    #[serde(rename = "maxAttendees")]
+    pub max_attendees: Option<i32>,
+    /// DateTime: Lower bound (inclusive) for an event's end time to filter by.
+    /// Optional. The default is not to filter by end time. Must be an RFC3339
+    /// timestamp with mandatory time zone offset.
+    #[serde(rename = "timeMin")]
+    pub time_min: Option<DateTime<Utc>>,
+    /// Whether to include deleted events (with status equals "cancelled") in
+    /// the result. Cancelled instances of recurring events will still be
+    /// included if singleEvents is False. Optional. The default is False.
+    #[serde(rename = "showDeleted")]
+    pub show_deleted: Option<bool>,
     /// The original start time of the instance in the result. Optional.
     #[serde(rename = "originalStart")]
     pub original_start: Option<String>,
@@ -3212,10 +3644,38 @@ pub struct EventsInstancesParams {
 
 impl std::fmt::Display for EventsInstancesParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        if let Some(ref v) = self.max_results {
+            write!(
+                f,
+                "&maxResults={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.always_include_email {
+            write!(
+                f,
+                "&alwaysIncludeEmail={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.time_max {
+            write!(
+                f,
+                "&timeMax={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.page_token {
+            write!(
+                f,
+                "&pageToken={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3226,45 +3686,17 @@ impl std::fmt::Display for EventsInstancesParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        if let Some(ref v) = self.max_results {
+        if let Some(ref v) = self.time_min {
             write!(
                 f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                "&timeMin={}",
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_max {
-            write!(
-                f,
-                "&timeMax={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_min {
-            write!(
-                f,
-                "&timeMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.always_include_email {
-            write!(
-                f,
-                "&alwaysIncludeEmail={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3279,9 +3711,9 @@ impl std::fmt::Display for EventsInstancesParams {
     }
 }
 
-/// Parameters for the `events.insert` method.
+/// Parameters for the `events.quickAdd` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsInsertParams {
+pub struct EventsQuickAddParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
@@ -3290,47 +3722,32 @@ pub struct EventsInsertParams {
     /// logged in user, use the "primary" keyword.
     #[serde(rename = "calendarId")]
     pub calendar_id: String,
-    /// Whether API client performing operation supports event attachments.
-    /// Optional. The default is False.
-    #[serde(rename = "supportsAttachments")]
-    pub supports_attachments: Option<bool>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-    /// Whether to send notifications about the creation of the new event. Note
-    /// that some emails might still be sent. The default is false.
-    #[serde(rename = "sendUpdates")]
-    pub send_updates: Option<EventsInsertSendUpdates>,
     /// Deprecated. Please use sendUpdates instead.
 
-    // Whether to send notifications about the creation of the new event. Note that some emails
-    // might still be sent even if you set the value to false. The default is false.
+    // Whether to send notifications about the creation of the event. Note that some emails might
+    // still be sent even if you set the value to false. The default is false.
     #[serde(rename = "sendNotifications")]
     pub send_notifications: Option<bool>,
-    /// Version number of conference data supported by the API client. Version 0
-    /// assumes no conference data support and ignores conference data in the
-    /// event's body. Version 1 enables support for copying of ConferenceData as
-    /// well as for creating new conferences using the createRequest field of
-    /// conferenceData. The default is 0.
-    #[serde(rename = "conferenceDataVersion")]
-    pub conference_data_version: Option<i32>,
+    /// The text describing the event to be created.
+    #[serde(rename = "text")]
+    pub text: String,
+    /// Guests who should receive notifications about the creation of the new
+    /// event.
+    #[serde(rename = "sendUpdates")]
+    pub send_updates: Option<EventsQuickAddSendUpdates>,
 }
 
-impl std::fmt::Display for EventsInsertParams {
+impl std::fmt::Display for EventsQuickAddParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.supports_attachments {
+        write!(
+            f,
+            "&text={}",
+            percent_encode(format!("{}", self.text).as_bytes(), NON_ALPHANUMERIC).to_string()
+        )?;
+        if let Some(ref v) = self.send_notifications {
             write!(
                 f,
-                "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_attendees {
-            write!(
-                f,
-                "&maxAttendees={}",
+                "&sendNotifications={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3341,436 +3758,19 @@ impl std::fmt::Display for EventsInsertParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        if let Some(ref v) = self.send_notifications {
-            write!(
-                f,
-                "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.conference_data_version {
-            write!(
-                f,
-                "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
         Ok(())
     }
 }
 
-/// Parameters for the `events.import` method.
+/// Parameters for the `freebusy.query` method.
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsImportParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Whether API client performing operation supports event attachments.
-    /// Optional. The default is False.
-    #[serde(rename = "supportsAttachments")]
-    pub supports_attachments: Option<bool>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-    /// Version number of conference data supported by the API client. Version 0
-    /// assumes no conference data support and ignores conference data in the
-    /// event's body. Version 1 enables support for copying of ConferenceData as
-    /// well as for creating new conferences using the createRequest field of
-    /// conferenceData. The default is 0.
-    #[serde(rename = "conferenceDataVersion")]
-    pub conference_data_version: Option<i32>,
-}
-
-impl std::fmt::Display for EventsImportParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.supports_attachments {
-            write!(
-                f,
-                "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.conference_data_version {
-            write!(
-                f,
-                "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
-/// Parameters for the `events.list` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct EventsListParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// The maximum number of attendees to include in the response. If there are
-    /// more than the specified number of attendees, only the participant is
-    /// returned. Optional.
-    #[serde(rename = "maxAttendees")]
-    pub max_attendees: Option<i32>,
-    /// DateTime: Upper bound (exclusive) for an event's start time to filter
-    /// by. Optional. The default is not to filter by start time. Must be an
-    /// RFC3339 timestamp with mandatory time zone offset, for example,
-    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
-    /// provided but are ignored. If timeMin is set, timeMax must be greater
-    /// than timeMin.
-    #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
-    /// DateTime: Lower bound (exclusive) for an event's end time to filter by.
-    /// Optional. The default is not to filter by end time. Must be an RFC3339
-    /// timestamp with mandatory time zone offset, for example,
-    /// 2011-06-03T10:00:00-07:00, 2011-06-03T10:00:00Z. Milliseconds may be
-    /// provided but are ignored. If timeMax is set, timeMin must be smaller
-    /// than timeMax.
-    #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
-    /// Specifies event ID in the iCalendar format to be included in the
-    /// response. Optional.
-    #[serde(rename = "iCalUID")]
-    pub i_cal_u_i_d: Option<String>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-    /// Deprecated and ignored. A value will always be returned in the email
-    /// field for the organizer, creator and attendees, even if no real email
-    /// address is available (i.e. a generated, non-working value will be
-    /// provided).
-    #[serde(rename = "alwaysIncludeEmail")]
-    pub always_include_email: Option<bool>,
-    /// Maximum number of events returned on one result page. The number of
-    /// events in the resulting page may be less than this value, or none at
-    /// all, even if there are more events matching the query. Incomplete pages
-    /// can be detected by a non-empty nextPageToken field in the response. By
-    /// default the value is 250 events. The page size can never be larger than
-    /// 2500 events. Optional.
-    #[serde(rename = "maxResults")]
-    pub max_results: Option<i32>,
-    /// The order of the events returned in the result. Optional. The default is
-    /// an unspecified, stable order.
-    #[serde(rename = "orderBy")]
-    pub order_by: Option<EventsListOrderBy>,
-    /// Whether to expand recurring events into instances and only return single
-    /// one-off events and instances of recurring events, but not the underlying
-    /// recurring events themselves. Optional. The default is False.
-    #[serde(rename = "singleEvents")]
-    pub single_events: Option<bool>,
-    /// Whether to include hidden invitations in the result. Optional. The
-    /// default is False.
-    #[serde(rename = "showHiddenInvitations")]
-    pub show_hidden_invitations: Option<bool>,
-    /// Time zone used in the response. Optional. The default is the time zone
-    /// of the calendar.
-    #[serde(rename = "timeZone")]
-    pub time_zone: Option<String>,
-    /// Whether to include deleted events (with status equals "cancelled") in
-    /// the result. Cancelled instances of recurring events (but not the
-    /// underlying recurring event) will still be included if showDeleted and
-    /// singleEvents are both False. If showDeleted and singleEvents are both
-    /// True, only single instances of deleted events (but not the underlying
-    /// recurring events) are returned. Optional. The default is False.
-    #[serde(rename = "showDeleted")]
-    pub show_deleted: Option<bool>,
-    /// DateTime: Lower bound for an event's last modification time (as a
-    /// RFC3339 timestamp) to filter by. When specified, entries deleted since
-    /// this time will always be included regardless of showDeleted. Optional.
-    /// The default is not to filter by last modification time.
-    #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTime<Utc>>,
-    /// Free text search terms to find events that match these terms in any
-    /// field, except for extended properties. Optional.
-    #[serde(rename = "q")]
-    pub q: Option<String>,
-    /// Token specifying which result page to return. Optional.
-    #[serde(rename = "pageToken")]
-    pub page_token: Option<String>,
-    /// Extended properties constraint specified as propertyName=value. Matches
-    /// only private properties. This parameter might be repeated multiple times
-    /// to return events that match all given constraints.
-    #[serde(rename = "privateExtendedProperty")]
-    pub private_extended_property: Option<String>,
-    /// Token obtained from the nextSyncToken field returned on the last page of
-    /// results from the previous list request. It makes the result of this list
-    /// request contain only entries that have changed since then. All events
-    /// deleted since the previous list request will always be in the result set
-    /// and it is not allowed to set showDeleted to False.
-    // There are several query parameters that cannot be specified together with nextSyncToken to
-    // ensure consistency of the client state.
-
-    // These are:
-    // - iCalUID
-    // - orderBy
-    // - privateExtendedProperty
-    // - q
-    // - sharedExtendedProperty
-    // - timeMin
-    // - timeMax
-    // - updatedMin If the syncToken expires, the server will respond with a 410 GONE response code
-    //   and the client should clear its storage and perform a full synchronization without any
-    //   syncToken.
-    // Learn more about incremental synchronization.
-    // Optional. The default is to return all entries.
-    #[serde(rename = "syncToken")]
-    pub sync_token: Option<String>,
-    /// Extended properties constraint specified as propertyName=value. Matches
-    /// only shared properties. This parameter might be repeated multiple times
-    /// to return events that match all given constraints.
-    #[serde(rename = "sharedExtendedProperty")]
-    pub shared_extended_property: Option<String>,
-}
-
-impl std::fmt::Display for EventsListParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.max_attendees {
-            write!(
-                f,
-                "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_max {
-            write!(
-                f,
-                "&timeMax={}",
-                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC)
-                    .to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_min {
-            write!(
-                f,
-                "&timeMin={}",
-                percent_encode(format!("{}", v.to_rfc3339()).as_bytes(), NON_ALPHANUMERIC)
-                    .to_string()
-            )?;
-        }
-        if let Some(ref v) = self.i_cal_u_i_d {
-            write!(
-                f,
-                "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.always_include_email {
-            write!(
-                f,
-                "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.max_results {
-            write!(
-                f,
-                "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.order_by {
-            write!(
-                f,
-                "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.single_events {
-            write!(
-                f,
-                "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_hidden_invitations {
-            write!(
-                f,
-                "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.time_zone {
-            write!(
-                f,
-                "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.show_deleted {
-            write!(
-                f,
-                "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.updated_min {
-            write!(
-                f,
-                "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.q {
-            write!(
-                f,
-                "&q={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.page_token {
-            write!(
-                f,
-                "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.private_extended_property {
-            write!(
-                f,
-                "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.sync_token {
-            write!(
-                f,
-                "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.shared_extended_property {
-            write!(
-                f,
-                "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        Ok(())
-    }
-}
-
-/// Parameters for the `colors.get` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct ColorsGetParams {
+pub struct FreebusyQueryParams {
     /// General attributes applying to any API call
     #[serde(flatten)]
     pub calendar_params: Option<CalendarParams>,
 }
 
-impl std::fmt::Display for ColorsGetParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.insert` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsInsertParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-}
-
-impl std::fmt::Display for CalendarsInsertParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.delete` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsDeleteParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for CalendarsDeleteParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.update` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsUpdateParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for CalendarsUpdateParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.get` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsGetParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for CalendarsGetParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.patch` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsPatchParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for CalendarsPatchParams {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Ok(())
-    }
-}
-
-/// Parameters for the `calendars.clear` method.
-#[derive(Serialize, Deserialize, Debug, Clone, Default)]
-pub struct CalendarsClearParams {
-    /// General attributes applying to any API call
-    #[serde(flatten)]
-    pub calendar_params: Option<CalendarParams>,
-    /// Calendar identifier. To retrieve calendar IDs call the calendarList.list
-    /// method. If you want to access the primary calendar of the currently
-    /// logged in user, use the "primary" keyword.
-    #[serde(rename = "calendarId")]
-    pub calendar_id: String,
-}
-
-impl std::fmt::Display for CalendarsClearParams {
+impl std::fmt::Display for FreebusyQueryParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         Ok(())
     }
@@ -3779,14 +3779,10 @@ impl std::fmt::Display for CalendarsClearParams {
 ///
 #[derive(Serialize, Deserialize, Debug, Clone, Default)]
 pub struct CalendarParams {
-    /// Selector specifying which fields to include in a partial response.
-    #[serde(rename = "fields")]
+    /// Returns response with indentations and line breaks.
+    #[serde(rename = "prettyPrint")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub fields: Option<String>,
-    /// Deprecated. Please use quotaUser instead.
-    #[serde(rename = "userIp")]
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub user_ip: Option<String>,
+    pub pretty_print: Option<bool>,
     /// Data format for the response.
     #[serde(rename = "alt")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -3806,25 +3802,22 @@ pub struct CalendarParams {
     #[serde(rename = "key")]
     #[serde(skip_serializing_if = "Option::is_none")]
     pub key: Option<String>,
-    /// Returns response with indentations and line breaks.
-    #[serde(rename = "prettyPrint")]
+    /// Selector specifying which fields to include in a partial response.
+    #[serde(rename = "fields")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub pretty_print: Option<bool>,
+    pub fields: Option<String>,
+    /// Deprecated. Please use quotaUser instead.
+    #[serde(rename = "userIp")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub user_ip: Option<String>,
 }
 
 impl std::fmt::Display for CalendarParams {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        if let Some(ref v) = self.fields {
+        if let Some(ref v) = self.pretty_print {
             write!(
                 f,
-                "&fields={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
-            )?;
-        }
-        if let Some(ref v) = self.user_ip {
-            write!(
-                f,
-                "&userIp={}",
+                "&prettyPrint={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3856,10 +3849,17 @@ impl std::fmt::Display for CalendarParams {
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
-        if let Some(ref v) = self.pretty_print {
+        if let Some(ref v) = self.fields {
             write!(
                 f,
-                "&prettyPrint={}",
+                "&fields={}",
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+            )?;
+        }
+        if let Some(ref v) = self.user_ip {
+            write!(
+                f,
+                "&userIp={}",
                 percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
             )?;
         }
@@ -3867,10 +3867,499 @@ impl std::fmt::Display for CalendarParams {
     }
 }
 
+/// The Calendar Colors service represents the Colors resource.
+pub struct ColorsService {
+    client: TlsClient,
+    authenticator: Box<dyn 'static + DerefAuth>,
+    scopes: Vec<String>,
+
+    base_url: String,
+    root_url: String,
+}
+
+impl ColorsService {
+    /// Create a new ColorsService object. The easiest way to call this is
+    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
+    /// Rc::new(authenticator))`. This way, one authenticator can be shared
+    /// among several services.
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> ColorsService {
+        ColorsService {
+            client,
+            authenticator: Box::new(auth),
+            scopes: vec![],
+            base_url: "https://www.googleapis.com/calendar/v3/".into(),
+            root_url: "https://www.googleapis.com/".into(),
+        }
+    }
+
+    /// Provide the base URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn base_url(&self) -> String {
+        if self.base_url.ends_with("/") {
+            return self.base_url.clone();
+        }
+        return self.base_url.clone() + "/";
+    }
+    /// Provide the root URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn root_url(&self) -> String {
+        if self.root_url.ends_with("/") {
+            return self.root_url.clone();
+        }
+        return self.root_url.clone();
+    }
+    /// Returns appropriate URLs for relative and absolute paths.
+    fn format_path(&self, path: &str) -> String {
+        if path.starts_with("/") {
+            return self.root_url().trim_end_matches("/").to_string() + path;
+        } else {
+            return self.base_url() + path;
+        }
+    }
+
+    #[cfg(test)]
+    /// Override API URLs. `base` is the base path relative to which (relative)
+    /// method paths are interpreted, whereas `root` is the URL relative to
+    /// which absolute paths are interpreted.
+    pub fn set_urls(&mut self, base: String, root: String) {
+        self.base_url = base;
+        self.root_url = root;
+    }
+
+    /// Explicitly select which scopes should be requested for authorization.
+    /// Otherwise, a possibly too large scope will be requested.
+    ///
+    /// It is most convenient to supply a vec or slice of CalendarScopes enum
+    /// values.
+    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
+        self.scopes = scopes
+            .as_ref()
+            .into_iter()
+            .map(|s| s.as_ref().to_string())
+            .collect();
+    }
+
+    /// Returns the color definitions for calendars and events.
+    pub async fn get(&self, params: &ColorsGetParams) -> Result<Colors> {
+        let rel_path = format!("colors",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
+    }
+}
+
+/// The Calendar Channels service represents the Channels resource.
+pub struct ChannelsService {
+    client: TlsClient,
+    authenticator: Box<dyn 'static + DerefAuth>,
+    scopes: Vec<String>,
+
+    base_url: String,
+    root_url: String,
+}
+
+impl ChannelsService {
+    /// Create a new ChannelsService object. The easiest way to call this is
+    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
+    /// Rc::new(authenticator))`. This way, one authenticator can be shared
+    /// among several services.
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> ChannelsService {
+        ChannelsService {
+            client,
+            authenticator: Box::new(auth),
+            scopes: vec![],
+            base_url: "https://www.googleapis.com/calendar/v3/".into(),
+            root_url: "https://www.googleapis.com/".into(),
+        }
+    }
+
+    /// Provide the base URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn base_url(&self) -> String {
+        if self.base_url.ends_with("/") {
+            return self.base_url.clone();
+        }
+        return self.base_url.clone() + "/";
+    }
+    /// Provide the root URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn root_url(&self) -> String {
+        if self.root_url.ends_with("/") {
+            return self.root_url.clone();
+        }
+        return self.root_url.clone();
+    }
+    /// Returns appropriate URLs for relative and absolute paths.
+    fn format_path(&self, path: &str) -> String {
+        if path.starts_with("/") {
+            return self.root_url().trim_end_matches("/").to_string() + path;
+        } else {
+            return self.base_url() + path;
+        }
+    }
+
+    #[cfg(test)]
+    /// Override API URLs. `base` is the base path relative to which (relative)
+    /// method paths are interpreted, whereas `root` is the URL relative to
+    /// which absolute paths are interpreted.
+    pub fn set_urls(&mut self, base: String, root: String) {
+        self.base_url = base;
+        self.root_url = root;
+    }
+
+    /// Explicitly select which scopes should be requested for authorization.
+    /// Otherwise, a possibly too large scope will be requested.
+    ///
+    /// It is most convenient to supply a vec or slice of CalendarScopes enum
+    /// values.
+    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
+        self.scopes = scopes
+            .as_ref()
+            .into_iter()
+            .map(|s| s.as_ref().to_string())
+            .collect();
+    }
+
+    /// Stop watching resources through this channel
+    pub async fn stop(&self, params: &ChannelsStopParams, req: &Channel) -> Result<()> {
+        let rel_path = format!("channels/stop",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarSettingsReadonly
+                .as_ref()
+                .to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+}
+
+/// The Calendar Calendars service represents the Calendars resource.
+pub struct CalendarsService {
+    client: TlsClient,
+    authenticator: Box<dyn 'static + DerefAuth>,
+    scopes: Vec<String>,
+
+    base_url: String,
+    root_url: String,
+}
+
+impl CalendarsService {
+    /// Create a new CalendarsService object. The easiest way to call this is
+    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
+    /// Rc::new(authenticator))`. This way, one authenticator can be shared
+    /// among several services.
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> CalendarsService {
+        CalendarsService {
+            client,
+            authenticator: Box::new(auth),
+            scopes: vec![],
+            base_url: "https://www.googleapis.com/calendar/v3/".into(),
+            root_url: "https://www.googleapis.com/".into(),
+        }
+    }
+
+    /// Provide the base URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn base_url(&self) -> String {
+        if self.base_url.ends_with("/") {
+            return self.base_url.clone();
+        }
+        return self.base_url.clone() + "/";
+    }
+    /// Provide the root URL of this API. The returned URL is guaranteed to end
+    /// with a '/'.
+    fn root_url(&self) -> String {
+        if self.root_url.ends_with("/") {
+            return self.root_url.clone();
+        }
+        return self.root_url.clone();
+    }
+    /// Returns appropriate URLs for relative and absolute paths.
+    fn format_path(&self, path: &str) -> String {
+        if path.starts_with("/") {
+            return self.root_url().trim_end_matches("/").to_string() + path;
+        } else {
+            return self.base_url() + path;
+        }
+    }
+
+    #[cfg(test)]
+    /// Override API URLs. `base` is the base path relative to which (relative)
+    /// method paths are interpreted, whereas `root` is the URL relative to
+    /// which absolute paths are interpreted.
+    pub fn set_urls(&mut self, base: String, root: String) {
+        self.base_url = base;
+        self.root_url = root;
+    }
+
+    /// Explicitly select which scopes should be requested for authorization.
+    /// Otherwise, a possibly too large scope will be requested.
+    ///
+    /// It is most convenient to supply a vec or slice of CalendarScopes enum
+    /// values.
+    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
+        self.scopes = scopes
+            .as_ref()
+            .into_iter()
+            .map(|s| s.as_ref().to_string())
+            .collect();
+    }
+
+    /// Creates a secondary calendar.
+    pub async fn insert(&self, params: &CalendarsInsertParams, req: &Calendar) -> Result<Calendar> {
+        let rel_path = format!("calendars",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Updates metadata for a calendar.
+    pub async fn update(&self, params: &CalendarsUpdateParams, req: &Calendar) -> Result<Calendar> {
+        let rel_path = format!(
+            "calendars/{calendarId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "PUT", opt_request).await
+    }
+
+    /// Returns metadata for a calendar.
+    pub async fn get(&self, params: &CalendarsGetParams) -> Result<Calendar> {
+        let rel_path = format!(
+            "calendars/{calendarId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
+    }
+
+    /// Deletes a secondary calendar. Use calendars.clear for clearing all
+    /// events on primary calendars.
+    pub async fn delete(&self, params: &CalendarsDeleteParams) -> Result<()> {
+        let rel_path = format!(
+            "calendars/{calendarId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
+    }
+
+    /// Updates metadata for a calendar. This method supports patch semantics.
+    pub async fn patch(&self, params: &CalendarsPatchParams, req: &Calendar) -> Result<Calendar> {
+        let rel_path = format!(
+            "calendars/{calendarId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "PATCH", opt_request).await
+    }
+
+    /// Clears a primary calendar. This operation deletes all events associated
+    /// with the primary calendar of an account.
+    pub async fn clear(&self, params: &CalendarsClearParams) -> Result<()> {
+        let rel_path = format!(
+            "calendars/{calendarId}/clear",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+}
+
 /// The Calendar Acl service represents the Acl resource.
 pub struct AclService {
     client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
+    authenticator: Box<dyn 'static + DerefAuth>,
     scopes: Vec<String>,
 
     base_url: String,
@@ -3882,10 +4371,7 @@ impl AclService {
     /// the Authenticator into an `Rc`: `new(client.clone(),
     /// Rc::new(authenticator))`. This way, one authenticator can be shared
     /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> AclService {
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> AclService {
         AclService {
             client,
             authenticator: Box::new(auth),
@@ -3942,41 +4428,6 @@ impl AclService {
             .collect();
     }
 
-    /// Returns the rules in the access control list for the calendar.
-    pub async fn list(&self, params: &AclListParams) -> Result<Acl> {
-        let rel_path = format!(
-            "calendars/{calendarId}/acl",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-
     /// Deletes an access control rule.
     pub async fn delete(&self, params: &AclDeleteParams) -> Result<()> {
         let rel_path = format!(
@@ -4013,14 +4464,15 @@ impl AclService {
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
     }
 
-    /// Creates an access control rule.
-    pub async fn insert(&self, params: &AclInsertParams, req: &AclRule) -> Result<AclRule> {
+    /// Updates an access control rule. This method supports patch semantics.
+    pub async fn patch(&self, params: &AclPatchParams, req: &AclRule) -> Result<AclRule> {
         let rel_path = format!(
-            "calendars/{calendarId}/acl",
+            "calendars/{calendarId}/acl/{ruleId}",
             calendarId = percent_encode(
                 format!("{}", params.calendar_id).as_bytes(),
                 NON_ALPHANUMERIC
-            )
+            ),
+            ruleId = percent_encode(format!("{}", params.rule_id).as_bytes(), NON_ALPHANUMERIC)
         );
         let path = self.format_path(rel_path.as_str());
 
@@ -4046,7 +4498,7 @@ impl AclService {
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+        do_request(&self.client, &full_uri, &headers, "PATCH", opt_request).await
     }
 
     /// Updates an access control rule.
@@ -4086,6 +4538,41 @@ impl AclService {
         do_request(&self.client, &full_uri, &headers, "PUT", opt_request).await
     }
 
+    /// Returns the rules in the access control list for the calendar.
+    pub async fn list(&self, params: &AclListParams) -> Result<Acl> {
+        let rel_path = format!(
+            "calendars/{calendarId}/acl",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
+    }
+
     /// Returns an access control rule.
     pub async fn get(&self, params: &AclGetParams) -> Result<AclRule> {
         let rel_path = format!(
@@ -4122,15 +4609,14 @@ impl AclService {
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 
-    /// Updates an access control rule. This method supports patch semantics.
-    pub async fn patch(&self, params: &AclPatchParams, req: &AclRule) -> Result<AclRule> {
+    /// Creates an access control rule.
+    pub async fn insert(&self, params: &AclInsertParams, req: &AclRule) -> Result<AclRule> {
         let rel_path = format!(
-            "calendars/{calendarId}/acl/{ruleId}",
+            "calendars/{calendarId}/acl",
             calendarId = percent_encode(
                 format!("{}", params.calendar_id).as_bytes(),
                 NON_ALPHANUMERIC
-            ),
-            ruleId = percent_encode(format!("{}", params.rule_id).as_bytes(), NON_ALPHANUMERIC)
+            )
         );
         let path = self.format_path(rel_path.as_str());
 
@@ -4156,7 +4642,7 @@ impl AclService {
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "PATCH", opt_request).await
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
     }
 
     /// Watch for changes to ACL resources.
@@ -4199,7 +4685,7 @@ impl AclService {
 /// The Calendar CalendarList service represents the CalendarList resource.
 pub struct CalendarListService {
     client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator> + Send + Sync>,
+    authenticator: Box<dyn 'static + DerefAuth>,
     scopes: Vec<String>,
 
     base_url: String,
@@ -4211,10 +4697,7 @@ impl CalendarListService {
     /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
     /// Rc::new(authenticator))`. This way, one authenticator can be shared
     /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator> + Send + Sync>(
-        client: TlsClient,
-        auth: A,
-    ) -> CalendarListService {
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> CalendarListService {
         CalendarListService {
             client,
             authenticator: Box::new(auth),
@@ -4269,6 +4752,99 @@ impl CalendarListService {
             .into_iter()
             .map(|s| s.as_ref().to_string())
             .collect();
+    }
+
+    /// Returns the calendars on the user's calendar list.
+    pub async fn list(&self, params: &CalendarListListParams) -> Result<CalendarList> {
+        let rel_path = format!("users/me/calendarList",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
+    }
+
+    /// Inserts an existing calendar into the user's calendar list.
+    pub async fn insert(
+        &self,
+        params: &CalendarListInsertParams,
+        req: &CalendarListEntry,
+    ) -> Result<CalendarListEntry> {
+        let rel_path = format!("users/me/calendarList",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Watch for changes to CalendarList resources.
+    pub async fn watch(&self, params: &CalendarListWatchParams, req: &Channel) -> Result<Channel> {
+        let rel_path = format!("users/me/calendarList/watch",);
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
     }
 
     /// Updates an existing calendar on the user's calendar list.
@@ -4387,69 +4963,6 @@ impl CalendarListService {
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
     }
 
-    /// Inserts an existing calendar into the user's calendar list.
-    pub async fn insert(
-        &self,
-        params: &CalendarListInsertParams,
-        req: &CalendarListEntry,
-    ) -> Result<CalendarListEntry> {
-        let rel_path = format!("users/me/calendarList",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-
-    /// Returns the calendars on the user's calendar list.
-    pub async fn list(&self, params: &CalendarListListParams) -> Result<CalendarList> {
-        let rel_path = format!("users/me/calendarList",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-
     /// Returns a calendar from the user's calendar list.
     pub async fn get(&self, params: &CalendarListGetParams) -> Result<CalendarListEntry> {
         let rel_path = format!(
@@ -4484,152 +4997,12 @@ impl CalendarListService {
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
-
-    /// Watch for changes to CalendarList resources.
-    pub async fn watch(&self, params: &CalendarListWatchParams, req: &Channel) -> Result<Channel> {
-        let rel_path = format!("users/me/calendarList/watch",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-}
-
-/// The Calendar Freebusy service represents the Freebusy resource.
-pub struct FreebusyService {
-    client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
-    scopes: Vec<String>,
-
-    base_url: String,
-    root_url: String,
-}
-
-impl FreebusyService {
-    /// Create a new FreebusyService object. The easiest way to call this is
-    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
-    /// Rc::new(authenticator))`. This way, one authenticator can be shared
-    /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> FreebusyService {
-        FreebusyService {
-            client,
-            authenticator: Box::new(auth),
-            scopes: vec![],
-            base_url: "https://www.googleapis.com/calendar/v3/".into(),
-            root_url: "https://www.googleapis.com/".into(),
-        }
-    }
-
-    /// Provide the base URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn base_url(&self) -> String {
-        if self.base_url.ends_with("/") {
-            return self.base_url.clone();
-        }
-        return self.base_url.clone() + "/";
-    }
-    /// Provide the root URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn root_url(&self) -> String {
-        if self.root_url.ends_with("/") {
-            return self.root_url.clone();
-        }
-        return self.root_url.clone();
-    }
-    /// Returns appropriate URLs for relative and absolute paths.
-    fn format_path(&self, path: &str) -> String {
-        if path.starts_with("/") {
-            return self.root_url().trim_end_matches("/").to_string() + path;
-        } else {
-            return self.base_url() + path;
-        }
-    }
-
-    #[cfg(test)]
-    /// Override API URLs. `base` is the base path relative to which (relative)
-    /// method paths are interpreted, whereas `root` is the URL relative to
-    /// which absolute paths are interpreted.
-    pub fn set_urls(&mut self, base: String, root: String) {
-        self.base_url = base;
-        self.root_url = root;
-    }
-
-    /// Explicitly select which scopes should be requested for authorization.
-    /// Otherwise, a possibly too large scope will be requested.
-    ///
-    /// It is most convenient to supply a vec or slice of CalendarScopes enum
-    /// values.
-    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
-        self.scopes = scopes
-            .as_ref()
-            .into_iter()
-            .map(|s| s.as_ref().to_string())
-            .collect();
-    }
-
-    /// Returns free/busy information for a set of calendars.
-    pub async fn query(
-        &self,
-        params: &FreebusyQueryParams,
-        req: &FreeBusyRequest,
-    ) -> Result<FreeBusyResponse> {
-        let rel_path = format!("freeBusy",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
 }
 
 /// The Calendar Settings service represents the Settings resource.
 pub struct SettingsService {
     client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
+    authenticator: Box<dyn 'static + DerefAuth>,
     scopes: Vec<String>,
 
     base_url: String,
@@ -4641,10 +5014,7 @@ impl SettingsService {
     /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
     /// Rc::new(authenticator))`. This way, one authenticator can be shared
     /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> SettingsService {
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> SettingsService {
         SettingsService {
             client,
             authenticator: Box::new(auth),
@@ -4735,37 +5105,6 @@ impl SettingsService {
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 
-    /// Returns all user settings for the authenticated user.
-    pub async fn list(&self, params: &SettingsListParams) -> Result<Settings> {
-        let rel_path = format!("users/me/settings",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarSettingsReadonly
-                .as_ref()
-                .to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-
     /// Watch for changes to Settings resources.
     pub async fn watch(&self, params: &SettingsWatchParams, req: &Channel) -> Result<Channel> {
         let rel_path = format!("users/me/settings/watch",);
@@ -4797,86 +5136,10 @@ impl SettingsService {
         let opt_request = Some(req);
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
     }
-}
 
-/// The Calendar Channels service represents the Channels resource.
-pub struct ChannelsService {
-    client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
-    scopes: Vec<String>,
-
-    base_url: String,
-    root_url: String,
-}
-
-impl ChannelsService {
-    /// Create a new ChannelsService object. The easiest way to call this is
-    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
-    /// Rc::new(authenticator))`. This way, one authenticator can be shared
-    /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> ChannelsService {
-        ChannelsService {
-            client,
-            authenticator: Box::new(auth),
-            scopes: vec![],
-            base_url: "https://www.googleapis.com/calendar/v3/".into(),
-            root_url: "https://www.googleapis.com/".into(),
-        }
-    }
-
-    /// Provide the base URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn base_url(&self) -> String {
-        if self.base_url.ends_with("/") {
-            return self.base_url.clone();
-        }
-        return self.base_url.clone() + "/";
-    }
-    /// Provide the root URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn root_url(&self) -> String {
-        if self.root_url.ends_with("/") {
-            return self.root_url.clone();
-        }
-        return self.root_url.clone();
-    }
-    /// Returns appropriate URLs for relative and absolute paths.
-    fn format_path(&self, path: &str) -> String {
-        if path.starts_with("/") {
-            return self.root_url().trim_end_matches("/").to_string() + path;
-        } else {
-            return self.base_url() + path;
-        }
-    }
-
-    #[cfg(test)]
-    /// Override API URLs. `base` is the base path relative to which (relative)
-    /// method paths are interpreted, whereas `root` is the URL relative to
-    /// which absolute paths are interpreted.
-    pub fn set_urls(&mut self, base: String, root: String) {
-        self.base_url = base;
-        self.root_url = root;
-    }
-
-    /// Explicitly select which scopes should be requested for authorization.
-    /// Otherwise, a possibly too large scope will be requested.
-    ///
-    /// It is most convenient to supply a vec or slice of CalendarScopes enum
-    /// values.
-    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
-        self.scopes = scopes
-            .as_ref()
-            .into_iter()
-            .map(|s| s.as_ref().to_string())
-            .collect();
-    }
-
-    /// Stop watching resources through this channel
-    pub async fn stop(&self, params: &ChannelsStopParams, req: &Channel) -> Result<()> {
-        let rel_path = format!("channels/stop",);
+    /// Returns all user settings for the authenticated user.
+    pub async fn list(&self, params: &SettingsListParams) -> Result<Settings> {
+        let rel_path = format!("users/me/settings",);
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4902,15 +5165,14 @@ impl ChannelsService {
         let full_uri = format!("{}{}", path, url_params);
 
         let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 }
 
 /// The Calendar Events service represents the Events resource.
 pub struct EventsService {
     client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator> + Send + Sync>,
+    authenticator: Box<dyn 'static + DerefAuth>,
     scopes: Vec<String>,
 
     base_url: String,
@@ -4922,10 +5184,7 @@ impl EventsService {
     /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
     /// Rc::new(authenticator))`. This way, one authenticator can be shared
     /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator> + Send + Sync>(
-        client: TlsClient,
-        auth: A,
-    ) -> EventsService {
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> EventsService {
         EventsService {
             client,
             authenticator: Box::new(auth),
@@ -4982,52 +5241,14 @@ impl EventsService {
             .collect();
     }
 
-    /// Updates an event.
-    pub async fn update(&self, params: &EventsUpdateParams, req: &Event) -> Result<Event> {
+    /// Returns events on the specified calendar.
+    pub async fn list(&self, params: &EventsListParams) -> Result<Events> {
         let rel_path = format!(
-            "calendars/{calendarId}/events/{eventId}",
+            "calendars/{calendarId}/events",
             calendarId = percent_encode(
                 format!("{}", params.calendar_id).as_bytes(),
                 NON_ALPHANUMERIC
-            ),
-            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "PUT", opt_request).await
-    }
-
-    /// Returns an event.
-    pub async fn get(&self, params: &EventsGetParams) -> Result<Event> {
-        let rel_path = format!(
-            "calendars/{calendarId}/events/{eventId}",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            ),
-            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
+            )
         );
         let path = self.format_path(rel_path.as_str());
 
@@ -5053,77 +5274,6 @@ impl EventsService {
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-
-    /// Creates an event based on a simple text string.
-    pub async fn quick_add(&self, params: &EventsQuickAddParams) -> Result<Event> {
-        let rel_path = format!(
-            "calendars/{calendarId}/events/quickAdd",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-
-    /// Moves an event to another calendar, i.e. changes an event's organizer.
-    pub async fn move_event(&self, params: &EventsMoveParams) -> Result<Event> {
-        let rel_path = format!(
-            "calendars/{calendarId}/events/{eventId}/move",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            ),
-            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
     }
 
     /// Updates an event. This method supports patch semantics.
@@ -5163,6 +5313,79 @@ impl EventsService {
         do_request(&self.client, &full_uri, &headers, "PATCH", opt_request).await
     }
 
+    /// Creates an event.
+    pub async fn insert(&self, params: &EventsInsertParams, req: &Event) -> Result<Event> {
+        let rel_path = format!(
+            "calendars/{calendarId}/events",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Updates an event.
+    pub async fn update(&self, params: &EventsUpdateParams, req: &Event) -> Result<Event> {
+        let rel_path = format!(
+            "calendars/{calendarId}/events/{eventId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            ),
+            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "PUT", opt_request).await
+    }
+
     /// Watch for changes to Events resources.
     pub async fn watch(&self, params: &EventsWatchParams, req: &Channel) -> Result<Channel> {
         let rel_path = format!(
@@ -5197,6 +5420,115 @@ impl EventsService {
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Moves an event to another calendar, i.e. changes an event's organizer.
+    pub async fn move_event(&self, params: &EventsMoveParams) -> Result<Event> {
+        let rel_path = format!(
+            "calendars/{calendarId}/events/{eventId}/move",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            ),
+            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Imports an event. This operation is used to add a private copy of an
+    /// existing event to a calendar.
+    pub async fn import(&self, params: &EventsImportParams, req: &Event) -> Result<Event> {
+        let rel_path = format!(
+            "calendars/{calendarId}/events/import",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            )
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        let opt_request = Some(req);
+        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
+    }
+
+    /// Returns an event.
+    pub async fn get(&self, params: &EventsGetParams) -> Result<Event> {
+        let rel_path = format!(
+            "calendars/{calendarId}/events/{eventId}",
+            calendarId = percent_encode(
+                format!("{}", params.calendar_id).as_bytes(),
+                NON_ALPHANUMERIC
+            ),
+            eventId = percent_encode(format!("{}", params.event_id).as_bytes(), NON_ALPHANUMERIC)
+        );
+        let path = self.format_path(rel_path.as_str());
+
+        let mut headers = vec![];
+        let tok;
+        if self.scopes.is_empty() {
+            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
+            tok = self.authenticator.token(scopes).await?;
+        } else {
+            tok = self.authenticator.token(&self.scopes).await?;
+        }
+        headers.push((
+            hyper::header::AUTHORIZATION,
+            format!("Bearer {token}", token = tok.as_str()),
+        ));
+
+        let mut url_params = format!("?{params}", params = params);
+        if let Some(ref api_params) = &params.calendar_params {
+            url_params.push_str(&format!("{}", api_params));
+        }
+
+        let full_uri = format!("{}{}", path, url_params);
+
+        let opt_request: Option<&EmptyRequest> = None;
+        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 
     /// Deletes an event.
@@ -5271,10 +5603,10 @@ impl EventsService {
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 
-    /// Creates an event.
-    pub async fn insert(&self, params: &EventsInsertParams, req: &Event) -> Result<Event> {
+    /// Creates an event based on a simple text string.
+    pub async fn quick_add(&self, params: &EventsQuickAddParams) -> Result<Event> {
         let rel_path = format!(
-            "calendars/{calendarId}/events",
+            "calendars/{calendarId}/events/quickAdd",
             calendarId = percent_encode(
                 format!("{}", params.calendar_id).as_bytes(),
                 NON_ALPHANUMERIC
@@ -5303,103 +5635,27 @@ impl EventsService {
         let full_uri = format!("{}{}", path, url_params);
 
         let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-
-    /// Imports an event. This operation is used to add a private copy of an
-    /// existing event to a calendar.
-    pub async fn import(&self, params: &EventsImportParams, req: &Event) -> Result<Event> {
-        let rel_path = format!(
-            "calendars/{calendarId}/events/import",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarEvents.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-
-    /// Returns events on the specified calendar.
-    pub async fn list(&self, params: &EventsListParams) -> Result<Events> {
-        let rel_path = format!(
-            "calendars/{calendarId}/events",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
     }
 }
 
-/// The Calendar Colors service represents the Colors resource.
-pub struct ColorsService {
+/// The Calendar Freebusy service represents the Freebusy resource.
+pub struct FreebusyService {
     client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
+    authenticator: Box<dyn 'static + DerefAuth>,
     scopes: Vec<String>,
 
     base_url: String,
     root_url: String,
 }
 
-impl ColorsService {
-    /// Create a new ColorsService object. The easiest way to call this is
+impl FreebusyService {
+    /// Create a new FreebusyService object. The easiest way to call this is
     /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
     /// Rc::new(authenticator))`. This way, one authenticator can be shared
     /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> ColorsService {
-        ColorsService {
+    pub fn new<A: 'static + DerefAuth>(client: TlsClient, auth: A) -> FreebusyService {
+        FreebusyService {
             client,
             authenticator: Box::new(auth),
             scopes: vec![],
@@ -5455,9 +5711,13 @@ impl ColorsService {
             .collect();
     }
 
-    /// Returns the color definitions for calendars and events.
-    pub async fn get(&self, params: &ColorsGetParams) -> Result<Colors> {
-        let rel_path = format!("colors",);
+    /// Returns free/busy information for a set of calendars.
+    pub async fn query(
+        &self,
+        params: &FreebusyQueryParams,
+        req: &FreeBusyRequest,
+    ) -> Result<FreeBusyResponse> {
+        let rel_path = format!("freeBusy",);
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -5481,291 +5741,7 @@ impl ColorsService {
         let full_uri = format!("{}{}", path, url_params);
 
         let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-}
-
-/// The Calendar Calendars service represents the Calendars resource.
-pub struct CalendarsService {
-    client: TlsClient,
-    authenticator: Box<dyn 'static + std::ops::Deref<Target = Authenticator>>,
-    scopes: Vec<String>,
-
-    base_url: String,
-    root_url: String,
-}
-
-impl CalendarsService {
-    /// Create a new CalendarsService object. The easiest way to call this is
-    /// wrapping the Authenticator into an `Rc`: `new(client.clone(),
-    /// Rc::new(authenticator))`. This way, one authenticator can be shared
-    /// among several services.
-    pub fn new<A: 'static + std::ops::Deref<Target = Authenticator>>(
-        client: TlsClient,
-        auth: A,
-    ) -> CalendarsService {
-        CalendarsService {
-            client,
-            authenticator: Box::new(auth),
-            scopes: vec![],
-            base_url: "https://www.googleapis.com/calendar/v3/".into(),
-            root_url: "https://www.googleapis.com/".into(),
-        }
-    }
-
-    /// Provide the base URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn base_url(&self) -> String {
-        if self.base_url.ends_with("/") {
-            return self.base_url.clone();
-        }
-        return self.base_url.clone() + "/";
-    }
-    /// Provide the root URL of this API. The returned URL is guaranteed to end
-    /// with a '/'.
-    fn root_url(&self) -> String {
-        if self.root_url.ends_with("/") {
-            return self.root_url.clone();
-        }
-        return self.root_url.clone();
-    }
-    /// Returns appropriate URLs for relative and absolute paths.
-    fn format_path(&self, path: &str) -> String {
-        if path.starts_with("/") {
-            return self.root_url().trim_end_matches("/").to_string() + path;
-        } else {
-            return self.base_url() + path;
-        }
-    }
-
-    #[cfg(test)]
-    /// Override API URLs. `base` is the base path relative to which (relative)
-    /// method paths are interpreted, whereas `root` is the URL relative to
-    /// which absolute paths are interpreted.
-    pub fn set_urls(&mut self, base: String, root: String) {
-        self.base_url = base;
-        self.root_url = root;
-    }
-
-    /// Explicitly select which scopes should be requested for authorization.
-    /// Otherwise, a possibly too large scope will be requested.
-    ///
-    /// It is most convenient to supply a vec or slice of CalendarScopes enum
-    /// values.
-    pub fn set_scopes<S: AsRef<str>, T: AsRef<[S]>>(&mut self, scopes: T) {
-        self.scopes = scopes
-            .as_ref()
-            .into_iter()
-            .map(|s| s.as_ref().to_string())
-            .collect();
-    }
-
-    /// Creates a secondary calendar.
-    pub async fn insert(&self, params: &CalendarsInsertParams, req: &Calendar) -> Result<Calendar> {
-        let rel_path = format!("calendars",);
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
-    }
-
-    /// Deletes a secondary calendar. Use calendars.clear for clearing all
-    /// events on primary calendars.
-    pub async fn delete(&self, params: &CalendarsDeleteParams) -> Result<()> {
-        let rel_path = format!(
-            "calendars/{calendarId}",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
-    }
-
-    /// Updates metadata for a calendar.
-    pub async fn update(&self, params: &CalendarsUpdateParams, req: &Calendar) -> Result<Calendar> {
-        let rel_path = format!(
-            "calendars/{calendarId}",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "PUT", opt_request).await
-    }
-
-    /// Returns metadata for a calendar.
-    pub async fn get(&self, params: &CalendarsGetParams) -> Result<Calendar> {
-        let rel_path = format!(
-            "calendars/{calendarId}",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::CalendarReadonly.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
-    }
-
-    /// Updates metadata for a calendar. This method supports patch semantics.
-    pub async fn patch(&self, params: &CalendarsPatchParams, req: &Calendar) -> Result<Calendar> {
-        let rel_path = format!(
-            "calendars/{calendarId}",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
-        let opt_request = Some(req);
-        do_request(&self.client, &full_uri, &headers, "PATCH", opt_request).await
-    }
-
-    /// Clears a primary calendar. This operation deletes all events associated
-    /// with the primary calendar of an account.
-    pub async fn clear(&self, params: &CalendarsClearParams) -> Result<()> {
-        let rel_path = format!(
-            "calendars/{calendarId}/clear",
-            calendarId = percent_encode(
-                format!("{}", params.calendar_id).as_bytes(),
-                NON_ALPHANUMERIC
-            )
-        );
-        let path = self.format_path(rel_path.as_str());
-
-        let mut headers = vec![];
-        let tok;
-        if self.scopes.is_empty() {
-            let scopes = &[CalendarScopes::Calendar.as_ref().to_string()];
-            tok = self.authenticator.token(scopes).await?;
-        } else {
-            tok = self.authenticator.token(&self.scopes).await?;
-        }
-        headers.push((
-            hyper::header::AUTHORIZATION,
-            format!("Bearer {token}", token = tok.as_str()),
-        ));
-
-        let mut url_params = format!("?{params}", params = params);
-        if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
-        }
-
-        let full_uri = format!("{}{}", path, url_params);
-
-        let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
     }
 }
