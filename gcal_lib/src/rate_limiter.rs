@@ -27,12 +27,18 @@ impl RateLimiter {
     }
 
     fn check_reset(&self) {
-        if Utc::now().timestamp_millis() as usize > self.until.load(Ordering::SeqCst) {
-            let new = (Utc::now() + chrono::Duration::milliseconds(self.unit_time_ms as i64))
-                .timestamp_millis() as usize;
-            self.until.store(new, Ordering::SeqCst);
-            self.current_count
-                .store(self.max_per_unit_time as isize, Ordering::SeqCst);
+        let current = Utc::now().timestamp_millis() as usize;
+        let until = self.until.load(Ordering::SeqCst);
+        if current > until {
+            let new = current + self.unit_time_ms;
+            if self
+                .until
+                .compare_exchange(until, new, Ordering::SeqCst, Ordering::SeqCst)
+                .is_ok()
+            {
+                self.current_count
+                    .store(self.max_per_unit_time as isize, Ordering::SeqCst);
+            }
         }
     }
 
@@ -40,7 +46,7 @@ impl RateLimiter {
         loop {
             self.check_reset();
 
-            if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
+            if self.current_count.fetch_sub(1, Ordering::SeqCst) > 0 {
                 return;
             }
 
@@ -52,13 +58,13 @@ impl RateLimiter {
                     sleep(Duration::from_millis(remaining as u64)).await;
                 }
                 self.check_reset();
-                if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
+                if self.current_count.fetch_sub(1, Ordering::SeqCst) > 0 {
                     return;
                 }
             } else {
                 let _lock = self.limit_mutex.lock().await;
                 self.check_reset();
-                if self.current_count.fetch_sub(1, Ordering::SeqCst) > 1 {
+                if self.current_count.fetch_sub(1, Ordering::SeqCst) > 0 {
                     return;
                 }
             }
@@ -69,12 +75,16 @@ impl RateLimiter {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
-    use tokio::task::spawn;
-    use tokio::time::{sleep, Duration};
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Arc;
     use chrono::Utc;
     use log::debug;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::{
+        task::spawn,
+        time::{sleep, Duration},
+    };
 
     use crate::rate_limiter::RateLimiter;
 
@@ -87,23 +97,27 @@ mod tests {
 
         let start = Utc::now();
 
-        let tasks: Vec<_> = (0..100).map(|_| {
-            let rate_limiter = rate_limiter.clone();
-            let test_count = test_count.clone();
-            spawn(async move {
-                rate_limiter.acquire().await;
-                test_count.fetch_add(1, Ordering::SeqCst);
+        let tasks: Vec<_> = (0..101)
+            .map(|_| {
+                let rate_limiter = rate_limiter.clone();
+                let test_count = test_count.clone();
+                spawn(async move {
+                    rate_limiter.acquire().await;
+                    test_count.fetch_add(1, Ordering::SeqCst);
+                })
             })
-        }).collect();
+            .collect();
 
-        sleep(Duration::from_millis(10)).await;
+        sleep(Duration::from_millis(20)).await;
 
-        debug!("{}", test_count.load(Ordering::SeqCst));
-        assert!(test_count.load(Ordering::SeqCst) < 11);
+        let count = test_count.load(Ordering::SeqCst);
+        debug!("{}", count);
+        assert!(count >= 10 && count < 20);
 
-        sleep(Duration::from_millis(1020)).await;
+        sleep(Duration::from_millis(1000)).await;
 
-        assert!(test_count.load(Ordering::SeqCst) >= 18);
+        let count = test_count.load(Ordering::SeqCst);
+        assert_eq!(count, 20);
 
         for t in tasks {
             t.await?;
@@ -113,6 +127,7 @@ mod tests {
 
         debug!("{}", elapsed);
         assert!(elapsed.num_seconds() >= 10);
+        assert_eq!(test_count.load(Ordering::SeqCst), 101);
         Ok(())
     }
 }
