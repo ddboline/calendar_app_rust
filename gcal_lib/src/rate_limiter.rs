@@ -92,12 +92,12 @@ mod tests {
     async fn test_rate_limiter() -> Result<(), Error> {
         env_logger::init();
 
-        let rate_limiter = Arc::new(RateLimiter::new(10, 1000));
+        let rate_limiter = Arc::new(RateLimiter::new(1000, 100));
         let test_count = Arc::new(AtomicUsize::new(0));
 
         let start = Utc::now();
 
-        let tasks: Vec<_> = (0..101)
+        let tasks: Vec<_> = (0..10_000)
             .map(|_| {
                 let rate_limiter = rate_limiter.clone();
                 let test_count = test_count.clone();
@@ -112,12 +112,12 @@ mod tests {
 
         let count = test_count.load(Ordering::SeqCst);
         debug!("{}", count);
-        assert!(count >= 10 && count < 20);
+        assert_eq!(count,  1000);
 
-        sleep(Duration::from_millis(1000)).await;
+        sleep(Duration::from_millis(100)).await;
 
         let count = test_count.load(Ordering::SeqCst);
-        assert_eq!(count, 20);
+        assert_eq!(count, 2000);
 
         for t in tasks {
             t.await?;
@@ -126,8 +126,8 @@ mod tests {
         let elapsed = Utc::now() - start;
 
         debug!("{}", elapsed);
-        assert!(elapsed.num_seconds() >= 10);
-        assert_eq!(test_count.load(Ordering::SeqCst), 101);
+        assert!(elapsed.num_seconds() >= 1);
+        assert_eq!(test_count.load(Ordering::SeqCst), 10_000);
         Ok(())
     }
 }
