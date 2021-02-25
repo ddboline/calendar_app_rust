@@ -65,3 +65,54 @@ impl RateLimiter {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Error;
+    use tokio::task::spawn;
+    use tokio::time::{sleep, Duration};
+    use std::sync::atomic::{AtomicUsize, Ordering};
+    use std::sync::Arc;
+    use chrono::Utc;
+    use log::debug;
+
+    use crate::rate_limiter::RateLimiter;
+
+    #[tokio::test]
+    async fn test_rate_limiter() -> Result<(), Error> {
+        env_logger::init();
+
+        let rate_limiter = Arc::new(RateLimiter::new(10, 1000));
+        let test_count = Arc::new(AtomicUsize::new(0));
+
+        let start = Utc::now();
+
+        let tasks: Vec<_> = (0..100).map(|_| {
+            let rate_limiter = rate_limiter.clone();
+            let test_count = test_count.clone();
+            spawn(async move {
+                rate_limiter.acquire().await;
+                test_count.fetch_add(1, Ordering::SeqCst);
+            })
+        }).collect();
+
+        sleep(Duration::from_millis(10)).await;
+
+        debug!("{}", test_count.load(Ordering::SeqCst));
+        assert!(test_count.load(Ordering::SeqCst) < 11);
+
+        sleep(Duration::from_millis(1020)).await;
+
+        assert!(test_count.load(Ordering::SeqCst) >= 18);
+
+        for t in tasks {
+            t.await?;
+        }
+
+        let elapsed = Utc::now() - start;
+
+        debug!("{}", elapsed);
+        assert!(elapsed.num_seconds() >= 10);
+        Ok(())
+    }
+}
