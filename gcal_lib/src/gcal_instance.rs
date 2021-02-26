@@ -33,7 +33,7 @@ fn https_client() -> TlsClient {
 pub struct GCalendarInstance {
     cal_list: Arc<CalendarListService>,
     cal_events: Arc<EventsService>,
-    rate_limit: Arc<RateLimiter>,
+    rate_limit: RateLimiter,
 }
 
 impl GCalendarInstance {
@@ -81,7 +81,7 @@ impl GCalendarInstance {
         Ok(Self {
             cal_list: Arc::new(cal_list),
             cal_events: Arc::new(cal_events),
-            rate_limit: Arc::new(RateLimiter::new(600, 60000)),
+            rate_limit: RateLimiter::new(600, 60000),
         })
     }
 
@@ -272,7 +272,7 @@ mod tests {
         )
         .await?;
         let cal_list = gcal.list_gcal_calendars().await?;
-        assert_eq!(cal_list.len(), 20);
+        assert_eq!(cal_list.len(), 19);
         Ok(())
     }
 
