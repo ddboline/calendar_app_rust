@@ -69,12 +69,16 @@ impl RateLimiter {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
-    use tokio::task::spawn;
-    use tokio::time::{sleep, Duration};
-    use std::sync::atomic::{AtomicUsize, Ordering};
-    use std::sync::Arc;
     use chrono::Utc;
     use log::debug;
+    use std::sync::{
+        atomic::{AtomicUsize, Ordering},
+        Arc,
+    };
+    use tokio::{
+        task::spawn,
+        time::{sleep, Duration},
+    };
 
     use crate::rate_limiter::RateLimiter;
 
@@ -87,14 +91,16 @@ mod tests {
 
         let start = Utc::now();
 
-        let tasks: Vec<_> = (0..100).map(|_| {
-            let rate_limiter = rate_limiter.clone();
-            let test_count = test_count.clone();
-            spawn(async move {
-                rate_limiter.acquire().await;
-                test_count.fetch_add(1, Ordering::SeqCst);
+        let tasks: Vec<_> = (0..100)
+            .map(|_| {
+                let rate_limiter = rate_limiter.clone();
+                let test_count = test_count.clone();
+                spawn(async move {
+                    rate_limiter.acquire().await;
+                    test_count.fetch_add(1, Ordering::SeqCst);
+                })
             })
-        }).collect();
+            .collect();
 
         sleep(Duration::from_millis(10)).await;
 
