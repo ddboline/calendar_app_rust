@@ -4,7 +4,10 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use log::{debug, error};
 use stack_string::StackString;
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::Arc,
+};
 use stdout_channel::StdoutChannel;
 use tokio::try_join;
 
@@ -216,10 +219,12 @@ impl CalendarSync {
         let inserted = self.sync_calendar_list().await?;
         output.push(format!("inserted {} calendars", inserted.len()).into());
 
+        let gcal_set: HashSet<_> = inserted.iter().map(|cal| cal.gcal_id.clone()).collect();
+
         let calendar_list = CalendarList::get_calendars(&self.pool)
             .await?
             .into_iter()
-            .filter(|calendar| calendar.sync);
+            .filter(|calendar| calendar.sync && gcal_set.contains(&calendar.gcal_id));
 
         let futures = calendar_list.map(|calendar| async move {
             let (exported, inserted) = if full {
