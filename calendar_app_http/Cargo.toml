@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.4.6"
+version = "0.4.8"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -28,7 +28,7 @@ dirs = "3.0"
 itertools = "0.10"
 url = "2.2"
 reqwest = {version="0.11", features=["cookies", "json", "rustls-tls", "stream"]}
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.2.0", features=["diesel_types"] }
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.2.2", features=["diesel_types"] }
 authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.4.0"}
 
 [dev-dependencies]
