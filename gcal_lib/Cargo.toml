@@ -20,7 +20,7 @@ env_logger = "0.8"
 deadqueue = "0.2"
 async-google-apis-common = "0.3"
 tokio = {version="1.2", features=["full"]}
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", tag="0.2.2", features=["diesel_types"] }
+stack-string = { version="0.2", features=["diesel_types"] }
 
 [dev-dependencies]
 calendar_app_lib = {path="../calendar_app_lib"}

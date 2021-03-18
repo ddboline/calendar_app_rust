@@ -3,17 +3,18 @@ use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, 
 use futures::{try_join, StreamExt};
 use lazy_static::lazy_static;
 use std::{
-    collections::{HashMap, VecDeque},
+    collections::{VecDeque},
     sync::Arc,
 };
+use im::HashMap;
 use telegram_bot::{
     Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind, ToChatRef, UpdateKind,
     UserId,
 };
 use tokio::{
-    sync::RwLock,
     time::{self, sleep, timeout},
 };
+use arc_swap::ArcSwap;
 
 use calendar_app_lib::{
     calendar_sync::CalendarSync, config::Config, models::AuthorizedUsers, pgpool::PgPool,
@@ -21,10 +22,10 @@ use calendar_app_lib::{
 
 use crate::failure_count::FailureCount;
 
-type UserIds = RwLock<HashMap<UserId, Option<ChatId>>>;
+type UserIds = ArcSwap<HashMap<UserId, Option<ChatId>>>;
 
 lazy_static! {
-    static ref TELEGRAM_USERIDS: UserIds = RwLock::new(HashMap::new());
+    static ref TELEGRAM_USERIDS: UserIds = ArcSwap::new(Arc::new(HashMap::new()));
     static ref FAILURE_COUNT: FailureCount = FailureCount::new(5);
 }
 
@@ -69,7 +70,7 @@ impl TelegramBot {
                 FAILURE_COUNT.check()?;
                 if let MessageKind::Text { ref data, .. } = message.kind {
                     FAILURE_COUNT.check()?;
-                    if TELEGRAM_USERIDS.read().await.contains_key(&message.from.id) {
+                    if TELEGRAM_USERIDS.load().contains_key(&message.from.id) {
                         FAILURE_COUNT.check()?;
                         if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
                             if data.starts_with("/init") {
@@ -127,7 +128,7 @@ impl TelegramBot {
         loop {
             FAILURE_COUNT.check()?;
             let now = Utc::now();
-            for chat_id in TELEGRAM_USERIDS.read().await.values() {
+            for chat_id in TELEGRAM_USERIDS.load().values() {
                 if let Some(chat_id) = chat_id {
                     if now > agenda_datetime {
                         agenda_datetime = agenda_datetime + Duration::days(1);
@@ -181,15 +182,16 @@ impl TelegramBot {
             FAILURE_COUNT.check()?;
             let p = self.pool.clone();
             if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&p).await {
-                let telegram_userid_map: HashMap<_, _> = authorized_users
-                    .into_iter()
-                    .filter_map(|user| {
-                        user.telegram_userid.map(|userid| {
-                            (UserId::new(userid), user.telegram_chatid.map(ChatId::new))
-                        })
-                    })
-                    .collect();
-                *TELEGRAM_USERIDS.write().await = telegram_userid_map;
+                let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();
+                for user in authorized_users {
+                    if let Some(userid) = user.telegram_userid {
+                        let userid = UserId::new(userid);
+                        if !telegram_userids.contains_key(&userid) {
+                            telegram_userids.insert(userid, user.telegram_chatid.map(ChatId::new));
+                        }
+                    }
+                }
+                TELEGRAM_USERIDS.store(Arc::new(telegram_userids));
                 FAILURE_COUNT.reset()?;
             } else {
                 FAILURE_COUNT.increment()?;
@@ -206,9 +208,11 @@ impl TelegramBot {
             {
                 user.telegram_chatid.replace(chatid.into());
                 user.update_authorized_users(&self.pool).await?;
-                if let Some(telegram_chatid) = TELEGRAM_USERIDS.write().await.get_mut(&userid) {
+                let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();
+                if let Some(telegram_chatid) = telegram_userids.get_mut(&userid) {
                     telegram_chatid.replace(chatid);
                 }
+                TELEGRAM_USERIDS.store(Arc::new(telegram_userids));
             }
             FAILURE_COUNT.reset()?;
         } else {
