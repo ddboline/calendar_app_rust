@@ -24,7 +24,7 @@ pub struct CalendarSync {
     pub config: Config,
     pub gcal: Option<GCalendarInstance>,
     pub pool: PgPool,
-    pub stdout: StdoutChannel,
+    pub stdout: StdoutChannel<StackString>,
 }
 
 impl CalendarSync {
