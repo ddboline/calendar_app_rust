@@ -1,4 +1,3 @@
-use crate::logged_user::TRIGGER_DB_UPDATE;
 use anyhow::Error as AnyhowError;
 use http::StatusCode;
 use log::error;
@@ -10,8 +9,9 @@ use warp::{
     reject::{InvalidHeader, MissingCookie, Reject},
     Rejection, Reply,
 };
-
 use stack_string::StackString;
+
+use crate::logged_user::TRIGGER_DB_UPDATE;
 
 #[derive(Error, Debug)]
 pub enum ServiceError {
