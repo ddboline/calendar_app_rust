@@ -1,13 +1,17 @@
 use anyhow::Error;
+use derive_more::Deref;
 use diesel::{pg::PgConnection, r2d2::ConnectionManager};
 use r2d2::{Pool, PooledConnection};
 use std::fmt;
 
 use stack_string::StackString;
 
-#[derive(Clone)]
+pub type PgPoolConn = PooledConnection<ConnectionManager<PgConnection>>;
+
+#[derive(Clone, Deref)]
 pub struct PgPool {
     pgurl: StackString,
+    #[deref]
     pool: Pool<ConnectionManager<PgConnection>>,
 }
 
@@ -29,7 +33,7 @@ impl PgPool {
         }
     }
 
-    pub fn get(&self) -> Result<PooledConnection<ConnectionManager<PgConnection>>, Error> {
+    pub fn get(&self) -> Result<PgPoolConn, Error> {
         self.pool.get().map_err(Into::into)
     }
 }

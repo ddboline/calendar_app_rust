@@ -1,10 +1,10 @@
 use anyhow::Error;
 use chrono::{DateTime, Utc};
-use diesel::{dsl::max, ExpressionMethods, OptionalExtension, QueryDsl, RunQueryDsl};
+use diesel::{dsl::max, ExpressionMethods, QueryDsl};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{cmp, io};
-use tokio::task::spawn_blocking;
+use tokio_diesel::{AsyncRunQueryDsl, OptionalExtension};
 
 use crate::{
     pgpool::PgPool,
@@ -27,67 +27,44 @@ pub struct CalendarList {
 }
 
 impl CalendarList {
-    fn get_calendars_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_list::dsl::calendar_list;
-        let conn = pool.get()?;
-        calendar_list.load(&conn).map_err(Into::into)
-    }
-
     pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_calendars_sync(&pool)).await?
+        use crate::schema::calendar_list::dsl::calendar_list;
+        calendar_list.load_async(pool).await.map_err(Into::into)
     }
 
-    fn get_by_id_sync(id_: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_by_id(id_: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
         use crate::schema::calendar_list::dsl::{calendar_list, id};
-        let conn = pool.get()?;
         calendar_list
             .filter(id.eq(id_))
-            .load(&conn)
+            .load_async(pool)
+            .await
             .map_err(Into::into)
     }
 
-    pub async fn get_by_id(id: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_by_id_sync(id, &pool)).await?
-    }
-
-    fn get_by_gcal_id_sync(gcal_id_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_by_gcal_id(gcal_id_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
         use crate::schema::calendar_list::dsl::{calendar_list, gcal_id};
-        let conn = pool.get()?;
         calendar_list
             .filter(gcal_id.eq(gcal_id_))
-            .load(&conn)
-            .map_err(Into::into)
-    }
-
-    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        let gcal_id = gcal_id.to_string();
-        spawn_blocking(move || Self::get_by_gcal_id_sync(&gcal_id, &pool)).await?
-    }
-
-    fn update_display_sync(&self, pool: &PgPool) -> Result<(), Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, display, id};
-        let conn = pool.get()?;
-        diesel::update(calendar_list.filter(id.eq(&self.id)))
-            .set(display.eq(&self.display))
-            .execute(&conn)
-            .map(|_| ())
+            .load_async(pool)
+            .await
             .map_err(Into::into)
     }
 
     pub async fn update_display(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.update_display_sync(&pool).map(|_| self)).await?
+        use crate::schema::calendar_list::dsl::{calendar_list, display, id};
+        diesel::update(calendar_list.filter(id.eq(&self.id)))
+            .set(display.eq(&self.display))
+            .execute_async(pool)
+            .await
+            .map(|_| self)
+            .map_err(Into::into)
     }
 
-    fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
+    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
         use crate::schema::calendar_list::dsl::{
             calendar_list, gcal_description, gcal_id, gcal_location, gcal_name, gcal_timezone, id,
             last_modified,
         };
-        let conn = pool.get()?;
         diesel::update(calendar_list.filter(id.eq(&self.id)))
             .set((
                 gcal_id.eq(&self.gcal_id),
@@ -97,42 +74,28 @@ impl CalendarList {
                 gcal_timezone.eq(&self.gcal_timezone),
                 last_modified.eq(Utc::now()),
             ))
-            .execute(&conn)
-            .map(|_| ())
-            .map_err(Into::into)
-    }
-
-    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
-    }
-
-    fn get_max_modified_sync(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
-        let conn = pool.get()?;
-        calendar_list
-            .select(max(last_modified))
-            .first(&conn)
+            .execute_async(pool)
+            .await
+            .map(|_| self)
             .map_err(Into::into)
     }
 
     pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_max_modified_sync(&pool)).await?
-    }
-
-    fn get_recent_sync(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
         use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
-        let conn = pool.get()?;
         calendar_list
-            .filter(last_modified.gt(modified))
-            .load(&conn)
+            .select(max(last_modified))
+            .first_async(pool)
+            .await
             .map_err(Into::into)
     }
 
     pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_recent_sync(modified, &pool)).await?
+        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
+        calendar_list
+            .filter(last_modified.gt(modified))
+            .load_async(pool)
+            .await
+            .map_err(Into::into)
     }
 }
 
@@ -183,19 +146,14 @@ impl InsertCalendarList {
         }
     }
 
-    fn insert_sync(&self, pool: &PgPool) -> Result<(), Error> {
-        use crate::schema::calendar_list::dsl::calendar_list;
-        let conn = pool.get()?;
-        diesel::insert_into(calendar_list)
-            .values(self)
-            .execute(&conn)
-            .map(|_| ())
-            .map_err(Into::into)
-    }
-
     pub async fn insert(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.insert_sync(&pool).map(|_| self)).await?
+        use crate::schema::calendar_list::dsl::calendar_list;
+        diesel::insert_into(calendar_list)
+            .values(&self)
+            .execute_async(pool)
+            .await
+            .map(|_| self)
+            .map_err(Into::into)
     }
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
@@ -236,72 +194,35 @@ pub struct CalendarCache {
 }
 
 impl CalendarCache {
-    fn get_all_events_sync(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::calendar_cache;
-        let conn = pool.get()?;
-        calendar_cache.load(&conn).map_err(Into::into)
-    }
-
     pub async fn get_all_events(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_all_events_sync(&pool)).await?
+        use crate::schema::calendar_cache::dsl::calendar_cache;
+        calendar_cache.load_async(pool).await.map_err(Into::into)
     }
 
-    fn get_by_gcal_id_sync(gcal_id_: &str, pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
+    pub async fn get_by_gcal_id(
+        gcal_id_: &str,
+        pool: &PgPool,
+    ) -> Result<Vec<CalendarCache>, Error> {
         use crate::schema::calendar_cache::dsl::{calendar_cache, gcal_id};
-        let conn = pool.get()?;
         calendar_cache
             .filter(gcal_id.eq(gcal_id_))
-            .load(&conn)
+            .load_async(pool)
+            .await
             .map_err(Into::into)
     }
 
-    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
-        let pool = pool.clone();
-        let gcal_id = gcal_id.to_owned();
-        spawn_blocking(move || Self::get_by_gcal_id_sync(&gcal_id, &pool)).await?
-    }
-
-    fn get_by_gcal_id_event_id_sync(
+    pub async fn get_by_gcal_id_event_id(
         gcal_id_: &str,
         event_id_: &str,
         pool: &PgPool,
     ) -> Result<Option<CalendarCache>, Error> {
         use crate::schema::calendar_cache::dsl::{calendar_cache, event_id, gcal_id};
-        let conn = pool.get()?;
         calendar_cache
             .filter(gcal_id.eq(gcal_id_))
             .filter(event_id.eq(event_id_))
-            .get_result(&conn)
+            .get_result_async(pool)
+            .await
             .optional()
-            .map_err(Into::into)
-    }
-
-    pub async fn get_by_gcal_id_event_id(
-        gcal_id: &str,
-        event_id: &str,
-        pool: &PgPool,
-    ) -> Result<Option<CalendarCache>, Error> {
-        let pool = pool.clone();
-        let gcal_id = gcal_id.to_owned();
-        let event_id = event_id.to_owned();
-        spawn_blocking(move || Self::get_by_gcal_id_event_id_sync(&gcal_id, &event_id, &pool))
-            .await?
-    }
-
-    fn get_by_datetime_sync(
-        min_time: DateTime<Utc>,
-        max_time: DateTime<Utc>,
-        pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::{
-            calendar_cache, event_end_time, event_start_time,
-        };
-        let conn = pool.get()?;
-        calendar_cache
-            .filter(event_end_time.gt(min_time))
-            .filter(event_start_time.lt(max_time))
-            .load(&conn)
             .map_err(Into::into)
     }
 
@@ -310,11 +231,18 @@ impl CalendarCache {
         max_time: DateTime<Utc>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_by_datetime_sync(min_time, max_time, &pool)).await?
+        use crate::schema::calendar_cache::dsl::{
+            calendar_cache, event_end_time, event_start_time,
+        };
+        calendar_cache
+            .filter(event_end_time.gt(min_time))
+            .filter(event_start_time.lt(max_time))
+            .load_async(pool)
+            .await
+            .map_err(Into::into)
     }
 
-    fn get_by_gcal_id_datetime_sync(
+    pub async fn get_by_gcal_id_datetime(
         gcal_id_: &str,
         min_time: Option<DateTime<Utc>>,
         max_time: Option<DateTime<Utc>>,
@@ -323,52 +251,36 @@ impl CalendarCache {
         use crate::schema::calendar_cache::dsl::{
             calendar_cache, event_end_time, event_start_time, gcal_id,
         };
-        let conn = pool.get()?;
-        min_time
-            .map_or_else(
-                || calendar_cache.filter(gcal_id.eq(gcal_id_)).load(&conn),
-                |min_time| {
-                    max_time.map_or_else(
-                        || {
-                            calendar_cache
-                                .filter(gcal_id.eq(gcal_id_))
-                                .filter(event_end_time.gt(min_time))
-                                .load(&conn)
-                        },
-                        |max_time| {
-                            calendar_cache
-                                .filter(gcal_id.eq(gcal_id_))
-                                .filter(event_end_time.gt(min_time))
-                                .filter(event_start_time.lt(max_time))
-                                .load(&conn)
-                        },
-                    )
-                },
-            )
-            .map_err(Into::into)
+        if let Some(min_time) = min_time {
+            if let Some(max_time) = max_time {
+                calendar_cache
+                    .filter(gcal_id.eq(gcal_id_))
+                    .filter(event_end_time.gt(min_time))
+                    .filter(event_start_time.lt(max_time))
+                    .load_async(pool)
+                    .await
+            } else {
+                calendar_cache
+                    .filter(gcal_id.eq(gcal_id_))
+                    .filter(event_end_time.gt(min_time))
+                    .load_async(pool)
+                    .await
+            }
+        } else {
+            calendar_cache
+                .filter(gcal_id.eq(gcal_id_))
+                .load_async(pool)
+                .await
+        }
+        .map_err(Into::into)
     }
 
-    pub async fn get_by_gcal_id_datetime(
-        gcal_id: &str,
-        min_time: Option<DateTime<Utc>>,
-        max_time: Option<DateTime<Utc>>,
-        pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
-        let pool = pool.clone();
-        let gcal_id = gcal_id.to_string();
-        spawn_blocking(move || {
-            Self::get_by_gcal_id_datetime_sync(&gcal_id, min_time, max_time, &pool)
-        })
-        .await?
-    }
-
-    fn update_sync(&self, pool: &PgPool) -> Result<(), Error> {
+    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
         use crate::schema::calendar_cache::dsl::{
             calendar_cache, event_description, event_end_time, event_id, event_location_lat,
             event_location_lon, event_location_name, event_name, event_start_time, event_url,
             gcal_id, last_modified,
         };
-        let conn = pool.get()?;
         diesel::update(
             calendar_cache
                 .filter(gcal_id.eq(&self.gcal_id))
@@ -385,56 +297,37 @@ impl CalendarCache {
             event_location_lon.eq(&self.event_location_lon),
             last_modified.eq(Utc::now()),
         ))
-        .execute(&conn)
-        .map(|_| ())
+        .execute_async(pool)
+        .await
+        .map(|_| self)
         .map_err(Into::into)
     }
 
-    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.update_sync(&pool).map(|_| self)).await?
-    }
-
-    fn delete_sync(&self, pool: &PgPool) -> Result<(), Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, id};
-        let conn = pool.get()?;
-        diesel::delete(calendar_cache.filter(id.eq(&self.id)))
-            .execute(&conn)
-            .map(|_| ())
-            .map_err(Into::into)
-    }
-
     pub async fn delete(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.delete_sync(&pool).map(|_| self)).await?
-    }
-
-    fn get_max_modified_sync(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
-        let conn = pool.get()?;
-        calendar_cache
-            .select(max(last_modified))
-            .first(&conn)
+        use crate::schema::calendar_cache::dsl::{calendar_cache, id};
+        diesel::delete(calendar_cache.filter(id.eq(&self.id)))
+            .execute_async(pool)
+            .await
+            .map(|_| self)
             .map_err(Into::into)
     }
 
     pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_max_modified_sync(&pool)).await?
-    }
-
-    fn get_recent_sync(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
         use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
-        let conn = pool.get()?;
         calendar_cache
-            .filter(last_modified.gt(modified))
-            .load(&conn)
+            .select(max(last_modified))
+            .first_async(pool)
+            .await
             .map_err(Into::into)
     }
 
     pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_recent_sync(modified, &pool)).await?
+        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
+        calendar_cache
+            .filter(last_modified.gt(modified))
+            .load_async(pool)
+            .await
+            .map_err(Into::into)
     }
 }
 
@@ -490,19 +383,14 @@ impl InsertCalendarCache {
         }
     }
 
-    fn insert_sync(&self, pool: &PgPool) -> Result<(), Error> {
-        use crate::schema::calendar_cache::dsl::calendar_cache;
-        let conn = pool.get()?;
-        diesel::insert_into(calendar_cache)
-            .values(self)
-            .execute(&conn)
-            .map(|_| ())
-            .map_err(Into::into)
-    }
-
     pub async fn insert(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.insert_sync(&pool).map(|_| self)).await?
+        use crate::schema::calendar_cache::dsl::calendar_cache;
+        diesel::insert_into(calendar_cache)
+            .values(&self)
+            .execute_async(pool)
+            .await
+            .map(|_| self)
+            .map_err(Into::into)
     }
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
@@ -530,34 +418,24 @@ pub struct AuthorizedUsers {
 }
 
 impl AuthorizedUsers {
-    fn get_authorized_users_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::authorized_users::dsl::authorized_users;
-        let conn = pool.get()?;
-        authorized_users.load(&conn).map_err(Into::into)
-    }
-
     pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_authorized_users_sync(&pool)).await?
+        use crate::schema::authorized_users::dsl::authorized_users;
+        authorized_users.load_async(pool).await.map_err(Into::into)
     }
 
-    fn update_authorized_users_sync(&self, pool: &PgPool) -> Result<(), Error> {
+    pub async fn update_authorized_users(self, pool: &PgPool) -> Result<Self, Error> {
         use crate::schema::authorized_users::dsl::{
             authorized_users, email, telegram_chatid, telegram_userid,
         };
-        let conn = pool.get()?;
         diesel::update(authorized_users.filter(email.eq(&self.email)))
             .set((
                 telegram_userid.eq(self.telegram_userid),
                 telegram_chatid.eq(self.telegram_chatid),
             ))
-            .execute(&conn)?;
-        Ok(())
-    }
-
-    pub async fn update_authorized_users(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.update_authorized_users_sync(&pool).map(|_| self)).await?
+            .execute_async(pool)
+            .await
+            .map(|_| self)
+            .map_err(Into::into)
     }
 }
 
@@ -570,51 +448,33 @@ pub struct ShortenedLinks {
 }
 
 impl ShortenedLinks {
-    fn get_by_original_url_sync(original_url_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::{original_url, shortened_links};
-        let conn = pool.get()?;
-        shortened_links
-            .filter(original_url.eq(original_url_))
-            .load(&conn)
-            .map_err(Into::into)
-    }
-
     pub async fn get_by_original_url(
-        original_url: &str,
+        original_url_: &str,
         pool: &PgPool,
     ) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        let original_url = original_url.to_string();
-        spawn_blocking(move || Self::get_by_original_url_sync(&original_url, &pool)).await?
-    }
-
-    fn get_by_shortened_url_sync(shortened_url_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::{shortened_links, shortened_url};
-        let conn = pool.get()?;
+        use crate::schema::shortened_links::dsl::{original_url, shortened_links};
         shortened_links
-            .filter(shortened_url.eq(shortened_url_))
-            .load(&conn)
+            .filter(original_url.eq(original_url_))
+            .load_async(pool)
+            .await
             .map_err(Into::into)
     }
 
     pub async fn get_by_shortened_url(
-        shortened_url: &str,
+        shortened_url_: &str,
         pool: &PgPool,
     ) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        let shortened_url = shortened_url.to_string();
-        spawn_blocking(move || Self::get_by_shortened_url_sync(&shortened_url, &pool)).await?
-    }
-
-    fn get_shortened_links_sync(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::shortened_links;
-        let conn = pool.get()?;
-        shortened_links.load(&conn).map_err(Into::into)
+        use crate::schema::shortened_links::dsl::{shortened_links, shortened_url};
+        shortened_links
+            .filter(shortened_url.eq(shortened_url_))
+            .load_async(pool)
+            .await
+            .map_err(Into::into)
     }
 
     pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || Self::get_shortened_links_sync(&pool)).await?
+        use crate::schema::shortened_links::dsl::shortened_links;
+        shortened_links.load_async(pool).await.map_err(Into::into)
     }
 }
 
@@ -670,19 +530,14 @@ impl InsertShortenedLinks {
         }
     }
 
-    fn insert_shortened_link_sync(&self, pool: &PgPool) -> Result<(), Error> {
-        use crate::schema::shortened_links::dsl::shortened_links;
-        let conn = pool.get()?;
-        diesel::insert_into(shortened_links)
-            .values(self)
-            .execute(&conn)
-            .map(|_| ())
-            .map_err(Into::into)
-    }
-
     pub async fn insert_shortened_link(self, pool: &PgPool) -> Result<Self, Error> {
-        let pool = pool.clone();
-        spawn_blocking(move || self.insert_shortened_link_sync(&pool).map(|_| self)).await?
+        use crate::schema::shortened_links::dsl::shortened_links;
+        diesel::insert_into(shortened_links)
+            .values(&self)
+            .execute_async(pool)
+            .await
+            .map(|_| self)
+            .map_err(Into::into)
     }
 }
 

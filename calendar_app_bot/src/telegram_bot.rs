@@ -1,20 +1,15 @@
 use anyhow::Error;
+use arc_swap::ArcSwap;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use futures::{try_join, StreamExt};
-use lazy_static::lazy_static;
-use std::{
-    collections::{VecDeque},
-    sync::Arc,
-};
 use im::HashMap;
+use lazy_static::lazy_static;
+use std::{collections::VecDeque, sync::Arc};
 use telegram_bot::{
     Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind, ToChatRef, UpdateKind,
     UserId,
 };
-use tokio::{
-    time::{self, sleep, timeout},
-};
-use arc_swap::ArcSwap;
+use tokio::time::{self, sleep, timeout};
 
 use calendar_app_lib::{
     calendar_sync::CalendarSync, config::Config, models::AuthorizedUsers, pgpool::PgPool,
