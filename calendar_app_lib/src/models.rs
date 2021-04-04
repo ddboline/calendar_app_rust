@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
 use diesel::{dsl::max, ExpressionMethods, QueryDsl};
 use serde::{Deserialize, Serialize};
@@ -167,12 +167,10 @@ impl InsertCalendarList {
                     .await
                     .map(Into::into)
             }
-            _ => {
-                panic!(
-                    "this shouldn't be possible... {} must be unique",
-                    self.gcal_id
-                );
-            }
+            _ => Err(format_err!(
+                "this shouldn't be possible... {} must be unique",
+                self.gcal_id
+            )),
         }
     }
 }

@@ -64,21 +64,22 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
             if let Some(current_date) = current_date {
                 if let Some(current_time) = current_time {
                     let current_datetime = NaiveDateTime::new(current_date, current_time);
-                    let start_time = New_York
+                    if let Some(start_time) = New_York
                         .from_local_datetime(&current_datetime)
                         .single()
-                        .unwrap()
-                        .with_timezone(&Utc);
-                    let end_time = start_time + Duration::hours(1);
-                    let mut event = Event::new(CALID, &name, start_time, end_time);
-                    if let Some(location) = location {
-                        event.location.replace(Location {
-                            name: location,
-                            ..Location::default()
-                        });
+                        .map(|d| d.with_timezone(&Utc))
+                    {
+                        let end_time = start_time + Duration::hours(1);
+                        let mut event = Event::new(CALID, &name, start_time, end_time);
+                        if let Some(location) = location {
+                            event.location.replace(Location {
+                                name: location,
+                                ..Location::default()
+                            });
+                        }
+                        event.url = event_url;
+                        events.push(event);
                     }
-                    event.url = event_url;
-                    events.push(event);
                 }
             }
         }

@@ -305,16 +305,12 @@ impl CalendarSync {
                     .with_timezone(&Utc)
             },
         );
-        let max_date = max_date.map_or_else(
-            || (Utc::now() + Duration::weeks(2)),
-            |d| {
-                Local
-                    .from_local_datetime(&d.and_hms(0, 0, 0))
-                    .single()
-                    .unwrap()
-                    .with_timezone(&Utc)
-            },
-        );
+        let max_date = max_date
+            .and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+            .map_or_else(
+                || (Utc::now() + Duration::weeks(2)),
+                |d| d.with_timezone(&Utc),
+            );
         let events = CalendarCache::get_by_gcal_id_datetime(
             &gcal_id,
             Some(min_date),

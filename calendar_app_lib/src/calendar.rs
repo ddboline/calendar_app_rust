@@ -74,15 +74,15 @@ impl From<CalendarList> for Calendar {
     }
 }
 
-impl Into<InsertCalendarList> for Calendar {
-    fn into(self) -> InsertCalendarList {
-        InsertCalendarList {
-            calendar_name: self.name,
-            gcal_id: self.gcal_id,
-            gcal_name: self.gcal_name,
-            gcal_description: self.description,
-            gcal_location: self.location.map(|l| l.name),
-            gcal_timezone: self.timezone.map(|z| z.into()),
+impl From<Calendar> for InsertCalendarList {
+    fn from(item: Calendar) -> Self {
+        Self {
+            calendar_name: item.name,
+            gcal_id: item.gcal_id,
+            gcal_name: item.gcal_name,
+            gcal_description: item.description,
+            gcal_location: item.location.map(|l| l.name),
+            gcal_timezone: item.timezone.map(|z| z.into()),
             sync: false,
             last_modified: Utc::now(),
             edit: false,

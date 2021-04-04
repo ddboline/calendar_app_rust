@@ -39,9 +39,7 @@ pub async fn calendar_index(_: LoggedUser) -> WarpResult<impl Reply> {
 }
 
 pub async fn agenda(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
-    let body = tokio::task::spawn(async move { agenda_body(data.cal_sync).await })
-        .await
-        .unwrap()?;
+    let body = agenda_body(data.cal_sync).await?;
     Ok(warp::reply::html(body))
 }
 
