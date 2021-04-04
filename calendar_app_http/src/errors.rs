@@ -2,6 +2,7 @@ use anyhow::Error as AnyhowError;
 use http::StatusCode;
 use log::error;
 use serde::Serialize;
+use stack_string::StackString;
 use std::{convert::Infallible, fmt::Debug};
 use thiserror::Error;
 use tokio::task::JoinError;
@@ -9,7 +10,6 @@ use warp::{
     reject::{InvalidHeader, MissingCookie, Reject},
     Rejection, Reply,
 };
-use stack_string::StackString;
 
 use crate::logged_user::TRIGGER_DB_UPDATE;
 
