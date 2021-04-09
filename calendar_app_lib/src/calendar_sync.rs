@@ -141,7 +141,7 @@ impl CalendarSync {
                             .map_err(|e| {
                                 error!(
                                     "gcal_id {} event_id {} is duplicate (possibly deleted \
-                                     removely) {}",
+                                     remotely) {}",
                                     gcal_id, event_id, e
                                 );
                                 e

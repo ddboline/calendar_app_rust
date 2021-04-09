@@ -191,11 +191,8 @@ impl GCalendarInstance {
             supports_attachments: Some(true),
             ..EventsInsertParams::default()
         };
-        exponential_retry(|| async {
-            self.rate_limit.acquire().await;
-            self.cal_events.insert(&params, &gcal_event).await
-        })
-        .await
+        self.rate_limit.acquire().await;
+        self.cal_events.insert(&params, &gcal_event).await
     }
 
     pub async fn update_gcal_event(
@@ -225,11 +222,8 @@ impl GCalendarInstance {
             event_id: gcal_event_id.into(),
             ..EventsDeleteParams::default()
         };
-        exponential_retry(|| async {
-            self.rate_limit.acquire().await;
-            self.cal_events.delete(&params).await
-        })
-        .await
+        self.rate_limit.acquire().await;
+        self.cal_events.delete(&params).await
     }
 }
 
