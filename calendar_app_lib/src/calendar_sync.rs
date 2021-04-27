@@ -131,22 +131,13 @@ impl CalendarSync {
                         Ok(None)
                     }
                 } else {
-                    let event_id = item.event_id.clone();
-                    Ok(Some(
-                        self.gcal
-                            .as_ref()
-                            .ok_or_else(|| format_err!("No gcal instance found"))?
-                            .insert_gcal_event(&gcal_id, event)
-                            .await
-                            .map_err(|e| {
-                                error!(
-                                    "gcal_id {} event_id {} is duplicate (possibly deleted \
-                                     remotely) {}",
-                                    gcal_id, event_id, e
-                                );
-                                e
-                            })?,
-                    ))
+                    Ok(self
+                        .gcal
+                        .as_ref()
+                        .ok_or_else(|| format_err!("No gcal instance found"))?
+                        .insert_gcal_event(&gcal_id, event)
+                        .await
+                        .ok())
                 }
             }
         });
