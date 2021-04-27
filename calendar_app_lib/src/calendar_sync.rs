@@ -2,7 +2,7 @@ use anyhow::{format_err, Error};
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
-use log::{debug, error};
+use log::debug;
 use stack_string::StackString;
 use std::{
     collections::{HashMap, HashSet},
