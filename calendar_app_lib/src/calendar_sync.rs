@@ -2,7 +2,7 @@ use anyhow::{format_err, Error};
 use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
-use log::{debug, error};
+use log::debug;
 use stack_string::StackString;
 use std::{
     collections::{HashMap, HashSet},
@@ -286,16 +286,14 @@ impl CalendarSync {
         min_date: Option<NaiveDate>,
         max_date: Option<NaiveDate>,
     ) -> Result<impl Iterator<Item = Event>, Error> {
-        let min_date = min_date.map_or_else(
-            || (Utc::now() - Duration::weeks(1)),
-            |d| {
+        let min_date = min_date
+            .and_then(|d| {
                 Local
                     .from_local_datetime(&d.and_hms(0, 0, 0))
                     .single()
-                    .unwrap()
-                    .with_timezone(&Utc)
-            },
-        );
+                    .map(|x| x.with_timezone(&Utc))
+            })
+            .unwrap_or_else(|| (Utc::now() - Duration::weeks(1)));
         let max_date = max_date
             .and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
             .map_or_else(

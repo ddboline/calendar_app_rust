@@ -322,11 +322,10 @@ async fn event_detail_body(
             .await?
     {
         let event: Event = event.into();
-        let mut output = Vec::new();
-        output.push(format!(
+        let mut output = vec![format!(
             r#"<tr text-style="center"><td>Name</td><td>{}</td></tr>"#,
             &event.name
-        ));
+        )];
         if let Some(description) = &event.description {
             let description = description
                 .split('\n')
