@@ -96,7 +96,7 @@ impl CalendarSync {
             }
         });
         let inserted: Result<Vec<_>, Error> = try_join_all(futures).await;
-        Ok(inserted?.into_iter().filter_map(|x| x).collect())
+        Ok(inserted?.into_iter().flatten().collect())
     }
 
     async fn export_calendar_events<'a>(
@@ -142,7 +142,7 @@ impl CalendarSync {
             }
         });
         let result: Result<Vec<_>, Error> = try_join_all(futures).await;
-        Ok(result?.into_iter().filter_map(|x| x).collect())
+        Ok(result?.into_iter().flatten().collect())
     }
 
     pub async fn sync_full_calendar(

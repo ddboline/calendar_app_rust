@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::manual_range_contains)]
+#![allow(clippy::default_trait_access)]
 
 #[macro_use]
 extern crate diesel;
