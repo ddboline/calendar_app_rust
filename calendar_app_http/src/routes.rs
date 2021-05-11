@@ -1,46 +1,46 @@
 use anyhow::format_err;
-use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{Duration, Local, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::Tz;
 use futures::future::try_join_all;
 use itertools::Itertools;
-use lazy_static::lazy_static;
+use rweb::{delete, get, post, Json, Query, Rejection, Reply, Schema};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::collections::HashMap;
-use tokio::sync::RwLock;
 use url::Url;
-use warp::{Rejection, Reply};
 
 use calendar_app_lib::{
     calendar::Event,
     calendar_sync::CalendarSync,
+    datetime_wrapper::DateTimeWrapper,
     models::{
         CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, ShortenedLinks,
     },
+    naivedate_wrapper::{NaiveDateWrapper, NaiveTimeWrapper},
 };
 
 use crate::{
-    app::AppState,
+    app::{AppState, UrlCache},
     errors::{ServiceError as Error, ServiceError},
     logged_user::LoggedUser,
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
 pub type HttpResult<T> = Result<T, Error>;
-type UrlCache = RwLock<HashMap<StackString, StackString>>;
 
-lazy_static! {
-    static ref SHORTENED_URLS: UrlCache = RwLock::new(HashMap::new());
-}
-
-pub async fn calendar_index(_: LoggedUser) -> WarpResult<impl Reply> {
+#[get("/calendar/index.html")]
+pub async fn calendar_index(#[cookie = "jwt"] _: LoggedUser) -> WarpResult<impl Reply> {
     let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
-pub async fn agenda(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
+#[get("/calendar/agenda")]
+pub async fn agenda(
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
+) -> WarpResult<impl Reply> {
     let body = agenda_body(data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
@@ -111,33 +111,43 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
     Ok(body)
 }
 
-pub async fn sync_calendars(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
+#[get("/calendar/sync_calendars")]
+pub async fn sync_calendars(
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
+) -> WarpResult<impl Reply> {
     let body = sync_calendars_body(&data.cal_sync, false).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResult<String> {
     Ok(cal_sync.run_syncing(do_full).await?.join("<br>"))
 }
 
-pub async fn sync_calendars_full(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
+#[get("/calendar/sync_calendars_full")]
+pub async fn sync_calendars_full(
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
+) -> WarpResult<impl Reply> {
     let body = sync_calendars_body(&data.cal_sync, true).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Schema)]
 pub struct DeleteEventPath {
     pub gcal_id: StackString,
     pub event_id: StackString,
 }
 
+#[delete("/calendar/delete_event")]
 pub async fn delete_event(
-    payload: DeleteEventPath,
-    _: LoggedUser,
-    data: AppState,
+    payload: Json<DeleteEventPath>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let payload = payload.into_inner();
     let body = delete_event_body(payload, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn delete_event_body(
@@ -163,9 +173,13 @@ async fn delete_event_body(
     Ok(body)
 }
 
-pub async fn list_calendars(_: LoggedUser, data: AppState) -> WarpResult<impl Reply> {
+#[get("/calendar/list_calendars")]
+pub async fn list_calendars(
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
+) -> WarpResult<impl Reply> {
     let body = list_calendars_body(&data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
@@ -227,20 +241,22 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
     Ok(body)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct ListEventsRequest {
     pub calendar_name: StackString,
-    pub min_time: Option<NaiveDate>,
-    pub max_time: Option<NaiveDate>,
+    pub min_time: Option<NaiveDateWrapper>,
+    pub max_time: Option<NaiveDateWrapper>,
 }
 
+#[get("/calendar/list_events")]
 pub async fn list_events(
-    query: ListEventsRequest,
-    _: LoggedUser,
-    data: AppState,
+    query: Query<ListEventsRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let query = query.into_inner();
     let body = list_events_body(query, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> HttpResult<String> {
@@ -253,7 +269,9 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
         Some(cal) => cal,
         None => return Ok("".to_string()),
     };
-    let events = cal_sync.list_events(&cal.gcal_id, query.min_time, query.max_time).await?
+    let min_time = query.min_time.map(Into::into);
+    let max_time = query.max_time.map(Into::into);
+    let events = cal_sync.list_events(&cal.gcal_id, min_time, max_time).await?
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
             let delete = if cal.edit {
@@ -304,13 +322,15 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
     Ok(body)
 }
 
+#[post("/calendar/event_detail")]
 pub async fn event_detail(
-    payload: DeleteEventPath,
-    _: LoggedUser,
-    data: AppState,
+    payload: Json<DeleteEventPath>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let payload = payload.into_inner();
     let body = event_detail_body(payload, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn event_detail_body(
@@ -395,18 +415,20 @@ async fn event_detail_body(
     Ok(body)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct MaxModifiedQuery {
-    pub max_modified: Option<DateTime<Utc>>,
+    pub max_modified: Option<DateTimeWrapper>,
 }
 
+#[get("/calendar/calendar_list")]
 pub async fn calendar_list(
-    query: MaxModifiedQuery,
-    _: LoggedUser,
-    data: AppState,
+    query: Query<MaxModifiedQuery>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let query = query.into_inner();
     let calendar_list = calendar_list_object(query, &data.cal_sync).await?;
-    Ok(warp::reply::json(&calendar_list))
+    Ok(rweb::reply::json(&calendar_list))
 }
 
 async fn calendar_list_object(
@@ -415,24 +437,26 @@ async fn calendar_list_object(
 ) -> HttpResult<Vec<CalendarList>> {
     let max_modified = query
         .max_modified
-        .unwrap_or_else(|| Utc::now() - Duration::days(7));
+        .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
     CalendarList::get_recent(max_modified, &cal_sync.pool)
         .await
         .map_err(Into::into)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct CalendarUpdateRequest {
     pub updates: Vec<CalendarList>,
 }
 
+#[post("/calendar/calendar_list")]
 pub async fn calendar_list_update(
-    payload: CalendarUpdateRequest,
-    _: LoggedUser,
-    data: AppState,
+    payload: Json<CalendarUpdateRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let payload = payload.into_inner();
     let calendars = calendar_list_update_object(payload, &data.cal_sync).await?;
-    Ok(warp::reply::json(&calendars))
+    Ok(rweb::reply::json(&calendars))
 }
 
 async fn calendar_list_update_object(
@@ -447,13 +471,15 @@ async fn calendar_list_update_object(
     try_join_all(futures).await
 }
 
+#[get("/calendar/calendar_cache")]
 pub async fn calendar_cache(
-    query: MaxModifiedQuery,
-    _: LoggedUser,
-    data: AppState,
+    query: Query<MaxModifiedQuery>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let query = query.into_inner();
     let events = calendar_cache_events(query, &data.cal_sync).await?;
-    Ok(warp::reply::json(&events))
+    Ok(rweb::reply::json(&events))
 }
 
 async fn calendar_cache_events(
@@ -462,26 +488,26 @@ async fn calendar_cache_events(
 ) -> HttpResult<Vec<CalendarCache>> {
     let max_modified = query
         .max_modified
-        .unwrap_or_else(|| Utc::now() - Duration::days(7));
+        .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
     CalendarCache::get_recent(max_modified, &cal_sync.pool)
         .await
         .map_err(Into::into)
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
+#[derive(Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarCacheRequest {
     pub id: i32,
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_time: DateTime<Utc>,
-    pub event_end_time: DateTime<Utc>,
+    pub event_start_time: DateTimeWrapper,
+    pub event_end_time: DateTimeWrapper,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeWrapper,
 }
 
 impl From<CalendarCacheRequest> for InsertCalendarCache {
@@ -489,31 +515,33 @@ impl From<CalendarCacheRequest> for InsertCalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time,
-            event_end_time: item.event_end_time,
+            event_start_time: item.event_start_time.into(),
+            event_end_time: item.event_end_time.into(),
             event_url: item.event_url.map(Into::into),
             event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified,
+            last_modified: item.last_modified.into(),
         }
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct CalendarCacheUpdateRequest {
     pub updates: Vec<CalendarCacheRequest>,
 }
 
+#[post("/calendar/calendar_cache")]
 pub async fn calendar_cache_update(
-    payload: CalendarCacheUpdateRequest,
-    _: LoggedUser,
-    data: AppState,
+    payload: Json<CalendarCacheUpdateRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let payload = payload.into_inner();
     let events = calendar_cache_update_events(payload, &data.cal_sync).await?;
-    Ok(warp::reply::json(&events))
+    Ok(rweb::reply::json(&events))
 }
 
 async fn calendar_cache_update_events(
@@ -528,19 +556,25 @@ async fn calendar_cache_update_events(
     try_join_all(futures).await
 }
 
-pub async fn user(user: LoggedUser) -> WarpResult<impl Reply> {
-    Ok(warp::reply::json(&user))
+#[get("/calendar/user")]
+pub async fn user(#[cookie = "jwt"] user: LoggedUser) -> WarpResult<impl Reply> {
+    Ok(rweb::reply::json(&user))
 }
 
-pub async fn link_shortener(link: StackString, data: AppState) -> WarpResult<impl Reply> {
-    let body = link_shortener_body(&link, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+#[get("/calendar/link/{link}")]
+pub async fn link_shortener(link: StackString, #[data] data: AppState) -> WarpResult<impl Reply> {
+    let body = link_shortener_body(&link, &data.cal_sync, &data.shortened_urls).await?;
+    Ok(rweb::reply::html(body))
 }
 
-async fn link_shortener_body(link: &str, cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn link_shortener_body(
+    link: &str,
+    cal_sync: &CalendarSync,
+    shortened_urls: &UrlCache,
+) -> HttpResult<String> {
     let config = &cal_sync.config;
 
-    if let Some(link) = SHORTENED_URLS.read().await.get(link) {
+    if let Some(link) = shortened_urls.read().await.get(link) {
         let body = format_short_link(&config.domain, &link);
         return Ok(body.into());
     }
@@ -554,7 +588,7 @@ async fn link_shortener_body(link: &str, cal_sync: &CalendarSync) -> HttpResult<
             r#"<script>window.location.replace("{}")</script>"#,
             link.original_url
         );
-        SHORTENED_URLS
+        shortened_urls
             .write()
             .await
             .insert(link.original_url, link.shortened_url);
@@ -572,19 +606,21 @@ fn format_short_link(domain: &str, link: &str) -> StackString {
     .into()
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Schema)]
 pub struct BuildEventRequest {
     pub gcal_id: StackString,
     pub event_id: Option<StackString>,
 }
 
+#[get("/calendar/create_calendar_event")]
 pub async fn build_calendar_event(
-    query: BuildEventRequest,
-    _: LoggedUser,
-    data: AppState,
+    query: Query<BuildEventRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let query = query.into_inner();
     let body = build_calendar_event_body(query, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn build_calendar_event_body(
@@ -629,40 +665,46 @@ async fn build_calendar_event_body(
     Ok(body)
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct CreateCalendarEventRequest {
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_date: NaiveDate,
-    pub event_start_time: NaiveTime,
-    pub event_end_date: NaiveDate,
-    pub event_end_time: NaiveTime,
+    pub event_start_date: NaiveDateWrapper,
+    pub event_start_time: NaiveTimeWrapper,
+    pub event_end_date: NaiveDateWrapper,
+    pub event_end_time: NaiveTimeWrapper,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
 }
 
+#[post("/calendar/create_calendar_event")]
 pub async fn create_calendar_event(
-    payload: CreateCalendarEventRequest,
-    _: LoggedUser,
-    data: AppState,
+    payload: Json<CreateCalendarEventRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let payload = payload.into_inner();
     let body = create_calendar_event_body(payload, &data.cal_sync).await?;
-    Ok(warp::reply::html(body))
+    Ok(rweb::reply::html(body))
 }
 
 async fn create_calendar_event_body(
     payload: CreateCalendarEventRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<String> {
-    let start_datetime = NaiveDateTime::new(payload.event_start_date, payload.event_start_time);
+    let start_datetime = NaiveDateTime::new(
+        payload.event_start_date.into(),
+        payload.event_start_time.into(),
+    );
     let start_datetime = Local
         .from_local_datetime(&start_datetime)
         .single()
         .unwrap()
         .with_timezone(&Utc);
-    let end_datetime = NaiveDateTime::new(payload.event_end_date, payload.event_end_time);
+    let end_datetime =
+        NaiveDateTime::new(payload.event_end_date.into(), payload.event_end_time.into());
     let end_datetime = Local
         .from_local_datetime(&end_datetime)
         .single()
@@ -710,7 +752,7 @@ async fn create_calendar_event_body(
     Ok("Event Inserted".to_string())
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Schema)]
 pub struct EditCalendarRequest {
     pub gcal_id: StackString,
     pub calendar_name: Option<StackString>,
@@ -719,13 +761,15 @@ pub struct EditCalendarRequest {
     pub display: Option<bool>,
 }
 
+#[get("/calendar/edit_calendar")]
 pub async fn edit_calendar(
-    query: EditCalendarRequest,
-    _: LoggedUser,
-    data: AppState,
+    query: Query<EditCalendarRequest>,
+    #[cookie = "jwt"] _: LoggedUser,
+    #[data] data: AppState,
 ) -> WarpResult<impl Reply> {
+    let query = query.into_inner();
     let calendar_list = edit_calendar_list(query, &data.cal_sync).await?;
-    Ok(warp::reply::json(&calendar_list))
+    Ok(rweb::reply::json(&calendar_list))
 }
 
 async fn edit_calendar_list(

@@ -122,7 +122,7 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
         }
     });
     let new_events: Result<Vec<_>, Error> = try_join_all(futures).await;
-    Ok(new_events?.into_iter().filter_map(|x| x).collect())
+    Ok(new_events?.into_iter().flatten().collect())
 }
 
 #[cfg(test)]

@@ -1,17 +1,19 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
 use diesel::{dsl::max, ExpressionMethods, QueryDsl};
+use rweb::Schema;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{cmp, io};
 use tokio_diesel::{AsyncRunQueryDsl, OptionalExtension};
 
 use crate::{
+    datetime_wrapper::DateTimeWrapper,
     pgpool::PgPool,
     schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
 };
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarList {
     pub id: i32,
     pub calendar_name: StackString,
@@ -21,7 +23,7 @@ pub struct CalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeWrapper,
     pub edit: bool,
     pub display: bool,
 }
@@ -140,7 +142,7 @@ impl InsertCalendarList {
             gcal_location: self.gcal_location,
             gcal_timezone: self.gcal_timezone,
             sync: false,
-            last_modified: Utc::now(),
+            last_modified: Utc::now().into(),
             edit: false,
             display: false,
         }

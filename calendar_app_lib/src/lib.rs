@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::manual_range_contains)]
+#![allow(clippy::default_trait_access)]
 
 #[macro_use]
 extern crate diesel;
@@ -18,9 +19,11 @@ pub mod calendar;
 pub mod calendar_cli_opts;
 pub mod calendar_sync;
 pub mod config;
+pub mod datetime_wrapper;
 pub mod latitude;
 pub mod longitude;
 pub mod models;
+pub mod naivedate_wrapper;
 pub mod parse_hashnyc;
 pub mod parse_nycruns;
 pub mod pgpool;

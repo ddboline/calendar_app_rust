@@ -123,12 +123,26 @@ impl TelegramBot {
         loop {
             FAILURE_COUNT.check()?;
             let now = Utc::now();
-            for chat_id in TELEGRAM_USERIDS.load().values() {
-                if let Some(chat_id) = chat_id {
-                    if now > agenda_datetime {
-                        agenda_datetime = agenda_datetime + Duration::days(1);
-                        events = self.cal_sync.list_agenda(0, 1).await?.collect();
-                        for event in &events {
+            for chat_id in TELEGRAM_USERIDS.load().values().flatten() {
+                if now > agenda_datetime {
+                    agenda_datetime = agenda_datetime + Duration::days(1);
+                    events = self.cal_sync.list_agenda(0, 1).await?.collect();
+                    for event in &events {
+                        self.send_message(
+                            *chat_id,
+                            &event
+                                .get_summary(
+                                    &self.cal_sync.config.domain,
+                                    &self.pool,
+                                    self.cal_sync.config.default_time_zone,
+                                )
+                                .await,
+                        )
+                        .await?;
+                    }
+                } else {
+                    while let Some(event) = events.front() {
+                        if now > event.start_time - Duration::minutes(5) {
                             self.send_message(
                                 *chat_id,
                                 &event
@@ -140,25 +154,9 @@ impl TelegramBot {
                                     .await,
                             )
                             .await?;
-                        }
-                    } else {
-                        while let Some(event) = events.front() {
-                            if now > event.start_time - Duration::minutes(5) {
-                                self.send_message(
-                                    *chat_id,
-                                    &event
-                                        .get_summary(
-                                            &self.cal_sync.config.domain,
-                                            &self.pool,
-                                            self.cal_sync.config.default_time_zone,
-                                        )
-                                        .await,
-                                )
-                                .await?;
-                                events.pop_front();
-                            } else {
-                                break;
-                            }
+                            events.pop_front();
+                        } else {
+                            break;
                         }
                     }
                 }
