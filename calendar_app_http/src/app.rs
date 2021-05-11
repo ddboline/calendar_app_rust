@@ -1,8 +1,8 @@
 use anyhow::Error;
+use rweb::Filter;
 use stack_string::StackString;
-use std::{net::SocketAddr, time::Duration};
-use tokio::time::interval;
-use warp::Filter;
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
+use tokio::{sync::RwLock, time::interval};
 
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
 
@@ -17,9 +17,12 @@ use crate::{
     },
 };
 
+pub type UrlCache = RwLock<HashMap<StackString, StackString>>;
+
 #[derive(Clone)]
 pub struct AppState {
     pub cal_sync: CalendarSync,
+    pub shortened_urls: Arc<UrlCache>,
 }
 
 pub async fn start_app() -> Result<(), Error> {
@@ -39,151 +42,63 @@ async fn run_app(config: &Config) -> Result<(), Error> {
     TRIGGER_DB_UPDATE.set();
     let pool = PgPool::new(&config.database_url);
     let cal_sync = CalendarSync::new(config.clone(), pool).await;
+    let shortened_urls = Arc::new(RwLock::new(HashMap::new()));
 
     tokio::task::spawn(_update_db(cal_sync.pool.clone()));
 
     let app = AppState {
-        cal_sync: cal_sync.clone(),
+        cal_sync,
+        shortened_urls,
     };
 
-    let data = warp::any().map(move || app.clone());
+    let calendar_index_path = calendar_index().boxed();
+    let agenda_path = agenda(app.clone()).boxed();
+    let sync_calendars_path = sync_calendars(app.clone()).boxed();
 
-    let calendar_index_path = warp::path("index.html")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and_then(calendar_index);
-    let agenda_path = warp::path("agenda")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(agenda);
-    let sync_calendars_path = warp::path("sync_calendars")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(sync_calendars);
-    let sync_calendars_full_path = warp::path("sync_calendars_full")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(sync_calendars_full);
-    let delete_event_path = warp::path("delete_event")
-        .and(warp::path::end())
-        .and(warp::delete())
-        .and(warp::body::json())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(delete_event);
-    let list_calendars_path = warp::path("list_calendars")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(list_calendars);
-    let list_events_path = warp::path("list_events")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::query())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(list_events);
-    let event_detail_path = warp::path("event_detail")
-        .and(warp::path::end())
-        .and(warp::post())
-        .and(warp::body::json())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(event_detail);
+    let sync_calendars_full_path = sync_calendars_full(app.clone()).boxed();
+    let delete_event_path = delete_event(app.clone()).boxed();
+    let list_calendars_path = list_calendars(app.clone()).boxed();
+    let list_events_path = list_events(app.clone()).boxed();
+    let event_detail_path = event_detail(app.clone()).boxed();
 
-    let calendar_list_get = warp::get()
-        .and(warp::path::end())
-        .and(warp::query())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(calendar_list);
-    let calendar_list_post = warp::post()
-        .and(warp::path::end())
-        .and(warp::body::json())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(calendar_list_update);
-    let calendar_list_path =
-        warp::path("calendar_list").and(calendar_list_get.or(calendar_list_post));
+    let calendar_list_get = calendar_list(app.clone()).boxed();
+    let calendar_list_post = calendar_list_update(app.clone()).boxed();
+    let calendar_list_path = calendar_list_get.or(calendar_list_post).boxed();
 
-    let calendar_cache_get = warp::get()
-        .and(warp::path::end())
-        .and(warp::query())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(calendar_cache);
-    let calendar_cache_post = warp::post()
-        .and(warp::path::end())
-        .and(warp::body::json())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(calendar_cache_update);
-    let calendar_cache_path =
-        warp::path("calendar_cache").and(calendar_cache_get.or(calendar_cache_post));
+    let calendar_cache_get = calendar_cache(app.clone()).boxed();
+    let calendar_cache_post = calendar_cache_update(app.clone()).boxed();
+    let calendar_cache_path = calendar_cache_get.or(calendar_cache_post).boxed();
 
-    let user_path = warp::path("user")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::cookie("jwt"))
-        .and_then(user);
+    let user_path = user().boxed();
 
-    let link_path = warp::path!("link" / StackString)
-        .and(warp::get())
-        .and(warp::path::end())
-        .and(data.clone())
-        .and_then(link_shortener);
+    let link_path = link_shortener(app.clone()).boxed();
 
-    let create_calendar_event_get = warp::get()
-        .and(warp::path::end())
-        .and(warp::query())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(build_calendar_event);
-    let create_calendar_event_post = warp::post()
-        .and(warp::path::end())
-        .and(warp::body::json())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(create_calendar_event);
-    let create_calendar_event_path = warp::path("create_calendar_event")
-        .and(create_calendar_event_get.or(create_calendar_event_post));
+    let create_calendar_event_get = build_calendar_event(app.clone()).boxed();
+    let create_calendar_event_post = create_calendar_event(app.clone()).boxed();
+    let create_calendar_event_path = create_calendar_event_get
+        .or(create_calendar_event_post)
+        .boxed();
 
-    let edit_calendar_path = warp::path("edit_calendar")
-        .and(warp::path::end())
-        .and(warp::get())
-        .and(warp::query())
-        .and(warp::cookie("jwt"))
-        .and(data.clone())
-        .and_then(edit_calendar);
+    let edit_calendar_path = edit_calendar(app.clone()).boxed();
 
-    let calendar_path = warp::path("calendar").and(
-        calendar_index_path
-            .or(agenda_path)
-            .or(sync_calendars_path)
-            .or(sync_calendars_full_path)
-            .or(delete_event_path)
-            .or(list_calendars_path)
-            .or(list_events_path)
-            .or(event_detail_path)
-            .or(calendar_list_path)
-            .or(calendar_cache_path)
-            .or(user_path)
-            .or(link_path)
-            .or(create_calendar_event_path)
-            .or(edit_calendar_path),
-    );
+    let calendar_path = calendar_index_path
+        .or(agenda_path)
+        .or(sync_calendars_path)
+        .or(sync_calendars_full_path)
+        .or(delete_event_path)
+        .or(list_calendars_path)
+        .or(list_events_path)
+        .or(event_detail_path)
+        .or(calendar_list_path)
+        .or(calendar_cache_path)
+        .or(user_path)
+        .or(link_path)
+        .or(create_calendar_event_path)
+        .or(edit_calendar_path);
 
     let routes = calendar_path.recover(error_response);
     let addr: SocketAddr = format!("127.0.0.1:{}", config.port).parse()?;
-    warp::serve(routes).bind(addr).await;
+    rweb::serve(routes).bind(addr).await;
     Ok(())
 }
 

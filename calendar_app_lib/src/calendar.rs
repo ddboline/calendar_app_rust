@@ -190,7 +190,7 @@ impl From<Event> for InsertCalendarCache {
             event_id: item.event_id,
             event_start_time: item.start_time,
             event_end_time: item.end_time,
-            event_url: item.url.map(Url::into_string).map(Into::into),
+            event_url: item.url.map(Into::<String>::into).map(Into::into),
             event_name: item.name,
             event_description: item.description.map(Into::into),
             event_location_lat: item
