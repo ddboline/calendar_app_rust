@@ -209,11 +209,8 @@ impl GCalendarInstance {
             event_id,
             ..EventsUpdateParams::default()
         };
-        exponential_retry(|| async {
-            self.rate_limit.acquire().await;
-            self.cal_events.update(&params, &gcal_event).await
-        })
-        .await
+        self.rate_limit.acquire().await;
+        self.cal_events.update(&params, &gcal_event).await
     }
 
     pub async fn delete_gcal_event(&self, gcal_id: &str, gcal_event_id: &str) -> Result<(), Error> {
