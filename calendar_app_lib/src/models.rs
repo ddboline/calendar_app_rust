@@ -101,7 +101,7 @@ impl CalendarList {
     }
 }
 
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize, Schema)]
 #[table_name = "calendar_list"]
 pub struct InsertCalendarList {
     pub calendar_name: StackString,
@@ -111,7 +111,7 @@ pub struct InsertCalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeWrapper,
     pub edit: bool,
 }
 
@@ -125,7 +125,7 @@ impl From<CalendarList> for InsertCalendarList {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: false,
-            last_modified: Utc::now(),
+            last_modified: Utc::now().into(),
             edit: false,
         }
     }
@@ -177,20 +177,20 @@ impl InsertCalendarList {
     }
 }
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarCache {
     pub id: i32,
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_time: DateTime<Utc>,
-    pub event_end_time: DateTime<Utc>,
+    pub event_start_time: DateTimeWrapper,
+    pub event_end_time: DateTimeWrapper,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeWrapper,
 }
 
 impl CalendarCache {
@@ -331,20 +331,20 @@ impl CalendarCache {
     }
 }
 
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize, Schema)]
 #[table_name = "calendar_cache"]
 pub struct InsertCalendarCache {
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_time: DateTime<Utc>,
-    pub event_end_time: DateTime<Utc>,
+    pub event_start_time: DateTimeWrapper,
+    pub event_end_time: DateTimeWrapper,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeWrapper,
 }
 
 impl From<CalendarCache> for InsertCalendarCache {
@@ -352,15 +352,15 @@ impl From<CalendarCache> for InsertCalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time,
-            event_end_time: item.event_end_time,
+            event_start_time: item.event_start_time.into(),
+            event_end_time: item.event_end_time.into(),
             event_url: item.event_url,
             event_name: item.event_name,
             event_description: item.event_description,
             event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: Utc::now(),
+            last_modified: Utc::now().into(),
         }
     }
 }
@@ -371,15 +371,15 @@ impl InsertCalendarCache {
             id,
             gcal_id: self.gcal_id,
             event_id: self.event_id,
-            event_start_time: self.event_start_time,
-            event_end_time: self.event_end_time,
+            event_start_time: self.event_start_time.into(),
+            event_end_time: self.event_end_time.into(),
             event_url: self.event_url,
             event_name: self.event_name,
             event_description: self.event_description,
             event_location_name: self.event_location_name,
             event_location_lat: self.event_location_lat,
             event_location_lon: self.event_location_lon,
-            last_modified: Utc::now(),
+            last_modified: Utc::now().into(),
         }
     }
 

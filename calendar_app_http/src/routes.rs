@@ -3,7 +3,14 @@ use chrono::{Duration, Local, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::Tz;
 use futures::future::try_join_all;
 use itertools::Itertools;
-use rweb::{delete, get, post, Json, Query, Rejection, Reply, Schema};
+use rweb::{delete, get, post, Json, Query, Rejection, Schema};
+use rweb_helper::{
+    content_type_trait::ContentTypeHtml,
+    derive_response_description,
+    html_response::HtmlResponse as HtmlBase,
+    json_response::JsonResponse as JsonBase,
+    status_code_trait::{StatusCodeCreated, StatusCodeOk},
+};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::collections::HashMap;
@@ -28,19 +35,27 @@ use crate::{
 pub type WarpResult<T> = Result<T, Rejection>;
 pub type HttpResult<T> = Result<T, Error>;
 
+struct IndexDescription {}
+derive_response_description!(IndexDescription, "Main Page");
+type IndexResponse = HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, IndexDescription>;
+
 #[get("/calendar/index.html")]
-pub async fn calendar_index(#[cookie = "jwt"] _: LoggedUser) -> WarpResult<impl Reply> {
+pub async fn calendar_index(#[cookie = "jwt"] _: LoggedUser) -> WarpResult<IndexResponse> {
     let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
+
+struct AgendaDescription {}
+derive_response_description!(AgendaDescription, "Agenda");
+type AgendaResponse = HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, AgendaDescription>;
 
 #[get("/calendar/agenda")]
 pub async fn agenda(
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<AgendaResponse> {
     let body = agenda_body(data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
@@ -111,13 +126,17 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
     Ok(body)
 }
 
+struct SyncDescription {}
+derive_response_description!(SyncDescription, "Sync Output");
+type SyncResponse = HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, SyncDescription>;
+
 #[get("/calendar/sync_calendars")]
 pub async fn sync_calendars(
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, false).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResult<String> {
@@ -128,9 +147,9 @@ async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResu
 pub async fn sync_calendars_full(
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, true).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 #[derive(Serialize, Deserialize, Debug, Schema)]
@@ -139,15 +158,20 @@ pub struct DeleteEventPath {
     pub event_id: StackString,
 }
 
+struct DeleteEventDescription {}
+derive_response_description!(DeleteEventDescription, "Delete Event Output");
+type DeleteEventResponse =
+    HtmlBase<String, Error, StatusCodeCreated, ContentTypeHtml, DeleteEventDescription>;
+
 #[delete("/calendar/delete_event")]
 pub async fn delete_event(
     payload: Json<DeleteEventPath>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<DeleteEventResponse> {
     let payload = payload.into_inner();
     let body = delete_event_body(payload, &data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn delete_event_body(
@@ -173,13 +197,18 @@ async fn delete_event_body(
     Ok(body)
 }
 
+struct ListCalendarsDescription {}
+derive_response_description!(ListCalendarsDescription, "List Calendars");
+type ListCalendarsResponse =
+    HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, ListCalendarsDescription>;
+
 #[get("/calendar/list_calendars")]
 pub async fn list_calendars(
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<ListCalendarsResponse> {
     let body = list_calendars_body(&data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
@@ -248,15 +277,20 @@ pub struct ListEventsRequest {
     pub max_time: Option<NaiveDateWrapper>,
 }
 
+struct ListEventsDescription {}
+derive_response_description!(ListEventsDescription, "List Events");
+type ListEventsResponse =
+    HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, ListEventsDescription>;
+
 #[get("/calendar/list_events")]
 pub async fn list_events(
     query: Query<ListEventsRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<ListEventsResponse> {
     let query = query.into_inner();
     let body = list_events_body(query, &data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> HttpResult<String> {
@@ -322,15 +356,20 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
     Ok(body)
 }
 
+struct EventDetailDescription {}
+derive_response_description!(EventDetailDescription, "Event Details");
+type EventDetailResponse =
+    HtmlBase<String, Error, StatusCodeCreated, ContentTypeHtml, EventDetailDescription>;
+
 #[post("/calendar/event_detail")]
 pub async fn event_detail(
     payload: Json<DeleteEventPath>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<EventDetailResponse> {
     let payload = payload.into_inner();
     let body = event_detail_body(payload, &data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn event_detail_body(
@@ -420,15 +459,20 @@ pub struct MaxModifiedQuery {
     pub max_modified: Option<DateTimeWrapper>,
 }
 
+struct CalendarListDescription {}
+derive_response_description!(CalendarListDescription, "Calendar List");
+type CalendarListResponse =
+    JsonBase<Vec<CalendarList>, Error, StatusCodeOk, CalendarListDescription>;
+
 #[get("/calendar/calendar_list")]
 pub async fn calendar_list(
     query: Query<MaxModifiedQuery>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<CalendarListResponse> {
     let query = query.into_inner();
     let calendar_list = calendar_list_object(query, &data.cal_sync).await?;
-    Ok(rweb::reply::json(&calendar_list))
+    Ok(JsonBase::new(calendar_list))
 }
 
 async fn calendar_list_object(
@@ -448,15 +492,20 @@ pub struct CalendarUpdateRequest {
     pub updates: Vec<CalendarList>,
 }
 
+struct CalendarListUpdateDescription {}
+derive_response_description!(CalendarListUpdateDescription, "Calendar List Update");
+type CalendarListUpdateResponse =
+    JsonBase<Vec<InsertCalendarList>, Error, StatusCodeCreated, CalendarListUpdateDescription>;
+
 #[post("/calendar/calendar_list")]
 pub async fn calendar_list_update(
     payload: Json<CalendarUpdateRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<CalendarListUpdateResponse> {
     let payload = payload.into_inner();
     let calendars = calendar_list_update_object(payload, &data.cal_sync).await?;
-    Ok(rweb::reply::json(&calendars))
+    Ok(JsonBase::new(calendars))
 }
 
 async fn calendar_list_update_object(
@@ -471,15 +520,20 @@ async fn calendar_list_update_object(
     try_join_all(futures).await
 }
 
+struct CalendarCacheDescription {}
+derive_response_description!(CalendarCacheDescription, "Calendar Cache");
+type CalendarCacheResponse =
+    JsonBase<Vec<CalendarCache>, Error, StatusCodeOk, CalendarCacheDescription>;
+
 #[get("/calendar/calendar_cache")]
 pub async fn calendar_cache(
     query: Query<MaxModifiedQuery>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<CalendarCacheResponse> {
     let query = query.into_inner();
     let events = calendar_cache_events(query, &data.cal_sync).await?;
-    Ok(rweb::reply::json(&events))
+    Ok(JsonBase::new(events))
 }
 
 async fn calendar_cache_events(
@@ -533,15 +587,20 @@ pub struct CalendarCacheUpdateRequest {
     pub updates: Vec<CalendarCacheRequest>,
 }
 
+struct CalendarCacheUpdateDescription {}
+derive_response_description!(CalendarCacheUpdateDescription, "Calendar Cache");
+type CalendarCacheUpdateResponse =
+    JsonBase<Vec<InsertCalendarCache>, Error, StatusCodeOk, CalendarCacheUpdateDescription>;
+
 #[post("/calendar/calendar_cache")]
 pub async fn calendar_cache_update(
     payload: Json<CalendarCacheUpdateRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<CalendarCacheUpdateResponse> {
     let payload = payload.into_inner();
     let events = calendar_cache_update_events(payload, &data.cal_sync).await?;
-    Ok(rweb::reply::json(&events))
+    Ok(JsonBase::new(events))
 }
 
 async fn calendar_cache_update_events(
@@ -556,15 +615,27 @@ async fn calendar_cache_update_events(
     try_join_all(futures).await
 }
 
+struct UserDescription {}
+derive_response_description!(UserDescription, "Logged in User");
+type UserResponse = JsonBase<LoggedUser, Error, StatusCodeOk, UserDescription>;
+
 #[get("/calendar/user")]
-pub async fn user(#[cookie = "jwt"] user: LoggedUser) -> WarpResult<impl Reply> {
-    Ok(rweb::reply::json(&user))
+pub async fn user(#[cookie = "jwt"] user: LoggedUser) -> WarpResult<UserResponse> {
+    Ok(JsonBase::new(user))
 }
 
+struct ShortenedLinkDescription {}
+derive_response_description!(ShortenedLinkDescription, "Shortened Link");
+type ShortenedLinkResponse =
+    HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, ShortenedLinkDescription>;
+
 #[get("/calendar/link/{link}")]
-pub async fn link_shortener(link: StackString, #[data] data: AppState) -> WarpResult<impl Reply> {
+pub async fn link_shortener(
+    link: StackString,
+    #[data] data: AppState,
+) -> WarpResult<ShortenedLinkResponse> {
     let body = link_shortener_body(&link, &data.cal_sync, &data.shortened_urls).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn link_shortener_body(
@@ -612,15 +683,20 @@ pub struct BuildEventRequest {
     pub event_id: Option<StackString>,
 }
 
+struct BuildCalendarEventDescription {}
+derive_response_description!(BuildCalendarEventDescription, "Build Calendar Event");
+type BuildCalendarEventResponse =
+    HtmlBase<String, Error, StatusCodeOk, ContentTypeHtml, BuildCalendarEventDescription>;
+
 #[get("/calendar/create_calendar_event")]
 pub async fn build_calendar_event(
     query: Query<BuildEventRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<BuildCalendarEventResponse> {
     let query = query.into_inner();
     let body = build_calendar_event_body(query, &data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn build_calendar_event_body(
@@ -679,15 +755,20 @@ pub struct CreateCalendarEventRequest {
     pub event_location_name: Option<StackString>,
 }
 
+struct CreateCalendarEventDescription {}
+derive_response_description!(CreateCalendarEventDescription, "Create Calendar Event");
+type CreateCalendarEventResponse =
+    HtmlBase<String, Error, StatusCodeCreated, ContentTypeHtml, CreateCalendarEventDescription>;
+
 #[post("/calendar/create_calendar_event")]
 pub async fn create_calendar_event(
     payload: Json<CreateCalendarEventRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<CreateCalendarEventResponse> {
     let payload = payload.into_inner();
     let body = create_calendar_event_body(payload, &data.cal_sync).await?;
-    Ok(rweb::reply::html(body))
+    Ok(HtmlBase::new(body))
 }
 
 async fn create_calendar_event_body(
@@ -714,15 +795,15 @@ async fn create_calendar_event_body(
     let event = InsertCalendarCache {
         gcal_id: payload.gcal_id,
         event_id: payload.event_id,
-        event_start_time: start_datetime,
-        event_end_time: end_datetime,
+        event_start_time: start_datetime.into(),
+        event_end_time: end_datetime.into(),
         event_url: payload.event_url,
         event_name: payload.event_name,
         event_description: payload.event_description,
         event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
-        last_modified: Utc::now(),
+        last_modified: Utc::now().into(),
     };
 
     let event = event.upsert(&cal_sync.pool).await?;
@@ -761,15 +842,19 @@ pub struct EditCalendarRequest {
     pub display: Option<bool>,
 }
 
+struct EditCalendarDescription {}
+derive_response_description!(EditCalendarDescription, "Edit Calendar Event");
+type EditCalendarResponse = JsonBase<CalendarList, Error, StatusCodeOk, EditCalendarDescription>;
+
 #[get("/calendar/edit_calendar")]
 pub async fn edit_calendar(
     query: Query<EditCalendarRequest>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
-) -> WarpResult<impl Reply> {
+) -> WarpResult<EditCalendarResponse> {
     let query = query.into_inner();
     let calendar_list = edit_calendar_list(query, &data.cal_sync).await?;
-    Ok(rweb::reply::json(&calendar_list))
+    Ok(JsonBase::new(calendar_list))
 }
 
 async fn edit_calendar_list(

@@ -1,5 +1,10 @@
 use anyhow::Error;
-use rweb::Filter;
+use rweb::{
+    filters::BoxedFilter,
+    http::header::CONTENT_TYPE,
+    openapi::{self, Info},
+    Filter, Reply,
+};
 use stack_string::StackString;
 use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{sync::RwLock, time::interval};
@@ -31,26 +36,7 @@ pub async fn start_app() -> Result<(), Error> {
     run_app(&config).await
 }
 
-async fn run_app(config: &Config) -> Result<(), Error> {
-    async fn _update_db(pool: PgPool) {
-        let mut i = interval(Duration::from_secs(60));
-        loop {
-            fill_from_db(&pool).await.unwrap_or(());
-            i.tick().await;
-        }
-    }
-    TRIGGER_DB_UPDATE.set();
-    let pool = PgPool::new(&config.database_url);
-    let cal_sync = CalendarSync::new(config.clone(), pool).await;
-    let shortened_urls = Arc::new(RwLock::new(HashMap::new()));
-
-    tokio::task::spawn(_update_db(cal_sync.pool.clone()));
-
-    let app = AppState {
-        cal_sync,
-        shortened_urls,
-    };
-
+fn get_calendar_path(app: &AppState) -> BoxedFilter<(impl Reply,)> {
     let calendar_index_path = calendar_index().boxed();
     let agenda_path = agenda(app.clone()).boxed();
     let sync_calendars_path = sync_calendars(app.clone()).boxed();
@@ -81,7 +67,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
 
     let edit_calendar_path = edit_calendar(app.clone()).boxed();
 
-    let calendar_path = calendar_index_path
+    calendar_index_path
         .or(agenda_path)
         .or(sync_calendars_path)
         .or(sync_calendars_full_path)
@@ -94,9 +80,59 @@ async fn run_app(config: &Config) -> Result<(), Error> {
         .or(user_path)
         .or(link_path)
         .or(create_calendar_event_path)
-        .or(edit_calendar_path);
+        .or(edit_calendar_path)
+        .boxed()
+}
 
-    let routes = calendar_path.recover(error_response);
+async fn run_app(config: &Config) -> Result<(), Error> {
+    async fn _update_db(pool: PgPool) {
+        let mut i = interval(Duration::from_secs(60));
+        loop {
+            fill_from_db(&pool).await.unwrap_or(());
+            i.tick().await;
+        }
+    }
+    TRIGGER_DB_UPDATE.set();
+    let pool = PgPool::new(&config.database_url);
+    let cal_sync = CalendarSync::new(config.clone(), pool).await;
+    let shortened_urls = Arc::new(RwLock::new(HashMap::new()));
+
+    tokio::task::spawn(_update_db(cal_sync.pool.clone()));
+
+    let app = AppState {
+        cal_sync,
+        shortened_urls,
+    };
+
+    let (spec, calendar_path) = openapi::spec()
+        .info(Info {
+            title: "Calendar Web App".into(),
+            description: "Web App to Display Calendar, Sync with GCal".into(),
+            version: env!("CARGO_PKG_VERSION").into(),
+            ..Info::default()
+        })
+        .build(|| get_calendar_path(&app));
+
+    let spec = Arc::new(spec);
+    let spec_json_path = rweb::path!("calendar" / "openapi" / "json")
+        .and(rweb::path::end())
+        .map({
+            let spec = spec.clone();
+            move || rweb::reply::json(spec.as_ref())
+        });
+
+    let spec_yaml = serde_yaml::to_string(spec.as_ref())?;
+    let spec_yaml_path = rweb::path!("calendar" / "openapi" / "yaml")
+        .and(rweb::path::end())
+        .map(move || {
+            let reply = rweb::reply::html(spec_yaml.clone());
+            rweb::reply::with_header(reply, CONTENT_TYPE, "text/yaml")
+        });
+
+    let routes = calendar_path
+        .or(spec_json_path)
+        .or(spec_yaml_path)
+        .recover(error_response);
     let addr: SocketAddr = format!("127.0.0.1:{}", config.port).parse()?;
     rweb::serve(routes).bind(addr).await;
     Ok(())
