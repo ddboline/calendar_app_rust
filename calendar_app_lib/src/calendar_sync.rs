@@ -125,7 +125,11 @@ impl CalendarSync {
                                 .as_ref()
                                 .ok_or_else(|| format_err!("No gcal instance found"))?
                                 .update_gcal_event(&gcal_id, event)
-                                .await?,
+                                .await
+                                .map_err(|e| {
+                                    println!("event {:?} cannot be updated", gcal_event.id);
+                                    e
+                                })?,
                         ))
                     } else {
                         Ok(None)
