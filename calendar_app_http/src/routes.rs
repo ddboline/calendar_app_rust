@@ -569,15 +569,15 @@ impl From<CalendarCacheRequest> for InsertCalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time.into(),
-            event_end_time: item.event_end_time.into(),
+            event_start_time: item.event_start_time,
+            event_end_time: item.event_end_time,
             event_url: item.event_url.map(Into::into),
             event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
         }
     }
 }
