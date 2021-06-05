@@ -119,6 +119,12 @@ impl CalendarSync {
                 let event: Event = item.clone().into();
                 let (gcal_id, event) = event.to_gcal_event()?;
                 if let Some(gcal_event) = event_map.get(event_id) {
+                    let update = update
+                        && gcal_event
+                            .organizer
+                            .as_ref()
+                            .and_then(|o| o.email.as_ref().map(String::as_str))
+                            != Some("unknownorganizer@calendar.google.com");
                     if !compare_gcal_events(gcal_event, &event) && update {
                         Ok(Some(
                             self.gcal
