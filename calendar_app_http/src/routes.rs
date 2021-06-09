@@ -5,9 +5,7 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
-    RwebResponse,
-    html_response::HtmlResponse as HtmlBase,
-    json_response::JsonResponse as JsonBase,
+    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, RwebResponse,
 };
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
@@ -34,7 +32,7 @@ pub type WarpResult<T> = Result<T, Rejection>;
 pub type HttpResult<T> = Result<T, Error>;
 
 #[derive(RwebResponse)]
-#[response(description="Main Page", content="html")]
+#[response(description = "Main Page", content = "html")]
 struct IndexResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/index.html")]
@@ -44,7 +42,7 @@ pub async fn calendar_index(#[cookie = "jwt"] _: LoggedUser) -> WarpResult<Index
 }
 
 #[derive(RwebResponse)]
-#[response(description="Agenda", content="html")]
+#[response(description = "Agenda", content = "html")]
 struct AgendaResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/agenda")]
@@ -125,7 +123,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Sync Output", content="html")]
+#[response(description = "Sync Output", content = "html")]
 struct SyncResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/sync_calendars")]
@@ -157,7 +155,11 @@ pub struct DeleteEventPath {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Delete Event Output", content="html", status="CREATED")]
+#[response(
+    description = "Delete Event Output",
+    content = "html",
+    status = "CREATED"
+)]
 struct DeleteEventResponse(HtmlBase<String, Error>);
 
 #[delete("/calendar/delete_event")]
@@ -195,7 +197,7 @@ async fn delete_event_body(
 }
 
 #[derive(RwebResponse)]
-#[response(description="List Calendars", content="html")]
+#[response(description = "List Calendars", content = "html")]
 struct ListCalendarsResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/list_calendars")]
@@ -274,7 +276,7 @@ pub struct ListEventsRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="List Events", content="html")]
+#[response(description = "List Events", content = "html")]
 struct ListEventsResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/list_events")]
@@ -352,7 +354,7 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
 }
 
 #[derive(RwebResponse)]
-#[response(description="Event Details", content="html", status="CREATED")]
+#[response(description = "Event Details", content = "html", status = "CREATED")]
 struct EventDetailResponse(HtmlBase<String, Error>);
 
 #[post("/calendar/event_detail")]
@@ -454,7 +456,7 @@ pub struct MaxModifiedQuery {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Calendar List")]
+#[response(description = "Calendar List")]
 struct CalendarListResponse(JsonBase<Vec<CalendarList>, Error>);
 
 #[get("/calendar/calendar_list")]
@@ -486,7 +488,7 @@ pub struct CalendarUpdateRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Calendar List Update", status="CREATED")]
+#[response(description = "Calendar List Update", status = "CREATED")]
 struct CalendarListUpdateResponse(JsonBase<Vec<InsertCalendarList>, Error>);
 
 #[post("/calendar/calendar_list")]
@@ -513,7 +515,7 @@ async fn calendar_list_update_object(
 }
 
 #[derive(RwebResponse)]
-#[response(description="Calendar Cache")]
+#[response(description = "Calendar Cache")]
 struct CalendarCacheResponse(JsonBase<Vec<CalendarCache>, Error>);
 
 #[get("/calendar/calendar_cache")]
@@ -579,7 +581,7 @@ pub struct CalendarCacheUpdateRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Calendar Cache Update")]
+#[response(description = "Calendar Cache Update")]
 struct CalendarCacheUpdateResponse(JsonBase<Vec<InsertCalendarCache>, Error>);
 
 #[post("/calendar/calendar_cache")]
@@ -606,7 +608,7 @@ async fn calendar_cache_update_events(
 }
 
 #[derive(RwebResponse)]
-#[response(description="Logged in User")]
+#[response(description = "Logged in User")]
 struct UserResponse(JsonBase<LoggedUser, Error>);
 
 #[get("/calendar/user")]
@@ -615,7 +617,7 @@ pub async fn user(#[cookie = "jwt"] user: LoggedUser) -> WarpResult<UserResponse
 }
 
 #[derive(RwebResponse)]
-#[response(description="Shortened Link", content="html")]
+#[response(description = "Shortened Link", content = "html")]
 struct ShortenedLinkResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/link/{link}")]
@@ -673,7 +675,7 @@ pub struct BuildEventRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Build Calendar Event", content="html")]
+#[response(description = "Build Calendar Event", content = "html")]
 struct BuildCalendarEventResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/create_calendar_event")]
@@ -744,7 +746,11 @@ pub struct CreateCalendarEventRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Create Calendar Event", content="html", status="CREATED")]
+#[response(
+    description = "Create Calendar Event",
+    content = "html",
+    status = "CREATED"
+)]
 struct CreateCalendarEventResponse(HtmlBase<String, Error>);
 
 #[post("/calendar/create_calendar_event")]
@@ -830,7 +836,7 @@ pub struct EditCalendarRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description="Edit Calendar Event")]
+#[response(description = "Edit Calendar Event")]
 struct EditCalendarResponse(JsonBase<CalendarList, Error>);
 
 #[get("/calendar/edit_calendar")]
