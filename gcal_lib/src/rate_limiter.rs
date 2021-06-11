@@ -79,18 +79,17 @@ impl RateLimiterInner {
 
     async fn check_reset(&self) {
         loop {
-            self.remaining
-                .fetch_max(self.max_per_unit_time, Ordering::SeqCst);
+            sleep(Duration::from_millis(self.unit_time_ms as u64)).await;
+            let mut consumed = 0;
             for _ in 0..self.max_per_unit_time {
-                if self.decrement_remaining().is_ok() {
-                    if let Some(send) = self.send_queue.try_pop() {
-                        send.send(()).expect("Channel closed");
-                    } else {
-                        break;
-                    }
+                if let Some(send) = self.send_queue.try_pop() {
+                    send.send(()).expect("Channel closed");
+                    consumed += 1;
+                } else {
+                    break;
                 }
             }
-            sleep(Duration::from_millis(self.unit_time_ms as u64)).await;
+            self.remaining.fetch_max(self.max_per_unit_time - consumed, Ordering::SeqCst);
         }
     }
 }
@@ -149,7 +148,7 @@ mod tests {
             elapsed.num_milliseconds(),
             test_count.load(Ordering::SeqCst)
         );
-        assert!(elapsed.num_milliseconds() >= 1000);
+        assert!(elapsed.num_milliseconds() >= 950);
         assert_eq!(test_count.load(Ordering::SeqCst), 10_000);
         Ok(())
     }
