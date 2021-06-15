@@ -5,13 +5,9 @@ use common::{
     yup_oauth2::{self, InstalledFlowAuthenticator},
     TlsClient,
 };
-use log::{debug, error};
+use log::debug;
 use stack_string::StackString;
-use std::{
-    fs::{create_dir_all, File},
-    path::Path,
-    sync::Arc,
-};
+use std::{fs::create_dir_all, path::Path, sync::Arc};
 
 pub use crate::calendar_v3_types::{CalendarListEntry, Event, EventDateTime};
 use crate::{
