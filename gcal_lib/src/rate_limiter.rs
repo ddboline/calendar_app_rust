@@ -1,16 +1,9 @@
-use anyhow::{format_err, Error};
-use chrono::Utc;
-use deadqueue::limited::Queue;
-use log::debug;
 use std::sync::{
     atomic::{AtomicUsize, Ordering},
     Arc,
 };
 use tokio::{
-    sync::{
-        oneshot::{channel, Receiver, Sender},
-        Mutex,
-    },
+    sync::Notify,
     task::{spawn, JoinHandle},
     time::{sleep, Duration},
 };
@@ -51,7 +44,7 @@ struct RateLimiterInner {
     max_per_unit_time: usize,
     unit_time_ms: usize,
     remaining: AtomicUsize,
-    send_queue: Queue<Sender<()>>,
+    notify: Notify,
 }
 
 impl RateLimiterInner {
@@ -60,7 +53,7 @@ impl RateLimiterInner {
             max_per_unit_time,
             unit_time_ms,
             remaining: AtomicUsize::new(max_per_unit_time),
-            send_queue: Queue::new(max_per_unit_time),
+            notify: Notify::new(),
         }
     }
 
@@ -70,26 +63,21 @@ impl RateLimiterInner {
     }
 
     async fn acquire(&self) {
-        if self.decrement_remaining().is_err() {
-            let (send, recv) = channel();
-            self.send_queue.push(send).await;
-            recv.await.expect("Channel closed");
+        loop {
+            if self.decrement_remaining().is_ok() {
+                return;
+            } else {
+                self.notify.notified().await;
+            }
         }
     }
 
     async fn check_reset(&self) {
         loop {
+            self.remaining
+                .fetch_max(self.max_per_unit_time, Ordering::SeqCst);
+            self.notify.notify_waiters();
             sleep(Duration::from_millis(self.unit_time_ms as u64)).await;
-            let mut consumed = 0;
-            for _ in 0..self.max_per_unit_time {
-                if let Some(send) = self.send_queue.try_pop() {
-                    send.send(()).expect("Channel closed");
-                    consumed += 1;
-                } else {
-                    break;
-                }
-            }
-            self.remaining.fetch_max(self.max_per_unit_time - consumed, Ordering::SeqCst);
         }
     }
 }
@@ -143,7 +131,7 @@ mod tests {
 
         let elapsed = Utc::now() - start;
 
-        debug!(
+        println!(
             "{} {}",
             elapsed.num_milliseconds(),
             test_count.load(Ordering::SeqCst)
