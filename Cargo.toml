@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_rust"
-version = "0.4.21"
+version = "0.4.22"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -22,7 +22,7 @@ calendar_app_http = {path="calendar_app_http"}
 chrono = "0.4"
 tokio = {version="1.6", features=["full"]}
 anyhow = "1.0"
-env_logger = "0.8"
+env_logger = "0.9"
 log = "0.4"
 
 [workspace]
