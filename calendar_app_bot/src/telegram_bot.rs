@@ -1,15 +1,20 @@
 use anyhow::Error;
 use arc_swap::ArcSwap;
 use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
+use deadqueue::unlimited::Queue;
 use futures::{try_join, StreamExt};
 use im::HashMap;
 use lazy_static::lazy_static;
+use stack_string::StackString;
 use std::{collections::VecDeque, sync::Arc};
 use telegram_bot::{
-    Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind, ToChatRef, UpdateKind,
-    UserId,
+    types::Update, Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind,
+    ToChatRef, UpdateKind, UserId,
 };
-use tokio::time::{self, sleep, timeout};
+use tokio::{
+    select,
+    time::{self, sleep, timeout},
+};
 
 use calendar_app_lib::{
     calendar_sync::CalendarSync, config::Config, models::AuthorizedUsers, pgpool::PgPool,
@@ -29,6 +34,7 @@ pub struct TelegramBot {
     api: Arc<Api>,
     pool: PgPool,
     cal_sync: Arc<CalendarSync>,
+    queue: Arc<Queue<(ChatId, StackString)>>,
 }
 
 impl TelegramBot {
@@ -37,6 +43,7 @@ impl TelegramBot {
             api: Arc::new(Api::new(bot_token)),
             pool: pool.clone(),
             cal_sync: Arc::new(CalendarSync::new(config.clone(), pool.clone()).await),
+            queue: Arc::new(Queue::new()),
         }
     }
 
@@ -59,51 +66,66 @@ impl TelegramBot {
 
     pub async fn bot_handler(&self) -> Result<(), Error> {
         let mut stream = self.api.stream();
-        while let Some(update) = stream.next().await {
+        loop {
+            let result = select! {
+                Some(update) = stream.next() => {
+                    self.process_update(update).await
+                },
+                (chat, msg) = self.queue.pop() => {
+                    self.api.spawn(chat.text(msg.as_str()));
+                    Ok(())
+                },
+                else => break,
+            };
+            result?;
+        }
+        Ok(())
+    }
+
+    async fn process_update(
+        &self,
+        update: Result<Update, telegram_bot::Error>,
+    ) -> Result<(), Error> {
+        FAILURE_COUNT.check()?;
+        if let UpdateKind::Message(message) = update?.kind {
             FAILURE_COUNT.check()?;
-            if let UpdateKind::Message(message) = update?.kind {
+            if let MessageKind::Text { ref data, .. } = message.kind {
                 FAILURE_COUNT.check()?;
-                if let MessageKind::Text { ref data, .. } = message.kind {
+                if TELEGRAM_USERIDS.load().contains_key(&message.from.id) {
                     FAILURE_COUNT.check()?;
-                    if TELEGRAM_USERIDS.load().contains_key(&message.from.id) {
-                        FAILURE_COUNT.check()?;
-                        if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
-                            if data.starts_with("/init") {
-                                self.update_telegram_chat_id(message.from.id, chat_id)
-                                    .await?;
-                                self.api
-                                    .send(
-                                        message.text_reply(format!(
-                                            "Initializing chat_id {}",
-                                            chat_id
-                                        )),
-                                    )
-                                    .await?;
-                            } else if data.starts_with("/cal") {
-                                for event in self.cal_sync.list_agenda(0, 1).await? {
-                                    self.send_message(
-                                        chat_id,
-                                        &event
-                                            .get_summary(
-                                                &self.cal_sync.config.domain,
-                                                &self.pool,
-                                                self.cal_sync.config.default_time_zone,
-                                            )
-                                            .await,
-                                    )
-                                    .await?;
-                                }
+                    if let ChatRef::Id(chat_id) = message.chat.to_chat_ref() {
+                        if data.starts_with("/init") {
+                            self.update_telegram_chat_id(message.from.id, chat_id)
+                                .await?;
+                            self.api
+                                .send(
+                                    message.text_reply(format!("Initializing chat_id {}", chat_id)),
+                                )
+                                .await?;
+                        } else if data.starts_with("/cal") {
+                            for event in self.cal_sync.list_agenda(0, 1).await? {
+                                self.send_message(
+                                    chat_id,
+                                    &event
+                                        .get_summary(
+                                            &self.cal_sync.config.domain,
+                                            &self.pool,
+                                            self.cal_sync.config.default_time_zone,
+                                        )
+                                        .await,
+                                )
+                                .await?;
                             }
                         }
-                    } else {
-                        // Answer message with "Hi".
-                        self.api
-                            .send(message.text_reply(format!(
-                                "Hi, {}, user_id {}! You just wrote '{}'",
-                                &message.from.first_name, &message.from.id, data
-                            )))
-                            .await?;
                     }
+                } else {
+                    // Answer message with "Hi".
+                    self.api
+                        .send(message.text_reply(format!(
+                            "Hi, {}, user_id {}! You just wrote '{}'",
+                            &message.from.first_name, &message.from.id, data
+                        )))
+                        .await?;
                 }
             }
         }
@@ -166,7 +188,7 @@ impl TelegramBot {
     }
 
     pub async fn send_message(&self, chat: ChatId, msg: &str) -> Result<(), Error> {
-        self.api.spawn(chat.text(msg));
+        self.queue.push((chat, msg.into()));
         Ok(())
     }
 

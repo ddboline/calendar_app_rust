@@ -15,5 +15,6 @@ lazy_static = "1.4"
 chrono = "0.4"
 arc-swap = "1.2.0"
 im = "15.0"
+deadqueue = "0.2"
 stack-string = { version="0.2", features=["diesel_types"] }
 telegram-bot = {git = "https://github.com/ddboline/telegram-bot.git", tag="0.9.0-2"}
