@@ -1,19 +1,17 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Utc};
 use diesel::{dsl::max, ExpressionMethods, QueryDsl};
-use rweb::Schema;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{cmp, io};
 use tokio_diesel::{AsyncRunQueryDsl, OptionalExtension};
 
 use crate::{
-    datetime_wrapper::DateTimeWrapper,
     pgpool::PgPool,
     schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
 };
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize, Schema)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {
     pub id: i32,
     pub calendar_name: StackString,
@@ -23,7 +21,7 @@ pub struct CalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: DateTimeWrapper,
+    pub last_modified: DateTime<Utc>,
     pub edit: bool,
     pub display: bool,
 }
@@ -101,7 +99,7 @@ impl CalendarList {
     }
 }
 
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize, Schema)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_list"]
 pub struct InsertCalendarList {
     pub calendar_name: StackString,
@@ -111,7 +109,7 @@ pub struct InsertCalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: DateTimeWrapper,
+    pub last_modified: DateTime<Utc>,
     pub edit: bool,
 }
 
@@ -177,20 +175,20 @@ impl InsertCalendarList {
     }
 }
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize, Schema)]
+#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCache {
     pub id: i32,
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_time: DateTimeWrapper,
-    pub event_end_time: DateTimeWrapper,
+    pub event_start_time: DateTime<Utc>,
+    pub event_end_time: DateTime<Utc>,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTimeWrapper,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl CalendarCache {
@@ -331,20 +329,20 @@ impl CalendarCache {
     }
 }
 
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize, Schema)]
+#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
 #[table_name = "calendar_cache"]
 pub struct InsertCalendarCache {
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub event_start_time: DateTimeWrapper,
-    pub event_end_time: DateTimeWrapper,
+    pub event_start_time: DateTime<Utc>,
+    pub event_end_time: DateTime<Utc>,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTimeWrapper,
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<CalendarCache> for InsertCalendarCache {
@@ -543,7 +541,7 @@ impl InsertShortenedLinks {
 
 fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> StackString {
     // Encoding multiples of the block size is most efficient.
-    let mut block = [0; blake3::BLOCK_LEN];
+    let mut block = [0; blake3::guts::BLOCK_LEN];
     let mut result = Vec::new();
     while len > 0 {
         output.fill(&mut block);

@@ -5,7 +5,7 @@ use stack_string::StackString;
 use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::{
-    fs::{read_to_string, File},
+    fs::{read, File},
     io::{stdin, stdout, AsyncReadExt, AsyncWrite, AsyncWriteExt},
 };
 
@@ -167,16 +167,16 @@ impl CalendarCliOpts {
             }
             CalendarActions::Import { table, filepath } => {
                 let data = if let Some(filepath) = filepath {
-                    read_to_string(&filepath).await?
+                    read(&filepath).await?
                 } else {
                     let mut stdin = stdin();
-                    let mut buf = String::new();
-                    stdin.read_to_string(&mut buf).await?;
+                    let mut buf = Vec::new();
+                    stdin.read_to_end(&mut buf).await?;
                     buf
                 };
                 match table.as_str() {
                     "calendar_list" => {
-                        let calendars: Vec<CalendarList> = serde_json::from_str(&data)?;
+                        let calendars: Vec<CalendarList> = serde_json::from_slice(&data)?;
                         let futures = calendars.into_iter().map(|calendar| {
                             let pool = cal_sync.pool.clone();
                             let calendar: InsertCalendarList = calendar.into();
@@ -188,7 +188,7 @@ impl CalendarCliOpts {
                             .send(format!("calendar_list {}", results?.len()));
                     }
                     "calendar_cache" => {
-                        let events: Vec<CalendarCache> = serde_json::from_str(&data)?;
+                        let events: Vec<CalendarCache> = serde_json::from_slice(&data)?;
                         let futures = events.into_iter().map(|event| {
                             let pool = cal_sync.pool.clone();
                             let event: InsertCalendarCache = event.into();
