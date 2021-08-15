@@ -123,7 +123,7 @@ impl From<CalendarList> for InsertCalendarList {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: false,
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
             edit: false,
         }
     }
@@ -140,7 +140,7 @@ impl InsertCalendarList {
             gcal_location: self.gcal_location,
             gcal_timezone: self.gcal_timezone,
             sync: false,
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
             edit: false,
             display: false,
         }
@@ -157,13 +157,13 @@ impl InsertCalendarList {
     }
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
-        let existing = CalendarList::get_by_gcal_id(&self.gcal_id, &pool).await?;
+        let existing = CalendarList::get_by_gcal_id(&self.gcal_id, pool).await?;
         match existing.len() {
-            0 => self.insert(&pool).await,
+            0 => self.insert(pool).await,
             1 => {
                 let id = existing[0].id;
                 self.into_calendar_list(id)
-                    .update(&pool)
+                    .update(pool)
                     .await
                     .map(Into::into)
             }
@@ -358,7 +358,7 @@ impl From<CalendarCache> for InsertCalendarCache {
             event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
         }
     }
 }
@@ -377,7 +377,7 @@ impl InsertCalendarCache {
             event_location_name: self.event_location_name,
             event_location_lat: self.event_location_lat,
             event_location_lon: self.event_location_lon,
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
         }
     }
 
@@ -393,13 +393,13 @@ impl InsertCalendarCache {
 
     pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
         let existing =
-            CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, &pool).await?;
+            CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, pool).await?;
         match existing {
-            None => self.insert(&pool).await,
+            None => self.insert(pool).await,
             Some(event) => {
                 let id = event.id;
                 self.into_calendar_cache(id)
-                    .update(&pool)
+                    .update(pool)
                     .await
                     .map(Into::into)
             }

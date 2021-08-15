@@ -10,6 +10,7 @@
 #![allow(clippy::missing_errors_doc)]
 #![allow(clippy::used_underscore_binding)]
 #![allow(clippy::default_trait_access)]
+#![allow(clippy::unused_async)]
 
 pub mod app;
 pub mod errors;
@@ -62,7 +63,7 @@ impl From<CalendarList> for CalendarListWrapper {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: item.sync,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
             edit: item.edit,
             display: item.display,
         }
@@ -101,7 +102,7 @@ impl From<InsertCalendarList> for InsertCalendarListWrapper {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: item.sync,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
             edit: item.edit,
         }
     }
@@ -117,7 +118,7 @@ impl From<CalendarListWrapper> for InsertCalendarList {
             gcal_location: item.gcal_location,
             gcal_timezone: item.gcal_timezone,
             sync: item.sync,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
             edit: item.edit,
         }
     }
@@ -157,15 +158,15 @@ impl From<CalendarCache> for CalendarCacheWrapper {
             id: item.id,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time.into(),
-            event_end_time: item.event_end_time.into(),
+            event_start_time: item.event_start_time,
+            event_end_time: item.event_end_time,
             event_url: item.event_url,
             event_name: item.event_name,
             event_description: item.event_description,
             event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
         }
     }
 }
@@ -201,15 +202,15 @@ impl From<InsertCalendarCache> for InsertCalendarCacheWrapper {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time.into(),
-            event_end_time: item.event_end_time.into(),
+            event_start_time: item.event_start_time,
+            event_end_time: item.event_end_time,
             event_url: item.event_url,
             event_name: item.event_name,
             event_description: item.event_description,
             event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
         }
     }
 }

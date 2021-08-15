@@ -81,11 +81,11 @@ impl CalendarSync {
                     .send(format!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
-            let event: InsertCalendarCache = Event::from_gcal_event(&item, &gcal_id)?.into();
+            let event: InsertCalendarCache = Event::from_gcal_event(item, gcal_id)?.into();
             if upsert {
                 let event = event.upsert(&self.pool).await?;
                 Ok(Some(event))
-            } else if CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event.event_id, &self.pool)
+            } else if CalendarCache::get_by_gcal_id_event_id(gcal_id, &event.event_id, &self.pool)
                 .await?
                 .is_none()
             {
@@ -164,7 +164,7 @@ impl CalendarSync {
             .gcal
             .as_ref()
             .ok_or_else(|| format_err!("No gcal instance found"))?
-            .get_gcal_events(&gcal_id, None, None)
+            .get_gcal_events(gcal_id, None, None)
             .await?;
         let exported = if edit {
             let database_events =
@@ -189,7 +189,7 @@ impl CalendarSync {
             .gcal
             .as_ref()
             .ok_or_else(|| format_err!("No gcal instance found"))?
-            .get_gcal_events(&gcal_id, Some(Utc::now()), None)
+            .get_gcal_events(gcal_id, Some(Utc::now()), None)
             .await?;
         let exported = if edit {
             let database_events =
@@ -312,7 +312,7 @@ impl CalendarSync {
                 |d| d.with_timezone(&Utc),
             );
         let events = CalendarCache::get_by_gcal_id_datetime(
-            &gcal_id,
+            gcal_id,
             Some(min_date),
             Some(max_date),
             &self.pool,

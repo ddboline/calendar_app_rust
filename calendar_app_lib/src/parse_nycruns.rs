@@ -49,7 +49,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                     if let Ok(time) = NaiveTime::parse_from_str(&time_str, "%l:%M %p") {
                         current_time.replace(time);
                     } else if let Ok(time) =
-                        NaiveTime::parse_from_str(&items[items.len() - 1], "%l:%M%p")
+                        NaiveTime::parse_from_str(items[items.len() - 1], "%l:%M%p")
                     {
                         current_time.replace(time);
                     } else {

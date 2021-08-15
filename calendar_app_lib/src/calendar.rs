@@ -84,7 +84,7 @@ impl From<Calendar> for InsertCalendarList {
             gcal_location: item.location.map(|l| l.name),
             gcal_timezone: item.timezone.map(|z| z.into()),
             sync: false,
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
             edit: false,
         }
     }
@@ -173,8 +173,8 @@ impl From<CalendarCache> for Event {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            start_time: item.event_start_time.into(),
-            end_time: item.event_end_time.into(),
+            start_time: item.event_start_time,
+            end_time: item.event_end_time,
             url: item.event_url.and_then(|u| u.parse().ok()),
             name: item.event_name,
             description: item.event_description,
@@ -188,8 +188,8 @@ impl From<Event> for InsertCalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.start_time.into(),
-            event_end_time: item.end_time.into(),
+            event_start_time: item.start_time,
+            event_end_time: item.end_time,
             event_url: item.url.map(Into::<String>::into).map(Into::into),
             event_name: item.name,
             event_description: item.description.map(Into::into),
@@ -202,7 +202,7 @@ impl From<Event> for InsertCalendarCache {
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(_, lon)| lon.into())),
             event_location_name: item.location.map(|l| l.name),
-            last_modified: Utc::now().into(),
+            last_modified: Utc::now(),
         }
     }
 }

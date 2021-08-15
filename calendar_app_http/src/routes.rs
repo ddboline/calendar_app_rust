@@ -588,15 +588,15 @@ impl From<CalendarCacheRequest> for InsertCalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time.into(),
-            event_end_time: item.event_end_time.into(),
+            event_start_time: item.event_start_time,
+            event_end_time: item.event_end_time,
             event_url: item.event_url.map(Into::into),
             event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified.into(),
+            last_modified: item.last_modified,
         }
     }
 }
@@ -670,12 +670,12 @@ async fn link_shortener_body(
     let config = &cal_sync.config;
 
     if let Some(link) = shortened_urls.read().await.get(link) {
-        let body = format_short_link(&config.domain, &link);
+        let body = format_short_link(&config.domain, link);
         return Ok(body.into());
     }
 
     let pool = &cal_sync.pool;
-    if let Some(link) = ShortenedLinks::get_by_shortened_url(&link, pool)
+    if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool)
         .await?
         .pop()
     {
@@ -729,7 +729,7 @@ async fn build_calendar_event_body(
     cal_sync: &CalendarSync,
 ) -> HttpResult<String> {
     let event = if let Some(event_id) = &query.event_id {
-        CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, &event_id, &cal_sync.pool).await?
+        CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, event_id, &cal_sync.pool).await?
     } else {
         None
     };
@@ -825,15 +825,15 @@ async fn create_calendar_event_body(
     let event = InsertCalendarCache {
         gcal_id: payload.gcal_id,
         event_id: payload.event_id,
-        event_start_time: start_datetime.into(),
-        event_end_time: end_datetime.into(),
+        event_start_time: start_datetime,
+        event_end_time: end_datetime,
         event_url: payload.event_url,
         event_name: payload.event_name,
         event_description: payload.event_description,
         event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
-        last_modified: Utc::now().into(),
+        last_modified: Utc::now(),
     };
 
     let event = event.upsert(&cal_sync.pool).await?;
