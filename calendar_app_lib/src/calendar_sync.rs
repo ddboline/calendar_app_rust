@@ -305,6 +305,7 @@ impl CalendarSync {
             })
             .unwrap_or_else(|| (Utc::now() - Duration::weeks(1)));
         let max_date = max_date
+            .and_then(|d| d.checked_add_signed(Duration::days(1)))
             .and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
             .map_or_else(
                 || (Utc::now() + Duration::weeks(2)),

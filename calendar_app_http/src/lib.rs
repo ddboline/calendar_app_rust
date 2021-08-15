@@ -12,12 +12,11 @@
 #![allow(clippy::default_trait_access)]
 
 pub mod app;
-pub mod datetime_wrapper;
 pub mod errors;
 pub mod logged_user;
-pub mod naivedate_wrapper;
 pub mod routes;
 
+use chrono::{DateTime, Utc};
 use rweb::Schema;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
@@ -26,20 +25,29 @@ use calendar_app_lib::models::{
     CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList,
 };
 
-use crate::datetime_wrapper::DateTimeWrapper;
-
 #[derive(Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarListWrapper {
+    #[schema(description = "Calendar ID")]
     pub id: i32,
+    #[schema(description = "Calendar Name")]
     pub calendar_name: StackString,
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "GCal Calendar Name")]
     pub gcal_name: Option<StackString>,
+    #[schema(description = "GCal Calendar Description")]
     pub gcal_description: Option<StackString>,
+    #[schema(description = "GCal Calendar Location")]
     pub gcal_location: Option<StackString>,
+    #[schema(description = "GCal Calendar Timezone")]
     pub gcal_timezone: Option<StackString>,
+    #[schema(description = "Sync Flag")]
     pub sync: bool,
-    pub last_modified: DateTimeWrapper,
+    #[schema(description = "Last Modified")]
+    pub last_modified: DateTime<Utc>,
+    #[schema(description = "Edit Flag")]
     pub edit: bool,
+    #[schema(description = "Display Flag")]
     pub display: bool,
 }
 
@@ -63,14 +71,23 @@ impl From<CalendarList> for CalendarListWrapper {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Schema)]
 pub struct InsertCalendarListWrapper {
+    #[schema(description = "Calendar Name")]
     pub calendar_name: StackString,
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "GCal Calendar Name")]
     pub gcal_name: Option<StackString>,
+    #[schema(description = "GCal Calendar Description")]
     pub gcal_description: Option<StackString>,
+    #[schema(description = "GCal Calendar Location")]
     pub gcal_location: Option<StackString>,
+    #[schema(description = "GCal Calendar Timezone")]
     pub gcal_timezone: Option<StackString>,
+    #[schema(description = "Sync Flag")]
     pub sync: bool,
-    pub last_modified: DateTimeWrapper,
+    #[schema(description = "Last Modified")]
+    pub last_modified: DateTime<Utc>,
+    #[schema(description = "Edit Flag")]
     pub edit: bool,
 }
 
@@ -108,18 +125,30 @@ impl From<CalendarListWrapper> for InsertCalendarList {
 
 #[derive(Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarCacheWrapper {
+    #[schema(description = "Calendar ID")]
     pub id: i32,
+    #[schema(description = "Gcal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Calendar Event ID")]
     pub event_id: StackString,
-    pub event_start_time: DateTimeWrapper,
-    pub event_end_time: DateTimeWrapper,
+    #[schema(description = "Event Start Time")]
+    pub event_start_time: DateTime<Utc>,
+    #[schema(description = "Event End Time")]
+    pub event_end_time: DateTime<Utc>,
+    #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
+    #[schema(description = "Event Name")]
     pub event_name: StackString,
+    #[schema(description = "Event Description")]
     pub event_description: Option<StackString>,
+    #[schema(description = "Event Location Name")]
     pub event_location_name: Option<StackString>,
+    #[schema(description = "Event Location Latitude")]
     pub event_location_lat: Option<f64>,
+    #[schema(description = "Event Location Longitude")]
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTimeWrapper,
+    #[schema(description = "Last Modified")]
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<CalendarCache> for CalendarCacheWrapper {
@@ -143,17 +172,28 @@ impl From<CalendarCache> for CalendarCacheWrapper {
 
 #[derive(Debug, Clone, Serialize, Deserialize, Schema)]
 pub struct InsertCalendarCacheWrapper {
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Event ID")]
     pub event_id: StackString,
-    pub event_start_time: DateTimeWrapper,
-    pub event_end_time: DateTimeWrapper,
+    #[schema(description = "Event Start Time")]
+    pub event_start_time: DateTime<Utc>,
+    #[schema(description = "Event End Time")]
+    pub event_end_time: DateTime<Utc>,
+    #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
+    #[schema(description = "Event Name")]
     pub event_name: StackString,
+    #[schema(description = "Event Description")]
     pub event_description: Option<StackString>,
+    #[schema(description = "Event Location Name")]
     pub event_location_name: Option<StackString>,
+    #[schema(description = "Event Location Longitude")]
     pub event_location_lat: Option<f64>,
+    #[schema(description = "Event Location Latitude")]
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTimeWrapper,
+    #[schema(description = "Last Modified")]
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<InsertCalendarCache> for InsertCalendarCacheWrapper {

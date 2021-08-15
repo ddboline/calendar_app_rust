@@ -3,7 +3,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: "Web App to Display Calendar, Sync with GCal"
-  version: 0.4.18
+  version: 0.4.23
 paths:
   /calendar/index.html:
     get:
@@ -81,8 +81,10 @@ paths:
             schema:
               properties:
                 gcal_id:
+                  description: GCal ID
                   type: string
                 event_id:
+                  description: GCal Event ID
                   type: string
               type: object
               required:
@@ -126,18 +128,24 @@ paths:
       parameters:
         - name: calendar_name
           in: query
+          required: true
           schema:
+            description: Calendar Name
             type: string
         - name: min_time
           in: query
+          required: false
           schema:
-            format: naivedate
+            description: Earliest Date
+            format: date
             nullable: true
             type: string
         - name: max_time
           in: query
+          required: false
           schema:
-            format: naivedate
+            description: Latest Date
+            format: date
             nullable: true
             type: string
       responses:
@@ -163,8 +171,10 @@ paths:
             schema:
               properties:
                 gcal_id:
+                  description: GCal ID
                   type: string
                 event_id:
+                  description: GCal Event ID
                   type: string
               type: object
               required:
@@ -189,10 +199,11 @@ paths:
   /calendar/calendar_list:
     get:
       parameters:
-        - name: max_modified
+        - name: min_modified
           in: query
+          required: false
           schema:
-            format: datetime
+            format: date-time
             nullable: true
             type: string
       responses:
@@ -204,31 +215,42 @@ paths:
                 items:
                   properties:
                     id:
+                      description: Calendar ID
                       type: integer
                     calendar_name:
+                      description: Calendar Name
                       type: string
                     gcal_id:
+                      description: GCal Calendar ID
                       type: string
                     gcal_name:
+                      description: GCal Calendar Name
                       nullable: true
                       type: string
                     gcal_description:
+                      description: GCal Calendar Description
                       nullable: true
                       type: string
                     gcal_location:
+                      description: GCal Calendar Location
                       nullable: true
                       type: string
                     gcal_timezone:
+                      description: GCal Calendar Timezone
                       nullable: true
                       type: string
                     sync:
+                      description: Sync Flag
                       type: boolean
                     last_modified:
-                      format: datetime
+                      description: Last Modified
+                      format: date-time
                       type: string
                     edit:
+                      description: Edit Flag
                       type: boolean
                     display:
+                      description: Display Flag
                       type: boolean
                   type: object
                   required:
@@ -255,34 +277,46 @@ paths:
             schema:
               properties:
                 updates:
+                  description: Calendar List Updates
                   items:
                     properties:
                       id:
+                        description: Calendar ID
                         type: integer
                       calendar_name:
+                        description: Calendar Name
                         type: string
                       gcal_id:
+                        description: GCal Calendar ID
                         type: string
                       gcal_name:
+                        description: GCal Calendar Name
                         nullable: true
                         type: string
                       gcal_description:
+                        description: GCal Calendar Description
                         nullable: true
                         type: string
                       gcal_location:
+                        description: GCal Calendar Location
                         nullable: true
                         type: string
                       gcal_timezone:
+                        description: GCal Calendar Timezone
                         nullable: true
                         type: string
                       sync:
+                        description: Sync Flag
                         type: boolean
                       last_modified:
-                        format: datetime
+                        description: Last Modified
+                        format: date-time
                         type: string
                       edit:
+                        description: Edit Flag
                         type: boolean
                       display:
+                        description: Display Flag
                         type: boolean
                     type: object
                     required:
@@ -307,27 +341,36 @@ paths:
                 items:
                   properties:
                     calendar_name:
+                      description: Calendar Name
                       type: string
                     gcal_id:
+                      description: GCal Calendar ID
                       type: string
                     gcal_name:
+                      description: GCal Calendar Name
                       nullable: true
                       type: string
                     gcal_description:
+                      description: GCal Calendar Description
                       nullable: true
                       type: string
                     gcal_location:
+                      description: GCal Calendar Location
                       nullable: true
                       type: string
                     gcal_timezone:
+                      description: GCal Calendar Timezone
                       nullable: true
                       type: string
                     sync:
+                      description: Sync Flag
                       type: boolean
                     last_modified:
-                      format: datetime
+                      description: Last Modified
+                      format: date-time
                       type: string
                     edit:
+                      description: Edit Flag
                       type: boolean
                   type: object
                   required:
@@ -348,10 +391,11 @@ paths:
   /calendar/calendar_cache:
     get:
       parameters:
-        - name: max_modified
+        - name: min_modified
           in: query
+          required: false
           schema:
-            format: datetime
+            format: date-time
             nullable: true
             type: string
       responses:
@@ -363,36 +407,48 @@ paths:
                 items:
                   properties:
                     id:
+                      description: Calendar ID
                       type: integer
                     gcal_id:
+                      description: Gcal Calendar ID
                       type: string
                     event_id:
+                      description: Calendar Event ID
                       type: string
                     event_start_time:
-                      format: datetime
+                      description: Event Start Time
+                      format: date-time
                       type: string
                     event_end_time:
-                      format: datetime
+                      description: Event End Time
+                      format: date-time
                       type: string
                     event_url:
+                      description: Event URL
                       nullable: true
                       type: string
                     event_name:
+                      description: Event Name
                       type: string
                     event_description:
+                      description: Event Description
                       nullable: true
                       type: string
                     event_location_name:
+                      description: Event Location Name
                       nullable: true
                       type: string
                     event_location_lat:
+                      description: Event Location Latitude
                       nullable: true
                       type: number
                     event_location_lon:
+                      description: Event Location Longitude
                       nullable: true
                       type: number
                     last_modified:
-                      format: datetime
+                      description: Last Modified
+                      format: date-time
                       type: string
                   type: object
                   required:
@@ -419,39 +475,52 @@ paths:
             schema:
               properties:
                 updates:
+                  description: Calendar Events Update
                   items:
                     properties:
                       id:
+                        description: Calendar ID
                         type: integer
                       gcal_id:
+                        description: GCal Calendar ID
                         type: string
                       event_id:
+                        description: Calendar Event ID
                         type: string
                       event_start_time:
-                        format: datetime
+                        description: Event Start Time
+                        format: date-time
                         type: string
                       event_end_time:
-                        format: datetime
+                        description: Event End Time
+                        format: date-time
                         type: string
                       event_url:
+                        description: Event URL
                         nullable: true
                         type: string
                       event_name:
+                        description: Event Name
                         type: string
                       event_description:
+                        description: Event Description
                         nullable: true
                         type: string
                       event_location_name:
+                        description: Event Location Name
                         nullable: true
                         type: string
                       event_location_lat:
+                        description: Event Location Latitude
                         nullable: true
                         type: number
                       event_location_lon:
+                        description: Event Location Longitude
                         nullable: true
                         type: number
                       last_modified:
-                        format: datetime
+                        description: Last Modified
+                        format: date-time
                         type: string
                     type: object
                     required:
@@ -476,34 +545,45 @@ paths:
                 items:
                   properties:
                     gcal_id:
+                      description: GCal Calendar ID
                       type: string
                     event_id:
+                      description: Event ID
                       type: string
                     event_start_time:
-                      format: datetime
+                      description: Event Start Time
+                      format: date-time
                       type: string
                     event_end_time:
-                      format: datetime
+                      description: Event End Time
+                      format: date-time
                       type: string
                     event_url:
+                      description: Event URL
                       nullable: true
                       type: string
                     event_name:
+                      description: Event Name
                       type: string
                     event_description:
+                      description: Event Description
                       nullable: true
                       type: string
                     event_location_name:
+                      description: Event Location Name
                       nullable: true
                       type: string
                     event_location_lat:
+                      description: Event Location Longitude
                       nullable: true
                       type: number
                     event_location_lon:
+                      description: Event Location Latitude
                       nullable: true
                       type: number
                     last_modified:
-                      format: datetime
+                      description: Last Modified
+                      format: date-time
                       type: string
                   type: object
                   required:
@@ -532,6 +612,7 @@ paths:
               schema:
                 properties:
                   email:
+                    description: Email Address
                     type: string
                 type: object
                 required:
@@ -572,11 +653,15 @@ paths:
       parameters:
         - name: gcal_id
           in: query
+          required: true
           schema:
+            description: GCal Calendar ID
             type: string
         - name: event_id
           in: query
+          required: false
           schema:
+            description: Event ID
             nullable: true
             type: string
       responses:
@@ -601,40 +686,40 @@ paths:
             schema:
               properties:
                 gcal_id:
+                  description: GCal Calendar ID
                   type: string
                 event_id:
+                  description: Event ID
                   type: string
-                event_start_date:
-                  format: naivedate
+                event_start_datetime:
+                  description: Event Start Time
+                  format: date-time
                   type: string
-                event_start_time:
-                  format: naivetime
-                  type: string
-                event_end_date:
-                  format: naivedate
-                  type: string
-                event_end_time:
-                  format: naivetime
+                event_end_datetime:
+                  description: Event End Time
+                  format: date-time
                   type: string
                 event_url:
+                  description: Event URL
                   nullable: true
                   type: string
                 event_name:
+                  description: Event Name
                   type: string
                 event_description:
+                  description: Event Description
                   nullable: true
                   type: string
                 event_location_name:
+                  description: Event Location Name
                   nullable: true
                   type: string
               type: object
               required:
                 - gcal_id
                 - event_id
-                - event_start_date
-                - event_start_time
-                - event_end_date
-                - event_end_time
+                - event_start_datetime
+                - event_end_datetime
                 - event_name
         required: true
       responses:
@@ -657,26 +742,36 @@ paths:
       parameters:
         - name: gcal_id
           in: query
+          required: true
           schema:
+            description: GCal Calendar ID
             type: string
         - name: calendar_name
           in: query
+          required: false
           schema:
+            description: Calendar Name
             nullable: true
             type: string
         - name: sync
           in: query
+          required: false
           schema:
+            description: Sync Flag
             nullable: true
             type: boolean
         - name: edit
           in: query
+          required: false
           schema:
+            description: Edit Flag
             nullable: true
             type: boolean
         - name: display
           in: query
+          required: false
           schema:
+            description: Display Flag
             nullable: true
             type: boolean
       responses:
@@ -687,31 +782,42 @@ paths:
               schema:
                 properties:
                   id:
+                    description: Calendar ID
                     type: integer
                   calendar_name:
+                    description: Calendar Name
                     type: string
                   gcal_id:
+                    description: GCal Calendar ID
                     type: string
                   gcal_name:
+                    description: GCal Calendar Name
                     nullable: true
                     type: string
                   gcal_description:
+                    description: GCal Calendar Description
                     nullable: true
                     type: string
                   gcal_location:
+                    description: GCal Calendar Location
                     nullable: true
                     type: string
                   gcal_timezone:
+                    description: GCal Calendar Timezone
                     nullable: true
                     type: string
                   sync:
+                    description: Sync Flag
                     type: boolean
                   last_modified:
-                    format: datetime
+                    description: Last Modified
+                    format: date-time
                     type: string
                   edit:
+                    description: Edit Flag
                     type: boolean
                   display:
+                    description: Display Flag
                     type: boolean
                 type: object
                 required:
@@ -730,3 +836,4 @@ paths:
           description: Method not allowed
         "500":
           description: Internal Server Error
+components: {}

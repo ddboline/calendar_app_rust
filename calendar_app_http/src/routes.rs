@@ -1,5 +1,5 @@
 use anyhow::format_err;
-use chrono::{Duration, Local, NaiveDateTime, TimeZone, Utc};
+use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use chrono_tz::Tz;
 use futures::future::try_join_all;
 use itertools::Itertools;
@@ -22,10 +22,8 @@ use calendar_app_lib::{
 
 use crate::{
     app::{AppState, UrlCache},
-    datetime_wrapper::DateTimeWrapper,
     errors::{ServiceError as Error, ServiceError},
     logged_user::LoggedUser,
-    naivedate_wrapper::{NaiveDateWrapper, NaiveTimeWrapper},
     CalendarCacheWrapper, CalendarListWrapper, InsertCalendarCacheWrapper,
     InsertCalendarListWrapper,
 };
@@ -151,8 +149,10 @@ pub async fn sync_calendars_full(
 }
 
 #[derive(Serialize, Deserialize, Debug, Schema)]
-pub struct DeleteEventPath {
+pub struct GcalEventID {
+    #[schema(description = "GCal ID")]
     pub gcal_id: StackString,
+    #[schema(description = "GCal Event ID")]
     pub event_id: StackString,
 }
 
@@ -166,7 +166,7 @@ struct DeleteEventResponse(HtmlBase<String, Error>);
 
 #[delete("/calendar/delete_event")]
 pub async fn delete_event(
-    payload: Json<DeleteEventPath>,
+    payload: Json<GcalEventID>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<DeleteEventResponse> {
@@ -175,10 +175,7 @@ pub async fn delete_event(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn delete_event_body(
-    payload: DeleteEventPath,
-    cal_sync: &CalendarSync,
-) -> HttpResult<String> {
+async fn delete_event_body(payload: GcalEventID, cal_sync: &CalendarSync) -> HttpResult<String> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
@@ -272,9 +269,12 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct ListEventsRequest {
+    #[schema(description = "Calendar Name")]
     pub calendar_name: StackString,
-    pub min_time: Option<NaiveDateWrapper>,
-    pub max_time: Option<NaiveDateWrapper>,
+    #[schema(description = "Earliest Date")]
+    pub min_time: Option<NaiveDate>,
+    #[schema(description = "Latest Date")]
+    pub max_time: Option<NaiveDate>,
 }
 
 #[derive(RwebResponse)]
@@ -361,7 +361,7 @@ struct EventDetailResponse(HtmlBase<String, Error>);
 
 #[post("/calendar/event_detail")]
 pub async fn event_detail(
-    payload: Json<DeleteEventPath>,
+    payload: Json<GcalEventID>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<EventDetailResponse> {
@@ -370,10 +370,7 @@ pub async fn event_detail(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn event_detail_body(
-    payload: DeleteEventPath,
-    cal_sync: &CalendarSync,
-) -> HttpResult<String> {
+async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> HttpResult<String> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
@@ -453,8 +450,9 @@ async fn event_detail_body(
 }
 
 #[derive(Serialize, Deserialize, Schema)]
-pub struct MaxModifiedQuery {
-    pub max_modified: Option<DateTimeWrapper>,
+pub struct MinModifiedQuery {
+    #[schema(description = "")]
+    pub min_modified: Option<DateTime<Utc>>,
 }
 
 #[derive(RwebResponse)]
@@ -463,7 +461,7 @@ struct CalendarListResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
 
 #[get("/calendar/calendar_list")]
 pub async fn calendar_list(
-    query: Query<MaxModifiedQuery>,
+    query: Query<MinModifiedQuery>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarListResponse> {
@@ -473,13 +471,13 @@ pub async fn calendar_list(
 }
 
 async fn calendar_list_object(
-    query: MaxModifiedQuery,
+    query: MinModifiedQuery,
     cal_sync: &CalendarSync,
 ) -> HttpResult<Vec<CalendarListWrapper>> {
-    let max_modified = query
-        .max_modified
+    let min_modified = query
+        .min_modified
         .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
-    let cal_list = CalendarList::get_recent(max_modified, &cal_sync.pool)
+    let cal_list = CalendarList::get_recent(min_modified, &cal_sync.pool)
         .await?
         .into_iter()
         .map(Into::into)
@@ -489,6 +487,7 @@ async fn calendar_list_object(
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct CalendarUpdateRequest {
+    #[schema(description = "Calendar List Updates")]
     pub updates: Vec<CalendarListWrapper>,
 }
 
@@ -531,7 +530,7 @@ struct CalendarCacheResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 
 #[get("/calendar/calendar_cache")]
 pub async fn calendar_cache(
-    query: Query<MaxModifiedQuery>,
+    query: Query<MinModifiedQuery>,
     #[cookie = "jwt"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarCacheResponse> {
@@ -545,31 +544,43 @@ pub async fn calendar_cache(
 }
 
 async fn calendar_cache_events(
-    query: MaxModifiedQuery,
+    query: MinModifiedQuery,
     cal_sync: &CalendarSync,
 ) -> HttpResult<Vec<CalendarCache>> {
-    let max_modified = query
-        .max_modified
+    let min_modified = query
+        .min_modified
         .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
-    CalendarCache::get_recent(max_modified, &cal_sync.pool)
+    CalendarCache::get_recent(min_modified, &cal_sync.pool)
         .await
         .map_err(Into::into)
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarCacheRequest {
+    #[schema(description = "Calendar ID")]
     pub id: i32,
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Calendar Event ID")]
     pub event_id: StackString,
-    pub event_start_time: DateTimeWrapper,
-    pub event_end_time: DateTimeWrapper,
+    #[schema(description = "Event Start Time")]
+    pub event_start_time: DateTime<Utc>,
+    #[schema(description = "Event End Time")]
+    pub event_end_time: DateTime<Utc>,
+    #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
+    #[schema(description = "Event Name")]
     pub event_name: StackString,
+    #[schema(description = "Event Description")]
     pub event_description: Option<StackString>,
+    #[schema(description = "Event Location Name")]
     pub event_location_name: Option<StackString>,
+    #[schema(description = "Event Location Latitude")]
     pub event_location_lat: Option<f64>,
+    #[schema(description = "Event Location Longitude")]
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTimeWrapper,
+    #[schema(description = "Last Modified")]
+    pub last_modified: DateTime<Utc>,
 }
 
 impl From<CalendarCacheRequest> for InsertCalendarCache {
@@ -592,6 +603,7 @@ impl From<CalendarCacheRequest> for InsertCalendarCache {
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct CalendarCacheUpdateRequest {
+    #[schema(description = "Calendar Events Update")]
     pub updates: Vec<CalendarCacheRequest>,
 }
 
@@ -691,7 +703,9 @@ fn format_short_link(domain: &str, link: &str) -> StackString {
 
 #[derive(Serialize, Deserialize, Debug, Schema)]
 pub struct BuildEventRequest {
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Event ID")]
     pub event_id: Option<StackString>,
 }
 
@@ -754,15 +768,21 @@ async fn build_calendar_event_body(
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct CreateCalendarEventRequest {
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Event ID")]
     pub event_id: StackString,
-    pub event_start_date: NaiveDateWrapper,
-    pub event_start_time: NaiveTimeWrapper,
-    pub event_end_date: NaiveDateWrapper,
-    pub event_end_time: NaiveTimeWrapper,
+    #[schema(description = "Event Start Time")]
+    pub event_start_datetime: NaiveDateTime,
+    #[schema(description = "Event End Time")]
+    pub event_end_datetime: NaiveDateTime,
+    #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
+    #[schema(description = "Event Name")]
     pub event_name: StackString,
+    #[schema(description = "Event Description")]
     pub event_description: Option<StackString>,
+    #[schema(description = "Event Location Name")]
     pub event_location_name: Option<StackString>,
 }
 
@@ -789,17 +809,13 @@ async fn create_calendar_event_body(
     payload: CreateCalendarEventRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<String> {
-    let start_datetime = NaiveDateTime::new(
-        payload.event_start_date.into(),
-        payload.event_start_time.into(),
-    );
+    let start_datetime = payload.event_start_datetime;
     let start_datetime = Local
         .from_local_datetime(&start_datetime)
         .single()
         .unwrap()
         .with_timezone(&Utc);
-    let end_datetime =
-        NaiveDateTime::new(payload.event_end_date.into(), payload.event_end_time.into());
+    let end_datetime = payload.event_end_datetime;
     let end_datetime = Local
         .from_local_datetime(&end_datetime)
         .single()
@@ -849,10 +865,15 @@ async fn create_calendar_event_body(
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct EditCalendarRequest {
+    #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
+    #[schema(description = "Calendar Name")]
     pub calendar_name: Option<StackString>,
+    #[schema(description = "Sync Flag")]
     pub sync: Option<bool>,
+    #[schema(description = "Edit Flag")]
     pub edit: Option<bool>,
+    #[schema(description = "Display Flag")]
     pub display: Option<bool>,
 }
 

@@ -197,10 +197,8 @@ DISPLAY_TEXT
         let data = JSON.stringify({
             "gcal_id": gcal_id,
             "event_id": event_id,
-            "event_start_date": event_start_date,
-            "event_start_time": event_start_time + ":00",
-            "event_end_date": event_end_date,
-            "event_end_time": event_end_time + ":00",
+            "event_start_datetime": event_start_date + "T" + event_start_time + ":00",
+            "event_end_datetime": event_start_date + "T" + event_end_time + ":00",
             "event_url": event_url,
             "event_name": event_name,
             "event_description": event_description,
