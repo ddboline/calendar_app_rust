@@ -13,11 +13,11 @@ tokio-diesel = {git="https://github.com/mehcode/tokio-diesel.git", branch="maste
 reqwest = {version="0.11", default_features = false, features=["cookies", "json", "gzip", "rustls-tls"]}
 anyhow = "1.0"
 chrono = "0.4"
-chrono-tz = "0.5"
+chrono-tz = "0.6"
 rayon = "1.5"
 tokio = {version="1.9", features=["full"]}
 url = "2.2"
-dirs = "3.0"
+dirs = "4.0"
 dotenv = "0.15"
 derive_more = "0.99"
 serde = {version="1.0", features=["derive"]}
