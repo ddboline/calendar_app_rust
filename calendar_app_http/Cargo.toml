@@ -8,7 +8,7 @@ edition = "2018"
 
 [dependencies]
 calendar_app_lib = {path = "../calendar_app_lib"}
-rweb = {version="0.14", features=["openapi", "chrono"]}
+rweb = {version="0.14", features=["openapi", "chrono", "uuid"]}
 http = "0.2"
 chrono = "0.4"
 chrono-tz = "0.6"
@@ -31,13 +31,14 @@ indexmap = "1.0"
 derive_more = "0.99"
 serde_yaml = "0.8"
 diesel-derive-newtype = "0.1"
+uuid = "0.8"
 diesel = {version="1.4", features=["postgres", "r2d2", "chrono"]}
 rweb_helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.3.4" }
 reqwest = {version="0.11", default_features = false, features=["cookies", "json", "rustls-tls", "stream"]}
 stack-string = { version="0.3", features=["diesel_types", "rweb-openapi"] }
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.2"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.4"}
 
 [dev-dependencies]
 maplit = "1.0"
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.2"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.2"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.4"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.7.4"}
