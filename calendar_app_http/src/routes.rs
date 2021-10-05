@@ -645,7 +645,7 @@ async fn calendar_cache_update_events(
 struct UserResponse(JsonBase<LoggedUser, Error>);
 
 #[get("/calendar/user")]
-pub async fn user(#[cookie = "jwt"] user: LoggedUser) -> WarpResult<UserResponse> {
+pub async fn user(#[filter = "LoggedUser::filter"] user: LoggedUser) -> WarpResult<UserResponse> {
     Ok(JsonBase::new(user).into())
 }
 
