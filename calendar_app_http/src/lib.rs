@@ -18,11 +18,11 @@ pub mod logged_user;
 pub mod routes;
 
 use chrono::{DateTime, Utc};
+use derive_more::{From, Into};
 use rweb::Schema;
+use rweb_helper::derive_rweb_schema;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
-use rweb_helper::derive_rweb_schema;
-use derive_more::{Into, From};
 
 use calendar_app_lib::models::{
     CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList,

@@ -36,7 +36,9 @@ pub type HttpResult<T> = Result<T, Error>;
 struct IndexResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/index.html")]
-pub async fn calendar_index(#[filter = "LoggedUser::filter"] _: LoggedUser) -> WarpResult<IndexResponse> {
+pub async fn calendar_index(
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
+) -> WarpResult<IndexResponse> {
     let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
     Ok(HtmlBase::new(body).into())
 }
