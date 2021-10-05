@@ -36,7 +36,7 @@ pub type HttpResult<T> = Result<T, Error>;
 struct IndexResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/index.html")]
-pub async fn calendar_index(#[cookie = "jwt"] _: LoggedUser) -> WarpResult<IndexResponse> {
+pub async fn calendar_index(#[filter = "LoggedUser::filter"] _: LoggedUser) -> WarpResult<IndexResponse> {
     let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
     Ok(HtmlBase::new(body).into())
 }
@@ -47,7 +47,7 @@ struct AgendaResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/agenda")]
 pub async fn agenda(
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<AgendaResponse> {
     let body = agenda_body(data.cal_sync).await?;
@@ -128,7 +128,7 @@ struct SyncResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/sync_calendars")]
 pub async fn sync_calendars(
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, false).await?;
@@ -141,7 +141,7 @@ async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResu
 
 #[get("/calendar/sync_calendars_full")]
 pub async fn sync_calendars_full(
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, true).await?;
@@ -167,7 +167,7 @@ struct DeleteEventResponse(HtmlBase<String, Error>);
 #[delete("/calendar/delete_event")]
 pub async fn delete_event(
     payload: Json<GcalEventID>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<DeleteEventResponse> {
     let payload = payload.into_inner();
@@ -201,7 +201,7 @@ struct ListCalendarsResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/list_calendars")]
 pub async fn list_calendars(
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<ListCalendarsResponse> {
     let body = list_calendars_body(&data.cal_sync).await?;
@@ -284,7 +284,7 @@ struct ListEventsResponse(HtmlBase<String, Error>);
 #[get("/calendar/list_events")]
 pub async fn list_events(
     query: Query<ListEventsRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<ListEventsResponse> {
     let query = query.into_inner();
@@ -362,7 +362,7 @@ struct EventDetailResponse(HtmlBase<String, Error>);
 #[post("/calendar/event_detail")]
 pub async fn event_detail(
     payload: Json<GcalEventID>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<EventDetailResponse> {
     let payload = payload.into_inner();
@@ -462,7 +462,7 @@ struct CalendarListResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
 #[get("/calendar/calendar_list")]
 pub async fn calendar_list(
     query: Query<MinModifiedQuery>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarListResponse> {
     let query = query.into_inner();
@@ -498,7 +498,7 @@ struct CalendarListUpdateResponse(JsonBase<Vec<InsertCalendarListWrapper>, Error
 #[post("/calendar/calendar_list")]
 pub async fn calendar_list_update(
     payload: Json<CalendarUpdateRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarListUpdateResponse> {
     let payload = payload.into_inner();
@@ -531,7 +531,7 @@ struct CalendarCacheResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 #[get("/calendar/calendar_cache")]
 pub async fn calendar_cache(
     query: Query<MinModifiedQuery>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarCacheResponse> {
     let query = query.into_inner();
@@ -614,7 +614,7 @@ struct CalendarCacheUpdateResponse(JsonBase<Vec<InsertCalendarCacheWrapper>, Err
 #[post("/calendar/calendar_cache")]
 pub async fn calendar_cache_update(
     payload: Json<CalendarCacheUpdateRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CalendarCacheUpdateResponse> {
     let payload = payload.into_inner();
@@ -716,7 +716,7 @@ struct BuildCalendarEventResponse(HtmlBase<String, Error>);
 #[get("/calendar/create_calendar_event")]
 pub async fn build_calendar_event(
     query: Query<BuildEventRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<BuildCalendarEventResponse> {
     let query = query.into_inner();
@@ -797,7 +797,7 @@ struct CreateCalendarEventResponse(HtmlBase<String, Error>);
 #[post("/calendar/create_calendar_event")]
 pub async fn create_calendar_event(
     payload: Json<CreateCalendarEventRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<CreateCalendarEventResponse> {
     let payload = payload.into_inner();
@@ -884,7 +884,7 @@ struct EditCalendarResponse(JsonBase<CalendarListWrapper, Error>);
 #[get("/calendar/edit_calendar")]
 pub async fn edit_calendar(
     query: Query<EditCalendarRequest>,
-    #[cookie = "jwt"] _: LoggedUser,
+    #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<EditCalendarResponse> {
     let query = query.into_inner();
