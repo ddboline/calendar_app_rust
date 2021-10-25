@@ -3,7 +3,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: "Web App to Display Calendar, Sync with GCal"
-  version: 0.4.24
+  version: 0.4.26
 paths:
   /calendar/index.html:
     get:
@@ -614,9 +614,14 @@ paths:
                   email:
                     description: Email Address
                     type: string
+                  session:
+                    description: Session Id
+                    format: uuid
+                    type: string
                 type: object
                 required:
                   - email
+                  - session
         "400":
           description: Bad Request
         "404":
