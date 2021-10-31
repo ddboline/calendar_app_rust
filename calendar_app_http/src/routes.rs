@@ -668,9 +668,7 @@ async fn link_shortener_body(
     }
 
     let pool = &cal_sync.pool;
-    if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool)
-        .await?
-    {
+    if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool).await? {
         let body = format!(
             r#"<script>window.location.replace("{}")</script>"#,
             link.original_url

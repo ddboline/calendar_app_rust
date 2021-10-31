@@ -46,14 +46,19 @@ impl CalendarList {
 
     pub async fn get_by_name(calendar_name: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
-        Self::get_by_name_conn(calendar_name, &conn).await.map_err(Into::into)
+        Self::get_by_name_conn(calendar_name, &conn)
+            .await
+            .map_err(Into::into)
     }
 
     async fn get_by_name_conn<C>(calendar_name: &str, conn: &C) -> Result<Option<Self>, Error>
     where
         C: GenericClient + Sync,
     {
-        let query = query!("SELECT * FROM calendar_list WHERE calendar_name = $calendar_name", calendar_name = calendar_name);
+        let query = query!(
+            "SELECT * FROM calendar_list WHERE calendar_name = $calendar_name",
+            calendar_name = calendar_name
+        );
         query.fetch_opt(&conn).await.map_err(Into::into)
     }
 
@@ -494,7 +499,10 @@ impl ShortenedLinks {
             .map_err(Into::into)
     }
 
-    async fn get_by_shortened_url_conn<C>(shortened_url: &str, conn: &C) -> Result<Option<Self>, Error>
+    async fn get_by_shortened_url_conn<C>(
+        shortened_url: &str,
+        conn: &C,
+    ) -> Result<Option<Self>, Error>
     where
         C: GenericClient + Sync,
     {
