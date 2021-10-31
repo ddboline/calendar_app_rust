@@ -44,24 +44,6 @@ impl CalendarList {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn get_by_name(calendar_name: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
-        let conn = pool.get().await?;
-        Self::get_by_name_conn(calendar_name, &conn)
-            .await
-            .map_err(Into::into)
-    }
-
-    async fn get_by_name_conn<C>(calendar_name: &str, conn: &C) -> Result<Option<Self>, Error>
-    where
-        C: GenericClient + Sync,
-    {
-        let query = query!(
-            "SELECT * FROM calendar_list WHERE calendar_name = $calendar_name",
-            calendar_name = calendar_name
-        );
-        query.fetch_opt(&conn).await.map_err(Into::into)
-    }
-
     pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
         Self::get_by_gcal_id_conn(gcal_id, &conn)
@@ -85,9 +67,9 @@ impl CalendarList {
             r#"
                 UPDATE calendar_list
                 SET display=$display
-                WHERE calendar_name=$calendar_name
+                WHERE gcal_id=$gcal_id
             "#,
-            calendar_name = self.calendar_name,
+            gcal_id = self.gcal_id,
             display = self.display,
         );
         let conn = pool.get().await?;
@@ -110,13 +92,13 @@ impl CalendarList {
         let query = query!(
             r#"
                 UPDATE calendar_list
-                SET gcal_id=$gcal_id,
+                SET calendar_name=$calendar_name,
                     gcal_name=$gcal_name,
                     gcal_description=$gcal_description,
                     gcal_location=$gcal_location,
                     gcal_timezone=$gcal_timezone,
                     last_modified=now()
-                WHERE calendar_name=$calendar_name
+                WHERE gcal_id=$gcal_id
             "#,
             calendar_name = self.calendar_name,
             gcal_id = self.gcal_id,
@@ -183,10 +165,11 @@ impl CalendarList {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
         let conn: &PgTransaction = &tran;
-        let existing = CalendarList::get_by_name_conn(&self.calendar_name, conn).await?;
+        let existing = CalendarList::get_by_gcal_id_conn(&self.gcal_id, conn).await?;
         if existing.is_some() {
             self.update_conn(conn).await?;
         } else {
+            println!("insert {} {}", self.calendar_name, self.gcal_id);
             self.insert_conn(conn).await?;
         }
         tran.commit().await?;
