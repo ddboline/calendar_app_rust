@@ -1,6 +1,7 @@
 use anyhow::{format_err, Error};
 use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
+use refinery::embed_migrations;
 use stack_string::StackString;
 use std::path::PathBuf;
 use structopt::StructOpt;
@@ -13,9 +14,11 @@ use crate::{
     calendar::Event,
     calendar_sync::CalendarSync,
     config::Config,
-    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    models::{CalendarCache, CalendarList},
     pgpool::PgPool,
 };
+
+embed_migrations!("../migrations");
 
 #[derive(StructOpt, Debug)]
 pub enum CalendarActions {
@@ -74,6 +77,7 @@ pub enum CalendarActions {
         /// Input file (if missinge will read from stdin)
         filepath: Option<PathBuf>,
     },
+    RunMigrations,
 }
 
 #[derive(StructOpt, Debug)]
@@ -179,7 +183,6 @@ impl CalendarCliOpts {
                         let calendars: Vec<CalendarList> = serde_json::from_slice(&data)?;
                         let futures = calendars.into_iter().map(|calendar| {
                             let pool = cal_sync.pool.clone();
-                            let calendar: InsertCalendarList = calendar.into();
                             async move { calendar.upsert(&pool).await.map_err(Into::into) }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
@@ -191,7 +194,6 @@ impl CalendarCliOpts {
                         let events: Vec<CalendarCache> = serde_json::from_slice(&data)?;
                         let futures = events.into_iter().map(|event| {
                             let pool = cal_sync.pool.clone();
-                            let event: InsertCalendarCache = event.into();
                             async move { event.upsert(&pool).await.map_err(Into::into) }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
@@ -223,6 +225,10 @@ impl CalendarCliOpts {
                     }
                     _ => {}
                 }
+            }
+            CalendarActions::RunMigrations => {
+                let mut client = cal_sync.pool.get().await?;
+                migrations::runner().run_async(&mut **client).await?;
             }
         }
         cal_sync.stdout.close().await?;

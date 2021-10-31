@@ -16,7 +16,7 @@ use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendar
 use crate::{
     calendar::{Calendar, Event},
     config::Config,
-    models::{CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList},
+    models::{CalendarCache, CalendarList},
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::parse_nycruns,
     pgpool::PgPool,
@@ -47,7 +47,7 @@ impl CalendarSync {
         }
     }
 
-    pub async fn sync_calendar_list(&self) -> Result<Vec<InsertCalendarList>, Error> {
+    pub async fn sync_calendar_list(&self) -> Result<Vec<CalendarList>, Error> {
         let calendar_list = self
             .gcal
             .as_ref()
@@ -60,8 +60,9 @@ impl CalendarSync {
             .into_iter()
             .filter_map(|item| Calendar::from_gcal_entry(&item))
             .map(|calendar| async move {
-                let cal: InsertCalendarList = calendar.into();
-                cal.upsert(&self.pool).await
+                let cal: CalendarList = calendar.into();
+                cal.upsert(&self.pool).await?;
+                Ok(cal)
             });
 
         try_join_all(futures).await
@@ -72,7 +73,7 @@ impl CalendarSync {
         gcal_id: &'a str,
         calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
         upsert: bool,
-    ) -> Result<Vec<InsertCalendarCache>, Error> {
+    ) -> Result<Vec<CalendarCache>, Error> {
         let futures = calendar_events.into_iter().map(|item| async move {
             if item.start.is_none() {
                 return Ok(None);
@@ -81,15 +82,15 @@ impl CalendarSync {
                     .send(format!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
-            let event: InsertCalendarCache = Event::from_gcal_event(item, gcal_id)?.into();
+            let event: CalendarCache = Event::from_gcal_event(item, gcal_id)?.into();
             if upsert {
-                let event = event.upsert(&self.pool).await?;
+                event.upsert(&self.pool).await?;
                 Ok(Some(event))
             } else if CalendarCache::get_by_gcal_id_event_id(gcal_id, &event.event_id, &self.pool)
                 .await?
                 .is_none()
             {
-                let event = event.insert(&self.pool).await?;
+                event.insert(&self.pool).await?;
                 Ok(Some(event))
             } else {
                 Ok(None)
@@ -159,7 +160,7 @@ impl CalendarSync {
         &self,
         gcal_id: &str,
         edit: bool,
-    ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
+    ) -> Result<(Vec<GCalEvent>, Vec<CalendarCache>), Error> {
         let calendar_events = self
             .gcal
             .as_ref()
@@ -184,7 +185,7 @@ impl CalendarSync {
         &self,
         gcal_id: &str,
         edit: bool,
-    ) -> Result<(Vec<GCalEvent>, Vec<InsertCalendarCache>), Error> {
+    ) -> Result<(Vec<GCalEvent>, Vec<CalendarCache>), Error> {
         let calendar_events = self
             .gcal
             .as_ref()

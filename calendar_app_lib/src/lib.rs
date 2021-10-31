@@ -12,9 +12,6 @@
 #![allow(clippy::manual_range_contains)]
 #![allow(clippy::default_trait_access)]
 
-#[macro_use]
-extern crate diesel;
-
 pub mod calendar;
 pub mod calendar_cli_opts;
 pub mod calendar_sync;
@@ -25,7 +22,6 @@ pub mod models;
 pub mod parse_hashnyc;
 pub mod parse_nycruns;
 pub mod pgpool;
-pub mod schema;
 pub mod timezone;
 
 #[cfg(test)]

@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::{
     calendar::{Event, Location},
-    models::{CalendarCache, InsertCalendarCache},
+    models::CalendarCache,
     pgpool::PgPool,
 };
 
@@ -87,7 +87,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
     Ok(events)
 }
 
-pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Error> {
+pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?
         .into_iter()
@@ -102,22 +102,23 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
     let futures = parse_nycruns_text(&body)?.into_iter().map(|event| {
         let current_event_map = current_event_map.clone();
         async move {
-            let mut event: InsertCalendarCache = event.into();
+            let mut event: CalendarCache = event.into();
             let start_time = event.event_start_time.with_timezone(&New_York);
-            match current_event_map.get(&start_time) {
-                Some(existing_event) => {
-                    if event.event_name != existing_event.event_name
-                        || event.event_description != existing_event.event_description
-                        || event.event_location_name != existing_event.event_location_name
-                    {
-                        event.event_id = existing_event.event_id.as_str().into();
-                        debug!("modifying event {:#?} {:#?}", event, existing_event);
-                        Ok(Some(event.upsert(pool).await?))
-                    } else {
-                        Ok(None)
-                    }
+            if let Some(existing_event) = current_event_map.get(&start_time) {
+                if event.event_name != existing_event.event_name
+                    || event.event_description != existing_event.event_description
+                    || event.event_location_name != existing_event.event_location_name
+                {
+                    event.event_id = existing_event.event_id.as_str().into();
+                    debug!("modifying event {:#?} {:#?}", event, existing_event);
+                    event.upsert(pool).await?;
+                    Ok(Some(event))
+                } else {
+                    Ok(None)
                 }
-                None => Ok(Some(event.insert(pool).await?)),
+            } else {
+                event.insert(pool).await?;
+                Ok(Some(event))
             }
         }
     });

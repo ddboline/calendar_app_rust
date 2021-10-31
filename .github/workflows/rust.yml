@@ -23,12 +23,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    - name: Install deps
-      run: |
-        sudo apt-get update && \
-        sudo apt-get install libpq-dev && \
-        rustup update && \
-        cargo install diesel_cli
 
     - name: Clippy
       run: cargo clippy -- -W clippy::pedantic
@@ -41,7 +35,7 @@ jobs:
         mkdir -p /tmp/.config/calendar_app_rust /tmp/.gcal && \
         echo -n "$CLIENT_SECRETS_JSON" > /tmp/.config/calendar_app_rust/client_secrets.json && \
         echo -n "$DDBOLINE_AT_GMAIL_COM_JSON" > /tmp/.gcal/ddboline@gmail.com.json && \
-        diesel database setup && \
+        ./target/debug/calendar-app-rust run-migrations && \
         cargo test --all --verbose && \
         cargo install cargo-tarpaulin && \
         cargo tarpaulin --verbose --all-features --workspace --out Xml

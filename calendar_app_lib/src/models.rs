@@ -1,19 +1,15 @@
-use anyhow::{format_err, Error};
+use anyhow::Error;
 use chrono::{DateTime, Utc};
-use diesel::{dsl::max, ExpressionMethods, QueryDsl};
+use derive_more::Into;
+use postgres_query::{client::GenericClient, query, query_dyn, FromSqlRow, Parameter};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{cmp, io};
-use tokio_diesel::{AsyncRunQueryDsl, OptionalExtension};
 
-use crate::{
-    pgpool::PgPool,
-    schema::{authorized_users, calendar_cache, calendar_list, shortened_links},
-};
+use crate::pgpool::{PgPool, PgTransaction};
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
+#[derive(FromSqlRow, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {
-    pub id: i32,
     pub calendar_name: StackString,
     pub gcal_id: StackString,
     pub gcal_name: Option<StackString>,
@@ -27,118 +23,14 @@ pub struct CalendarList {
 }
 
 impl CalendarList {
-    pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_list::dsl::calendar_list;
-        calendar_list.load_async(pool).await.map_err(Into::into)
-    }
-
-    pub async fn get_by_id(id_: i32, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, id};
-        calendar_list
-            .filter(id.eq(id_))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
-    }
-
-    pub async fn get_by_gcal_id(gcal_id_: &str, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, gcal_id};
-        calendar_list
-            .filter(gcal_id.eq(gcal_id_))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
-    }
-
-    pub async fn update_display(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, display, id};
-        diesel::update(calendar_list.filter(id.eq(&self.id)))
-            .set(display.eq(&self.display))
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
-    }
-
-    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_list::dsl::{
-            calendar_list, gcal_description, gcal_id, gcal_location, gcal_name, gcal_timezone, id,
-            last_modified,
-        };
-        diesel::update(calendar_list.filter(id.eq(&self.id)))
-            .set((
-                gcal_id.eq(&self.gcal_id),
-                gcal_name.eq(&self.gcal_name),
-                gcal_description.eq(&self.gcal_description),
-                gcal_location.eq(&self.gcal_location),
-                gcal_timezone.eq(&self.gcal_timezone),
-                last_modified.eq(Utc::now()),
-            ))
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
-    }
-
-    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
-        calendar_list
-            .select(max(last_modified))
-            .first_async(pool)
-            .await
-            .map_err(Into::into)
-    }
-
-    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_list::dsl::{calendar_list, last_modified};
-        calendar_list
-            .filter(last_modified.gt(modified))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
-    }
-}
-
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "calendar_list"]
-pub struct InsertCalendarList {
-    pub calendar_name: StackString,
-    pub gcal_id: StackString,
-    pub gcal_name: Option<StackString>,
-    pub gcal_description: Option<StackString>,
-    pub gcal_location: Option<StackString>,
-    pub gcal_timezone: Option<StackString>,
-    pub sync: bool,
-    pub last_modified: DateTime<Utc>,
-    pub edit: bool,
-}
-
-impl From<CalendarList> for InsertCalendarList {
-    fn from(item: CalendarList) -> Self {
+    pub fn new(calendar_name: &str, gcal_id: &str) -> Self {
         Self {
-            calendar_name: item.calendar_name,
-            gcal_id: item.gcal_id,
-            gcal_name: item.gcal_name,
-            gcal_description: item.gcal_description,
-            gcal_location: item.gcal_location,
-            gcal_timezone: item.gcal_timezone,
-            sync: false,
-            last_modified: Utc::now(),
-            edit: false,
-        }
-    }
-}
-
-impl InsertCalendarList {
-    pub fn into_calendar_list(self, id: i32) -> CalendarList {
-        CalendarList {
-            id,
-            calendar_name: self.calendar_name,
-            gcal_id: self.gcal_id,
-            gcal_name: self.gcal_name,
-            gcal_description: self.gcal_description,
-            gcal_location: self.gcal_location,
-            gcal_timezone: self.gcal_timezone,
+            calendar_name: calendar_name.into(),
+            gcal_id: gcal_id.into(),
+            gcal_name: None,
+            gcal_description: None,
+            gcal_location: None,
+            gcal_timezone: None,
             sync: false,
             last_modified: Utc::now(),
             edit: false,
@@ -146,40 +38,166 @@ impl InsertCalendarList {
         }
     }
 
-    pub async fn insert(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_list::dsl::calendar_list;
-        diesel::insert_into(calendar_list)
-            .values(&self)
-            .execute_async(pool)
+    pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let query = query!("SELECT * FROM calendar_list");
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
+    }
+
+    pub async fn get_by_name(calendar_name: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
+        let conn = pool.get().await?;
+        Self::get_by_name_conn(calendar_name, &conn)
             .await
-            .map(|_| self)
             .map_err(Into::into)
     }
 
-    pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
-        let existing = CalendarList::get_by_gcal_id(&self.gcal_id, pool).await?;
-        match existing.len() {
-            0 => self.insert(pool).await,
-            1 => {
-                let id = existing[0].id;
-                self.into_calendar_list(id)
-                    .update(pool)
-                    .await
-                    .map(Into::into)
-            }
-            _ => Err(format_err!(
-                "this shouldn't be possible... {} must be unique",
-                self.gcal_id
-            )),
+    async fn get_by_name_conn<C>(calendar_name: &str, conn: &C) -> Result<Option<Self>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            "SELECT * FROM calendar_list WHERE calendar_name = $calendar_name",
+            calendar_name = calendar_name
+        );
+        query.fetch_opt(&conn).await.map_err(Into::into)
+    }
+
+    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
+        let conn = pool.get().await?;
+        Self::get_by_gcal_id_conn(gcal_id, &conn)
+            .await
+            .map_err(Into::into)
+    }
+
+    pub async fn get_by_gcal_id_conn<C>(gcal_id: &str, conn: &C) -> Result<Option<Self>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            "SELECT * FROM calendar_list WHERE gcal_id = $gcal_id",
+            gcal_id = gcal_id
+        );
+        query.fetch_opt(conn).await.map_err(Into::into)
+    }
+
+    pub async fn update_display(&self, pool: &PgPool) -> Result<(), Error> {
+        let query = query!(
+            r#"
+                UPDATE calendar_list
+                SET display=$display
+                WHERE calendar_name=$calendar_name
+            "#,
+            calendar_name = self.calendar_name,
+            display = self.display,
+        );
+        let conn = pool.get().await?;
+        query.execute(&conn).await?;
+        Ok(())
+    }
+
+    pub async fn update(&self, pool: &PgPool) -> Result<(), Error> {
+        let mut conn = pool.get().await?;
+        let tran = conn.transaction().await?;
+        let conn: &PgTransaction = &tran;
+        self.update_conn(conn).await?;
+        tran.commit().await?;
+        Ok(())
+    }
+    async fn update_conn<C>(&self, conn: &C) -> Result<(), Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                UPDATE calendar_list
+                SET gcal_id=$gcal_id,
+                    gcal_name=$gcal_name,
+                    gcal_description=$gcal_description,
+                    gcal_location=$gcal_location,
+                    gcal_timezone=$gcal_timezone,
+                    last_modified=now()
+                WHERE calendar_name=$calendar_name
+            "#,
+            calendar_name = self.calendar_name,
+            gcal_id = self.gcal_id,
+            gcal_name = self.gcal_name,
+            gcal_description = self.gcal_description,
+            gcal_location = self.gcal_location,
+            gcal_timezone = self.gcal_timezone,
+        );
+        query.execute(&conn).await?;
+        Ok(())
+    }
+
+    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+        #[derive(FromSqlRow, Into)]
+        struct Wrap(DateTime<Utc>);
+
+        let query = query!("SELECT max(last_modified) FROM calendar_list");
+        let conn = pool.get().await?;
+        let result: Option<Wrap> = query.fetch_opt(&conn).await?;
+        Ok(result.map(Into::into))
+    }
+
+    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+        let query = query!(
+            r#"
+                SELECT * FROM calendar_list
+                WHERE last_modified > $modified
+            "#,
+            modified = modified
+        );
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
+    }
+
+    async fn insert_conn<C>(&self, conn: &C) -> Result<(), Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                INSERT INTO calendar_list (
+                    calendar_name, gcal_id, gcal_name, gcal_description, gcal_location,
+                    gcal_timezone, sync, last_modified, edit, display
+                ) VALUES (
+                    $calendar_name, $gcal_id, $gcal_name, $gcal_description, $gcal_location,
+                    $gcal_timezone, $sync, now(), $edit, $display
+                )
+            "#,
+            calendar_name = self.calendar_name,
+            gcal_id = self.gcal_id,
+            gcal_name = self.gcal_name,
+            gcal_description = self.gcal_description,
+            gcal_location = self.gcal_location,
+            gcal_timezone = self.gcal_timezone,
+            sync = self.sync,
+            edit = self.edit,
+            display = self.display,
+        );
+        query.execute(conn).await?;
+        Ok(())
+    }
+
+    pub async fn upsert(&self, pool: &PgPool) -> Result<Option<Self>, Error> {
+        let mut conn = pool.get().await?;
+        let tran = conn.transaction().await?;
+        let conn: &PgTransaction = &tran;
+        let existing = CalendarList::get_by_name_conn(&self.calendar_name, conn).await?;
+        if existing.is_some() {
+            self.update_conn(conn).await?;
+        } else {
+            self.insert_conn(conn).await?;
         }
+        tran.commit().await?;
+        Ok(existing)
     }
 }
 
-#[derive(Queryable, Clone, Debug, Serialize, Deserialize)]
+#[derive(FromSqlRow, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCache {
-    pub id: i32,
-    pub gcal_id: StackString,
     pub event_id: StackString,
+    pub gcal_id: StackString,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
     pub event_url: Option<StackString>,
@@ -193,35 +211,48 @@ pub struct CalendarCache {
 
 impl CalendarCache {
     pub async fn get_all_events(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::calendar_cache;
-        calendar_cache.load_async(pool).await.map_err(Into::into)
+        let query = query!("SELECT * FROM calendar_cache");
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn get_by_gcal_id(
-        gcal_id_: &str,
-        pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, gcal_id};
-        calendar_cache
-            .filter(gcal_id.eq(gcal_id_))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
+    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
+        let query = query!(
+            "SELECT * FROM calendar_cache WHERE gcal_id=$gcal_id",
+            gcal_id = gcal_id
+        );
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
     pub async fn get_by_gcal_id_event_id(
-        gcal_id_: &str,
-        event_id_: &str,
+        gcal_id: &str,
+        event_id: &str,
         pool: &PgPool,
     ) -> Result<Option<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, event_id, gcal_id};
-        calendar_cache
-            .filter(gcal_id.eq(gcal_id_))
-            .filter(event_id.eq(event_id_))
-            .get_result_async(pool)
+        let conn = pool.get().await?;
+        Self::get_by_gcal_id_event_id_conn(gcal_id, event_id, &conn)
             .await
-            .optional()
             .map_err(Into::into)
+    }
+
+    async fn get_by_gcal_id_event_id_conn<C>(
+        gcal_id: &str,
+        event_id: &str,
+        conn: &C,
+    ) -> Result<Option<CalendarCache>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                SELECT * FROM calendar_cache
+                WHERE gcal_id=$gcal_id AND event_id=$event_id
+            "#,
+            gcal_id = gcal_id,
+            event_id = event_id,
+        );
+        query.fetch_opt(conn).await.map_err(Into::into)
     }
 
     pub async fn get_by_datetime(
@@ -229,186 +260,175 @@ impl CalendarCache {
         max_time: DateTime<Utc>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::{
-            calendar_cache, event_end_time, event_start_time,
-        };
-        calendar_cache
-            .filter(event_end_time.gt(min_time))
-            .filter(event_start_time.lt(max_time))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
+        let query = query!(
+            r#"
+                SELECT * FROM calendar_cache
+                WHERE event_end_time >= $min_time
+                  AND event_start_time <= $max_time
+            "#,
+            min_time = min_time,
+            max_time = max_time,
+        );
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
     pub async fn get_by_gcal_id_datetime(
-        gcal_id_: &str,
+        gcal_id: &str,
         min_time: Option<DateTime<Utc>>,
         max_time: Option<DateTime<Utc>>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
-        use crate::schema::calendar_cache::dsl::{
-            calendar_cache, event_end_time, event_start_time, gcal_id,
-        };
-        if let Some(min_time) = min_time {
-            if let Some(max_time) = max_time {
-                calendar_cache
-                    .filter(gcal_id.eq(gcal_id_))
-                    .filter(event_end_time.gt(min_time))
-                    .filter(event_start_time.lt(max_time))
-                    .load_async(pool)
-                    .await
-            } else {
-                calendar_cache
-                    .filter(gcal_id.eq(gcal_id_))
-                    .filter(event_end_time.gt(min_time))
-                    .load_async(pool)
-                    .await
-            }
-        } else {
-            calendar_cache
-                .filter(gcal_id.eq(gcal_id_))
-                .load_async(pool)
-                .await
+        let mut conditions = vec!["gcal_id = $gcal_id"];
+        let mut bindings = Vec::new();
+
+        if let Some(max_time) = max_time {
+            conditions.push("event_start_time <= $max_time");
+            bindings.push(("max_time", max_time));
         }
-        .map_err(Into::into)
+        if let Some(min_time) = min_time {
+            conditions.push("event_end_time >= $min_time");
+            bindings.push(("min_time", min_time));
+        }
+        let query = format!(
+            "SELECT * FROM calendar_cache WHERE gcal_id = $gcal_id {}",
+            if conditions.is_empty() {
+                "".into()
+            } else {
+                format!(" AND {}", conditions.join(" AND "))
+            }
+        );
+        let mut query_bindings: Vec<_> =
+            bindings.iter().map(|(k, v)| (*k, v as Parameter)).collect();
+        query_bindings.push(("gcal_id", &gcal_id as Parameter));
+        let query = query_dyn!(&query, ..query_bindings)?;
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn update(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_cache::dsl::{
-            calendar_cache, event_description, event_end_time, event_id, event_location_lat,
-            event_location_lon, event_location_name, event_name, event_start_time, event_url,
-            gcal_id, last_modified,
-        };
-        diesel::update(
-            calendar_cache
-                .filter(gcal_id.eq(&self.gcal_id))
-                .filter(event_id.eq(&self.event_id)),
-        )
-        .set((
-            event_start_time.eq(&self.event_start_time),
-            event_end_time.eq(&self.event_end_time),
-            event_url.eq(&self.event_url),
-            event_name.eq(&self.event_name),
-            event_description.eq(&self.event_description),
-            event_location_name.eq(&self.event_location_name),
-            event_location_lat.eq(&self.event_location_lat),
-            event_location_lon.eq(&self.event_location_lon),
-            last_modified.eq(Utc::now()),
-        ))
-        .execute_async(pool)
-        .await
-        .map(|_| self)
-        .map_err(Into::into)
+    pub async fn update(&self, pool: &PgPool) -> Result<(), Error> {
+        let conn = pool.get().await?;
+        self.update_conn(&conn).await?;
+        Ok(())
     }
 
-    pub async fn delete(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, id};
-        diesel::delete(calendar_cache.filter(id.eq(&self.id)))
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
+    async fn update_conn<C>(&self, conn: &C) -> Result<(), Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                UPDATE calendar_cache
+                SET event_start_time=$event_start_time,
+                    event_end_time=$event_end_time,
+                    event_url=$event_url,
+                    event_name=$event_name,
+                    event_description=$event_description,
+                    event_location_name=$event_location_name,
+                    event_location_lat=$event_location_lat,
+                    event_location_lon=$event_location_lon,
+                    last_modified=now()
+                WHERE gcal_id=$gcal_id AND event_id=$event_id
+            "#,
+            gcal_id = self.gcal_id,
+            event_id = self.event_id,
+            event_start_time = self.event_start_time,
+            event_end_time = self.event_end_time,
+            event_url = self.event_url,
+            event_name = self.event_name,
+            event_description = self.event_description,
+            event_location_name = self.event_location_name,
+            event_location_lat = self.event_location_lat,
+            event_location_lon = self.event_location_lon,
+        );
+        query.execute(conn).await?;
+        Ok(())
+    }
+
+    pub async fn delete(&self, pool: &PgPool) -> Result<(), Error> {
+        let query = query!(
+            "DELETE FROM calendar_cache WHERE event_id=$event_id AND gcal_id=$gcal_id",
+            event_id = self.event_id,
+            gcal_id = self.gcal_id,
+        );
+        let conn = pool.get().await?;
+        query.execute(&conn).await?;
+        Ok(())
     }
 
     pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
-        calendar_cache
-            .select(max(last_modified))
-            .first_async(pool)
-            .await
-            .map_err(Into::into)
+        #[derive(FromSqlRow, Into)]
+        struct Wrap(DateTime<Utc>);
+        let query = query!("SELECT max(last_modified) FROM calendar_cache");
+        let conn = pool.get().await?;
+        let result: Option<Wrap> = query.fetch_opt(&conn).await?;
+        Ok(result.map(Into::into))
     }
 
     pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::calendar_cache::dsl::{calendar_cache, last_modified};
-        calendar_cache
-            .filter(last_modified.gt(modified))
-            .load_async(pool)
-            .await
-            .map_err(Into::into)
-    }
-}
-
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "calendar_cache"]
-pub struct InsertCalendarCache {
-    pub gcal_id: StackString,
-    pub event_id: StackString,
-    pub event_start_time: DateTime<Utc>,
-    pub event_end_time: DateTime<Utc>,
-    pub event_url: Option<StackString>,
-    pub event_name: StackString,
-    pub event_description: Option<StackString>,
-    pub event_location_name: Option<StackString>,
-    pub event_location_lat: Option<f64>,
-    pub event_location_lon: Option<f64>,
-    pub last_modified: DateTime<Utc>,
-}
-
-impl From<CalendarCache> for InsertCalendarCache {
-    fn from(item: CalendarCache) -> Self {
-        Self {
-            gcal_id: item.gcal_id,
-            event_id: item.event_id,
-            event_start_time: item.event_start_time,
-            event_end_time: item.event_end_time,
-            event_url: item.event_url,
-            event_name: item.event_name,
-            event_description: item.event_description,
-            event_location_name: item.event_location_name,
-            event_location_lat: item.event_location_lat,
-            event_location_lon: item.event_location_lon,
-            last_modified: Utc::now(),
-        }
-    }
-}
-
-impl InsertCalendarCache {
-    pub fn into_calendar_cache(self, id: i32) -> CalendarCache {
-        CalendarCache {
-            id,
-            gcal_id: self.gcal_id,
-            event_id: self.event_id,
-            event_start_time: self.event_start_time,
-            event_end_time: self.event_end_time,
-            event_url: self.event_url,
-            event_name: self.event_name,
-            event_description: self.event_description,
-            event_location_name: self.event_location_name,
-            event_location_lat: self.event_location_lat,
-            event_location_lon: self.event_location_lon,
-            last_modified: Utc::now(),
-        }
+        let query = query!(
+            "SELECT * FROM calendar_cache WHERE last_modified >= $modified",
+            modified = modified
+        );
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn insert(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::calendar_cache::dsl::calendar_cache;
-        diesel::insert_into(calendar_cache)
-            .values(&self)
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
+    pub async fn insert(&self, pool: &PgPool) -> Result<(), Error> {
+        let conn = pool.get().await?;
+        self.insert_conn(&conn).await?;
+        Ok(())
     }
 
-    pub async fn upsert(self, pool: &PgPool) -> Result<Self, Error> {
+    async fn insert_conn<C>(&self, conn: &C) -> Result<(), Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                INSERT INTO calendar_cache (
+                    gcal_id, event_id, event_start_time, event_end_time, event_url,
+                    event_name, event_description, event_location_name,
+                    event_location_lat, event_location_lon, last_modified
+                ) VALUES (
+                    $gcal_id, $event_id, $event_start_time, $event_end_time, $event_url,
+                    $event_name, $event_description, $event_location_name,
+                    $event_location_lat, $event_location_lon, now()
+                )
+            "#,
+            gcal_id = self.gcal_id,
+            event_id = self.event_id,
+            event_start_time = self.event_start_time,
+            event_end_time = self.event_end_time,
+            event_url = self.event_url,
+            event_name = self.event_name,
+            event_description = self.event_description,
+            event_location_name = self.event_location_name,
+            event_location_lat = self.event_location_lat,
+            event_location_lon = self.event_location_lon,
+        );
+        query.execute(conn).await?;
+        Ok(())
+    }
+
+    pub async fn upsert(&self, pool: &PgPool) -> Result<(), Error> {
+        let mut conn = pool.get().await?;
+        let tran = conn.transaction().await?;
+        let conn: &PgTransaction = &tran;
         let existing =
-            CalendarCache::get_by_gcal_id_event_id(&self.gcal_id, &self.event_id, pool).await?;
-        match existing {
-            None => self.insert(pool).await,
-            Some(event) => {
-                let id = event.id;
-                self.into_calendar_cache(id)
-                    .update(pool)
-                    .await
-                    .map(Into::into)
-            }
+            CalendarCache::get_by_gcal_id_event_id_conn(&self.gcal_id, &self.event_id, conn)
+                .await?;
+        if existing.is_some() {
+            self.update_conn(conn).await?;
+        } else {
+            self.insert_conn(conn).await?;
         }
+        tran.commit().await?;
+        Ok(())
     }
 }
 
-#[derive(Queryable, Insertable, Clone, Debug)]
-#[table_name = "authorized_users"]
+#[derive(FromSqlRow, Clone, Debug)]
 pub struct AuthorizedUsers {
     pub email: StackString,
     pub telegram_userid: Option<i64>,
@@ -417,90 +437,99 @@ pub struct AuthorizedUsers {
 
 impl AuthorizedUsers {
     pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::authorized_users::dsl::authorized_users;
-        authorized_users.load_async(pool).await.map_err(Into::into)
+        let query = query!("SELECT * FROM authorized_users");
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn update_authorized_users(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::authorized_users::dsl::{
-            authorized_users, email, telegram_chatid, telegram_userid,
-        };
-        diesel::update(authorized_users.filter(email.eq(&self.email)))
-            .set((
-                telegram_userid.eq(self.telegram_userid),
-                telegram_chatid.eq(self.telegram_chatid),
-            ))
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
+    pub async fn update_authorized_users(&self, pool: &PgPool) -> Result<(), Error> {
+        let query = query!(
+            r#"
+                UPDATE authorized_users
+                SET telegram_userid=$telegram_userid,
+                    telegram_chatid=$telegram_chatid
+                WHERE email=$email
+            "#,
+            email = self.email,
+            telegram_userid = self.telegram_userid,
+            telegram_chatid = self.telegram_chatid,
+        );
+        let conn = pool.get().await?;
+        query.execute(&conn).await?;
+        Ok(())
     }
 }
 
-#[derive(Queryable, Clone, Debug)]
+#[derive(FromSqlRow, Clone, Debug)]
 pub struct ShortenedLinks {
-    pub id: i32,
-    pub original_url: StackString,
     pub shortened_url: StackString,
+    pub original_url: StackString,
     pub last_modified: DateTime<Utc>,
 }
 
 impl ShortenedLinks {
     pub async fn get_by_original_url(
-        original_url_: &str,
+        original_url: &str,
         pool: &PgPool,
     ) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::{original_url, shortened_links};
-        shortened_links
-            .filter(original_url.eq(original_url_))
-            .load_async(pool)
+        let conn = pool.get().await?;
+        Self::get_by_original_url_conn(original_url, &conn)
             .await
             .map_err(Into::into)
+    }
+
+    async fn get_by_original_url_conn<C>(original_url: &str, conn: &C) -> Result<Vec<Self>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            "SELECT * FROM shortened_links WHERE original_url=$original_url",
+            original_url = original_url,
+        );
+        query.fetch(conn).await.map_err(Into::into)
     }
 
     pub async fn get_by_shortened_url(
-        shortened_url_: &str,
+        shortened_url: &str,
         pool: &PgPool,
-    ) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::{shortened_links, shortened_url};
-        shortened_links
-            .filter(shortened_url.eq(shortened_url_))
-            .load_async(pool)
+    ) -> Result<Option<Self>, Error> {
+        let conn = pool.get().await?;
+        Self::get_by_shortened_url_conn(shortened_url, &conn)
             .await
             .map_err(Into::into)
     }
 
+    async fn get_by_shortened_url_conn<C>(
+        shortened_url: &str,
+        conn: &C,
+    ) -> Result<Option<Self>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            "SELECT * FROM shortened_links WHERE shortened_url=$shortened_url",
+            shortened_url = shortened_url,
+        );
+        query.fetch_opt(conn).await.map_err(Into::into)
+    }
+
     pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        use crate::schema::shortened_links::dsl::shortened_links;
-        shortened_links.load_async(pool).await.map_err(Into::into)
+        let query = query!("SELECT * FROM shortened_links");
+        let conn = pool.get().await?;
+        query.fetch(&conn).await.map_err(Into::into)
     }
-}
 
-#[derive(Insertable, Debug, Clone, Serialize, Deserialize)]
-#[table_name = "shortened_links"]
-pub struct InsertShortenedLinks {
-    pub original_url: StackString,
-    pub shortened_url: StackString,
-    pub last_modified: DateTime<Utc>,
-}
-
-impl From<ShortenedLinks> for InsertShortenedLinks {
-    fn from(item: ShortenedLinks) -> Self {
-        Self {
-            original_url: item.original_url,
-            shortened_url: item.shortened_url,
-            last_modified: Utc::now(),
-        }
-    }
-}
-
-impl InsertShortenedLinks {
     pub async fn get_or_create(original_url: &str, pool: &PgPool) -> Result<Self, Error> {
-        let existing = ShortenedLinks::get_by_original_url(original_url, pool)
+        let mut conn = pool.get().await?;
+        let tran = conn.transaction().await?;
+        let conn: &PgTransaction = &tran;
+
+        let existing = Self::get_by_original_url_conn(original_url, conn)
             .await?
             .pop();
+
         if let Some(existing) = existing {
-            Ok(existing.into())
+            Ok(existing)
         } else {
             let base_hasher = blake3::Hasher::new();
             let output = hash_reader(&base_hasher, original_url.as_bytes())?;
@@ -511,8 +540,8 @@ impl InsertShortenedLinks {
 
             while short_chars < output.len() {
                 let shortened =
-                    ShortenedLinks::get_by_shortened_url(&output[..short_chars], pool).await?;
-                if shortened.is_empty() {
+                    ShortenedLinks::get_by_shortened_url_conn(&output[..short_chars], conn).await?;
+                if shortened.is_none() {
                     break;
                 }
                 short_chars += 1;
@@ -520,22 +549,43 @@ impl InsertShortenedLinks {
 
             let shortened_url = &output[..short_chars];
 
-            Ok(Self {
+            let output = Self {
                 original_url: original_url.into(),
                 shortened_url: shortened_url.into(),
                 last_modified: Utc::now(),
-            })
+            };
+            output.insert_shortened_link_conn(conn).await?;
+
+            let output = ShortenedLinks::get_by_shortened_url_conn(shortened_url, conn)
+                .await?
+                .expect("Something went wrong");
+            Ok(output)
         }
     }
 
-    pub async fn insert_shortened_link(self, pool: &PgPool) -> Result<Self, Error> {
-        use crate::schema::shortened_links::dsl::shortened_links;
-        diesel::insert_into(shortened_links)
-            .values(&self)
-            .execute_async(pool)
-            .await
-            .map(|_| self)
-            .map_err(Into::into)
+    pub async fn insert_shortened_link(&self, pool: &PgPool) -> Result<(), Error> {
+        let conn = pool.get().await?;
+        self.insert_shortened_link_conn(&conn).await?;
+        Ok(())
+    }
+
+    async fn insert_shortened_link_conn<C>(&self, conn: &C) -> Result<(), Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!(
+            r#"
+                INSERT INTO shortened_links (
+                    original_url, shortened_url, last_modified
+                ) VALUE (
+                    $original_url, $shortened_url, now()
+                )
+            "#,
+            original_url = self.original_url,
+            shortened_url = self.shortened_url,
+        );
+        query.execute(conn).await?;
+        Ok(())
     }
 }
 
