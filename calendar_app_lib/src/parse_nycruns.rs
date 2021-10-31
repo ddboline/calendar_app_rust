@@ -119,7 +119,6 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
             } else {
                 event.insert(pool).await?;
                 Ok(Some(event))
-
             }
         }
     });

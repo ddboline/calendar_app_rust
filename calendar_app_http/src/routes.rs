@@ -840,11 +840,7 @@ async fn create_calendar_event_body(
     .await?
     {
         Some(event) => event,
-        None => {
-            return Err(Error::BadRequest(
-                "Failed to store event in db".into(),
-            ))
-        }
+        None => return Err(Error::BadRequest("Failed to store event in db".into())),
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event()?;
