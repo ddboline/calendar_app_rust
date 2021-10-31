@@ -74,7 +74,6 @@ impl From<CalendarList> for Calendar {
 impl From<Calendar> for CalendarList {
     fn from(item: Calendar) -> Self {
         Self {
-            id: -1,
             calendar_name: item.name,
             gcal_id: item.gcal_id,
             gcal_name: item.gcal_name,
@@ -185,7 +184,6 @@ impl From<CalendarCache> for Event {
 impl From<Event> for CalendarCache {
     fn from(item: Event) -> Self {
         Self {
-            id: -1,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
             event_start_time: item.start_time,

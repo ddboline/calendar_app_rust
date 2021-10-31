@@ -582,7 +582,6 @@ pub struct CalendarCacheRequest {
 impl From<CalendarCacheRequest> for CalendarCache {
     fn from(item: CalendarCacheRequest) -> Self {
         Self {
-            id: -1,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
             event_start_time: item.event_start_time,
@@ -671,7 +670,6 @@ async fn link_shortener_body(
     let pool = &cal_sync.pool;
     if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool)
         .await?
-        .pop()
     {
         let body = format!(
             r#"<script>window.location.replace("{}")</script>"#,
@@ -817,7 +815,6 @@ async fn create_calendar_event_body(
         .with_timezone(&Utc);
 
     let event = CalendarCache {
-        id: -1,
         gcal_id: payload.gcal_id,
         event_id: payload.event_id,
         event_start_time: start_datetime,

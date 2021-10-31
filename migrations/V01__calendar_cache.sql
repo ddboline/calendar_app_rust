@@ -1,8 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE calendar_cache (
-    id SERIAL PRIMARY KEY,
+    event_id TEXT UNIQUE NOT NULL PRIMARY KEY,
     gcal_id TEXT NOT NULL,
-    event_id TEXT UNIQUE NOT NULL,
     event_start_time TIMESTAMP WITH TIME ZONE NOT NULL,
     event_end_time TIMESTAMP WITH TIME ZONE NOT NULL,
     event_url TEXT,

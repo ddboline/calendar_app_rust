@@ -10,7 +10,6 @@ use crate::pgpool::{PgPool, PgTransaction};
 
 #[derive(FromSqlRow, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarList {
-    pub id: i32,
     pub calendar_name: StackString,
     pub gcal_id: StackString,
     pub gcal_name: Option<StackString>,
@@ -26,7 +25,6 @@ pub struct CalendarList {
 impl CalendarList {
     pub fn new(calendar_name: &str, gcal_id: &str) -> Self {
         Self {
-            id: -1,
             calendar_name: calendar_name.into(),
             gcal_id: gcal_id.into(),
             gcal_name: None,
@@ -46,9 +44,16 @@ impl CalendarList {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
-    pub async fn get_by_id(id: i32, pool: &PgPool) -> Result<Option<Self>, Error> {
-        let query = query!("SELECT * FROM calendar_list WHERE id = $id", id = id);
+    pub async fn get_by_name(calendar_name: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
+        Self::get_by_name_conn(calendar_name, &conn).await.map_err(Into::into)
+    }
+
+    async fn get_by_name_conn<C>(calendar_name: &str, conn: &C) -> Result<Option<Self>, Error>
+    where
+        C: GenericClient + Sync,
+    {
+        let query = query!("SELECT * FROM calendar_list WHERE calendar_name = $calendar_name", calendar_name = calendar_name);
         query.fetch_opt(&conn).await.map_err(Into::into)
     }
 
@@ -75,9 +80,9 @@ impl CalendarList {
             r#"
                 UPDATE calendar_list
                 SET display=$display
-                WHERE id=$id
+                WHERE calendar_name=$calendar_name
             "#,
-            id = self.id,
+            calendar_name = self.calendar_name,
             display = self.display,
         );
         let conn = pool.get().await?;
@@ -106,9 +111,9 @@ impl CalendarList {
                     gcal_location=$gcal_location,
                     gcal_timezone=$gcal_timezone,
                     last_modified=now()
-                WHERE id=$id
+                WHERE calendar_name=$calendar_name
             "#,
-            id = self.id,
+            calendar_name = self.calendar_name,
             gcal_id = self.gcal_id,
             gcal_name = self.gcal_name,
             gcal_description = self.gcal_description,
@@ -139,15 +144,6 @@ impl CalendarList {
         );
         let conn = pool.get().await?;
         query.fetch(&conn).await.map_err(Into::into)
-    }
-
-    pub async fn insert(&self, pool: &PgPool) -> Result<(), Error> {
-        let mut conn = pool.get().await?;
-        let tran = conn.transaction().await?;
-        let conn: &PgTransaction = &tran;
-        self.insert_conn(conn).await?;
-        tran.commit().await?;
-        Ok(())
     }
 
     async fn insert_conn<C>(&self, conn: &C) -> Result<(), Error>
@@ -182,7 +178,7 @@ impl CalendarList {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
         let conn: &PgTransaction = &tran;
-        let existing = CalendarList::get_by_gcal_id_conn(&self.gcal_id, conn).await?;
+        let existing = CalendarList::get_by_name_conn(&self.calendar_name, conn).await?;
         if existing.is_some() {
             self.update_conn(conn).await?;
         } else {
@@ -195,9 +191,8 @@ impl CalendarList {
 
 #[derive(FromSqlRow, Clone, Debug, Serialize, Deserialize)]
 pub struct CalendarCache {
-    pub id: i32,
-    pub gcal_id: StackString,
     pub event_id: StackString,
+    pub gcal_id: StackString,
     pub event_start_time: DateTime<Utc>,
     pub event_end_time: DateTime<Utc>,
     pub event_url: Option<StackString>,
@@ -346,7 +341,11 @@ impl CalendarCache {
     }
 
     pub async fn delete(&self, pool: &PgPool) -> Result<(), Error> {
-        let query = query!("DELETE FROM calendar_cache WHERE id=$id", id = self.id);
+        let query = query!(
+            "DELETE FROM calendar_cache WHERE event_id=$event_id AND gcal_id=$gcal_id",
+            event_id = self.event_id,
+            gcal_id = self.gcal_id,
+        );
         let conn = pool.get().await?;
         query.execute(&conn).await?;
         Ok(())
@@ -458,9 +457,8 @@ impl AuthorizedUsers {
 
 #[derive(FromSqlRow, Clone, Debug)]
 pub struct ShortenedLinks {
-    pub id: i32,
-    pub original_url: StackString,
     pub shortened_url: StackString,
+    pub original_url: StackString,
     pub last_modified: DateTime<Utc>,
 }
 
@@ -489,14 +487,14 @@ impl ShortenedLinks {
     pub async fn get_by_shortened_url(
         shortened_url: &str,
         pool: &PgPool,
-    ) -> Result<Vec<Self>, Error> {
+    ) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
         Self::get_by_shortened_url_conn(shortened_url, &conn)
             .await
             .map_err(Into::into)
     }
 
-    async fn get_by_shortened_url_conn<C>(shortened_url: &str, conn: &C) -> Result<Vec<Self>, Error>
+    async fn get_by_shortened_url_conn<C>(shortened_url: &str, conn: &C) -> Result<Option<Self>, Error>
     where
         C: GenericClient + Sync,
     {
@@ -504,7 +502,7 @@ impl ShortenedLinks {
             "SELECT * FROM shortened_links WHERE shortened_url=$shortened_url",
             shortened_url = shortened_url,
         );
-        query.fetch(conn).await.map_err(Into::into)
+        query.fetch_opt(conn).await.map_err(Into::into)
     }
 
     pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
@@ -535,7 +533,7 @@ impl ShortenedLinks {
             while short_chars < output.len() {
                 let shortened =
                     ShortenedLinks::get_by_shortened_url_conn(&output[..short_chars], conn).await?;
-                if shortened.is_empty() {
+                if shortened.is_none() {
                     break;
                 }
                 short_chars += 1;
@@ -544,7 +542,6 @@ impl ShortenedLinks {
             let shortened_url = &output[..short_chars];
 
             let output = Self {
-                id: -1,
                 original_url: original_url.into(),
                 shortened_url: shortened_url.into(),
                 last_modified: Utc::now(),
@@ -553,7 +550,6 @@ impl ShortenedLinks {
 
             let output = ShortenedLinks::get_by_shortened_url_conn(shortened_url, conn)
                 .await?
-                .pop()
                 .expect("Something went wrong");
             Ok(output)
         }
