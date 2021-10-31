@@ -523,7 +523,7 @@ impl ShortenedLinks {
             .pop();
 
         if let Some(existing) = existing {
-            Ok(existing.into())
+            Ok(existing)
         } else {
             let base_hasher = blake3::Hasher::new();
             let output = hash_reader(&base_hasher, original_url.as_bytes())?;
