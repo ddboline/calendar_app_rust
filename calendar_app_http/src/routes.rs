@@ -841,7 +841,7 @@ async fn create_calendar_event_body(
     {
         Some(event) => event,
         None => {
-            return Err(ServiceError::BadRequest(
+            return Err(Error::BadRequest(
                 "Failed to store event in db".into(),
             ))
         }
