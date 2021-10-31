@@ -15,17 +15,14 @@ use url::Url;
 use calendar_app_lib::{
     calendar::Event,
     calendar_sync::CalendarSync,
-    models::{
-        CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, ShortenedLinks,
-    },
+    models::{CalendarCache, CalendarList, ShortenedLinks},
 };
 
 use crate::{
     app::{AppState, UrlCache},
-    errors::{ServiceError as Error, ServiceError},
+    errors::ServiceError as Error,
     logged_user::LoggedUser,
-    CalendarCacheWrapper, CalendarListWrapper, InsertCalendarCacheWrapper,
-    InsertCalendarListWrapper,
+    CalendarCacheWrapper, CalendarListWrapper,
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
@@ -495,7 +492,7 @@ pub struct CalendarUpdateRequest {
 
 #[derive(RwebResponse)]
 #[response(description = "Calendar List Update", status = "CREATED")]
-struct CalendarListUpdateResponse(JsonBase<Vec<InsertCalendarListWrapper>, Error>);
+struct CalendarListUpdateResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
 
 #[post("/calendar/calendar_list")]
 pub async fn calendar_list_update(
@@ -511,16 +508,13 @@ pub async fn calendar_list_update(
 async fn calendar_list_update_object(
     payload: CalendarUpdateRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<InsertCalendarListWrapper>> {
+) -> HttpResult<Vec<CalendarListWrapper>> {
     let futures = payload.updates.into_iter().map(|calendar| {
         let pool = cal_sync.pool.clone();
-        let calendar: InsertCalendarList = calendar.into();
+        let calendar: CalendarList = calendar.into();
         async move {
-            calendar
-                .upsert(&pool)
-                .await
-                .map_err(Into::into)
-                .map(Into::into)
+            calendar.upsert(&pool).await?;
+            Ok(calendar.into())
         }
     });
     try_join_all(futures).await
@@ -585,9 +579,10 @@ pub struct CalendarCacheRequest {
     pub last_modified: DateTime<Utc>,
 }
 
-impl From<CalendarCacheRequest> for InsertCalendarCache {
+impl From<CalendarCacheRequest> for CalendarCache {
     fn from(item: CalendarCacheRequest) -> Self {
         Self {
+            id: -1,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
             event_start_time: item.event_start_time,
@@ -611,7 +606,7 @@ pub struct CalendarCacheUpdateRequest {
 
 #[derive(RwebResponse)]
 #[response(description = "Calendar Cache Update")]
-struct CalendarCacheUpdateResponse(JsonBase<Vec<InsertCalendarCacheWrapper>, Error>);
+struct CalendarCacheUpdateResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 
 #[post("/calendar/calendar_cache")]
 pub async fn calendar_cache_update(
@@ -627,16 +622,13 @@ pub async fn calendar_cache_update(
 async fn calendar_cache_update_events(
     payload: CalendarCacheUpdateRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<InsertCalendarCacheWrapper>> {
+) -> HttpResult<Vec<CalendarCacheWrapper>> {
     let futures = payload.updates.into_iter().map(|event| {
         let pool = cal_sync.pool.clone();
-        let event: InsertCalendarCache = event.into();
+        let event: CalendarCache = event.into();
         async move {
-            event
-                .upsert(&pool)
-                .await
-                .map_err(Into::into)
-                .map(Into::into)
+            event.upsert(&pool).await?;
+            Ok(event.into())
         }
     });
     try_join_all(futures).await
@@ -824,7 +816,8 @@ async fn create_calendar_event_body(
         .unwrap()
         .with_timezone(&Utc);
 
-    let event = InsertCalendarCache {
+    let event = CalendarCache {
+        id: -1,
         gcal_id: payload.gcal_id,
         event_id: payload.event_id,
         event_start_time: start_datetime,
@@ -838,7 +831,7 @@ async fn create_calendar_event_body(
         last_modified: Utc::now(),
     };
 
-    let event = event.upsert(&cal_sync.pool).await?;
+    event.upsert(&cal_sync.pool).await?;
     let event = match CalendarCache::get_by_gcal_id_event_id(
         &event.gcal_id,
         &event.event_id,
@@ -899,9 +892,7 @@ async fn edit_calendar_list(
     cal_sync: &CalendarSync,
 ) -> HttpResult<CalendarListWrapper> {
     let mut calendar = if let Some(calendar) =
-        CalendarList::get_by_gcal_id(&query.gcal_id, &cal_sync.pool)
-            .await?
-            .pop()
+        CalendarList::get_by_gcal_id(&query.gcal_id, &cal_sync.pool).await?
     {
         calendar
     } else {
@@ -918,13 +909,11 @@ async fn edit_calendar_list(
     }
     let calendar = if let Some(display) = query.display {
         calendar.display = display;
-        calendar.update_display(&cal_sync.pool).await?
+        calendar.update_display(&cal_sync.pool).await?;
+        calendar
     } else {
         calendar
     };
-    calendar
-        .update(&cal_sync.pool)
-        .await
-        .map_err(Into::into)
-        .map(Into::into)
+    calendar.update(&cal_sync.pool).await?;
+    Ok(calendar.into())
 }

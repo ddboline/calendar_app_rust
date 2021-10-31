@@ -9,7 +9,7 @@ use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     calendar::{Event, Location},
-    models::{CalendarCache, InsertCalendarCache},
+    models::CalendarCache,
     pgpool::PgPool,
 };
 
@@ -88,7 +88,7 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
     Ok(events)
 }
 
-pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Error> {
+pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?
         .into_iter()
@@ -104,7 +104,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
     let futures = parse_hashnyc_text(&body)?.into_iter().map(|event| {
         let current_event_map = current_event_map.clone();
         async move {
-            let mut event: InsertCalendarCache = event.into();
+            let mut event: CalendarCache = event.into();
             let start_time = event.event_start_time.with_timezone(&New_York);
             match current_event_map.get(&start_time) {
                 Some(existing_event) => {
@@ -113,12 +113,16 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<InsertCalendarCache>, Er
                         || event.event_location_name != existing_event.event_location_name
                     {
                         event.event_id = existing_event.event_id.as_str().into();
-                        Ok(Some(event.upsert(pool).await?))
+                        event.upsert(pool).await?;
+                        Ok(Some(event))
                     } else {
                         Ok(None)
                     }
                 }
-                None => Ok(Some(event.insert(pool).await?)),
+                None => {
+                    event.insert(pool).await?;
+                    Ok(Some(event))
+                }
             }
         }
     });

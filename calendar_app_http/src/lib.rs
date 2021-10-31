@@ -24,9 +24,7 @@ use rweb_helper::derive_rweb_schema;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 
-use calendar_app_lib::models::{
-    CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList,
-};
+use calendar_app_lib::models::{CalendarCache, CalendarList};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Into, From)]
 pub struct CalendarListWrapper(CalendarList);
@@ -60,41 +58,6 @@ struct _CalendarListWrapper {
     display: bool,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Into, From)]
-pub struct InsertCalendarListWrapper(InsertCalendarList);
-
-derive_rweb_schema!(InsertCalendarListWrapper, _InsertCalendarListWrapper);
-
-#[allow(dead_code)]
-#[derive(Schema)]
-struct _InsertCalendarListWrapper {
-    #[schema(description = "Calendar Name")]
-    calendar_name: StackString,
-    #[schema(description = "GCal Calendar ID")]
-    gcal_id: StackString,
-    #[schema(description = "GCal Calendar Name")]
-    gcal_name: Option<StackString>,
-    #[schema(description = "GCal Calendar Description")]
-    gcal_description: Option<StackString>,
-    #[schema(description = "GCal Calendar Location")]
-    gcal_location: Option<StackString>,
-    #[schema(description = "GCal Calendar Timezone")]
-    gcal_timezone: Option<StackString>,
-    #[schema(description = "Sync Flag")]
-    sync: bool,
-    #[schema(description = "Last Modified")]
-    last_modified: DateTime<Utc>,
-    #[schema(description = "Edit Flag")]
-    edit: bool,
-}
-
-impl From<CalendarListWrapper> for InsertCalendarList {
-    fn from(item: CalendarListWrapper) -> Self {
-        let calendar: CalendarList = item.into();
-        calendar.into()
-    }
-}
-
 #[derive(Clone, Debug, Serialize, Deserialize, Into, From)]
 pub struct CalendarCacheWrapper(CalendarCache);
 
@@ -124,38 +87,6 @@ struct _CalendarCacheWrapper {
     #[schema(description = "Event Location Latitude")]
     event_location_lat: Option<f64>,
     #[schema(description = "Event Location Longitude")]
-    event_location_lon: Option<f64>,
-    #[schema(description = "Last Modified")]
-    last_modified: DateTime<Utc>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize, Into, From)]
-pub struct InsertCalendarCacheWrapper(InsertCalendarCache);
-
-derive_rweb_schema!(InsertCalendarCacheWrapper, _InsertCalendarCacheWrapper);
-
-#[allow(dead_code)]
-#[derive(Schema)]
-struct _InsertCalendarCacheWrapper {
-    #[schema(description = "GCal Calendar ID")]
-    gcal_id: StackString,
-    #[schema(description = "Event ID")]
-    event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    event_start_time: DateTime<Utc>,
-    #[schema(description = "Event End Time")]
-    event_end_time: DateTime<Utc>,
-    #[schema(description = "Event URL")]
-    event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
-    event_name: StackString,
-    #[schema(description = "Event Description")]
-    event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
-    event_location_name: Option<StackString>,
-    #[schema(description = "Event Location Longitude")]
-    event_location_lat: Option<f64>,
-    #[schema(description = "Event Location Latitude")]
     event_location_lon: Option<f64>,
     #[schema(description = "Last Modified")]
     last_modified: DateTime<Utc>,

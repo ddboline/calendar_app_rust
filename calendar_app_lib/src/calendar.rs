@@ -13,10 +13,7 @@ use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTi
 use crate::{
     latitude::Latitude,
     longitude::Longitude,
-    models::{
-        CalendarCache, CalendarList, InsertCalendarCache, InsertCalendarList, InsertShortenedLinks,
-        ShortenedLinks,
-    },
+    models::{CalendarCache, CalendarList, ShortenedLinks},
     pgpool::PgPool,
     timezone::TimeZone,
 };
@@ -74,9 +71,10 @@ impl From<CalendarList> for Calendar {
     }
 }
 
-impl From<Calendar> for InsertCalendarList {
+impl From<Calendar> for CalendarList {
     fn from(item: Calendar) -> Self {
         Self {
+            id: -1,
             calendar_name: item.name,
             gcal_id: item.gcal_id,
             gcal_name: item.gcal_name,
@@ -86,6 +84,7 @@ impl From<Calendar> for InsertCalendarList {
             sync: false,
             last_modified: Utc::now(),
             edit: false,
+            display: false,
         }
     }
 }
@@ -183,9 +182,10 @@ impl From<CalendarCache> for Event {
     }
 }
 
-impl From<Event> for InsertCalendarCache {
+impl From<Event> for CalendarCache {
     fn from(item: Event) -> Self {
         Self {
+            id: -1,
             gcal_id: item.gcal_id,
             event_id: item.event_id,
             event_start_time: item.start_time,
@@ -331,10 +331,9 @@ impl Event {
                 }
             }
             if short_url.is_none() {
-                if let Ok(result) =
-                    InsertShortenedLinks::get_or_create(original_url.as_str(), pool).await
+                if let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await
                 {
-                    if let Ok(result) = result.insert_shortened_link(pool).await {
+                    if result.insert_shortened_link(pool).await.is_ok() {
                         short_url.replace(format!(
                             "https://{}/calendar/link/{}",
                             domain, &result.shortened_url
