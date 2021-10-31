@@ -104,24 +104,22 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         async move {
             let mut event: CalendarCache = event.into();
             let start_time = event.event_start_time.with_timezone(&New_York);
-            match current_event_map.get(&start_time) {
-                Some(existing_event) => {
-                    if event.event_name != existing_event.event_name
-                        || event.event_description != existing_event.event_description
-                        || event.event_location_name != existing_event.event_location_name
-                    {
-                        event.event_id = existing_event.event_id.as_str().into();
-                        debug!("modifying event {:#?} {:#?}", event, existing_event);
-                        event.upsert(pool).await?;
-                        Ok(Some(event))
-                    } else {
-                        Ok(None)
-                    }
-                }
-                None => {
-                    event.insert(pool).await?;
+            if let Some(existing_event) = current_event_map.get(&start_time) {
+                if event.event_name != existing_event.event_name
+                    || event.event_description != existing_event.event_description
+                    || event.event_location_name != existing_event.event_location_name
+                {
+                    event.event_id = existing_event.event_id.as_str().into();
+                    debug!("modifying event {:#?} {:#?}", event, existing_event);
+                    event.upsert(pool).await?;
                     Ok(Some(event))
+                } else {
+                    Ok(None)
                 }
+            } else {
+                event.insert(pool).await?;
+                Ok(Some(event))
+
             }
         }
     });
