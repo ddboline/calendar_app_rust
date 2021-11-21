@@ -20,7 +20,7 @@ env_logger = "0.9"
 deadqueue = "0.2"
 async-google-apis-common = "0.3"
 tokio = {version="1.9", features=["full"]}
-stack-string = { version="0.3", features=["postgres_types"] }
+stack-string = { version="0.4", features=["postgres_types"] }
 
 [dev-dependencies]
 calendar_app_lib = {path="../calendar_app_lib"}
