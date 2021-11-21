@@ -1,21 +1,23 @@
 FROM rust:alpine3.14 as buildstage
 
-RUN apk add musl-dev && mkdir -p /build/aws_app_rust
+RUN apk add musl-dev && mkdir -p /build/calendar_app_rust
 
-ADD Cargo.toml /build/aws_app_rust/
-COPY src /build/aws_app_rust/src
-COPY aws_app_http /build/aws_app_rust/aws_app_http
-COPY aws_app_lib /build/aws_app_rust/aws_app_lib
-COPY migrations /build/aws_app_rust/migrations
-COPY templates /build/aws_app_rust/templates
+ADD Cargo.toml /build/calendar_app_rust/
+COPY src /build/calendar_app_rust/src
+COPY calendar_app_http /build/calendar_app_rust/calendar_app_http
+COPY calendar_app_bot /build/calendar_app_rust/calendar_app_bot
+COPY calendar_app_lib /build/calendar_app_rust/calendar_app_lib
+COPY gcal_lib /build/calendar_app_rust/gcal_lib
+COPY migrations /build/calendar_app_rust/migrations
+COPY templates /build/calendar_app_rust/templates
 
-RUN mkdir -p /aws_app_rust && \
-    cd /build/aws_app_rust && \
-    cargo install --path=. --root=/aws_app_rust
+RUN mkdir -p /calendar_app_rust && \
+    cd /build/calendar_app_rust && \
+    cargo install --path=. --root=/calendar_app_rust
 
 FROM alpine:3.14
 
-COPY --from=buildstage /aws_app_rust/bin/* /usr/bin/
+COPY --from=buildstage /calendar_app_rust/bin/* /usr/bin/
 
 STOPSIGNAL SIGTERM
 
