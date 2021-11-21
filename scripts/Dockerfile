@@ -21,6 +21,6 @@ COPY --from=buildstage /calendar_app_rust/bin/* /usr/bin/
 
 STOPSIGNAL SIGTERM
 
-EXPOSE 3096
+EXPOSE 4042
 
 CMD ["/usr/bin/aws-app-http"]

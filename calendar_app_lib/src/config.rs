@@ -20,6 +20,8 @@ pub struct ConfigInner {
     pub gcal_token_path: PathBuf,
     #[serde(default = "default_domain")]
     pub domain: StackString,
+    #[serde(default = "default_host")]
+    pub host: StackString,
     #[serde(default = "default_port")]
     pub port: u32,
     #[serde(default = "default_n_db_workers")]
@@ -47,6 +49,9 @@ fn default_gcal_secret() -> PathBuf {
 fn default_gcal_token_path() -> PathBuf {
     let home_dir = dirs::home_dir().expect("No HOME directory");
     home_dir.join(".gcal")
+}
+fn default_host() -> StackString {
+    "0.0.0.0".into()
 }
 fn default_port() -> u32 {
     4042
