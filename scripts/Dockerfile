@@ -23,4 +23,4 @@ STOPSIGNAL SIGTERM
 
 EXPOSE 4042
 
-CMD ["/usr/bin/aws-app-http"]
+CMD ["/usr/bin/calendar-app-http"]
