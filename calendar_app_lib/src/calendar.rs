@@ -235,8 +235,8 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
 
 impl Event {
     pub fn new(
-        gcal_id: &str,
-        name: &str,
+        gcal_id: impl Into<StackString>,
+        name: impl Into<StackString>,
         start_time: DateTime<Utc>,
         end_time: DateTime<Utc>,
     ) -> Self {
@@ -252,7 +252,10 @@ impl Event {
         }
     }
 
-    pub fn from_gcal_event(item: &GCalEvent, gcal_id: &str) -> Result<Self, Error> {
+    pub fn from_gcal_event(
+        item: &GCalEvent,
+        gcal_id: impl Into<StackString>,
+    ) -> Result<Self, Error> {
         let mut loc = None;
         if let Some(name) = &item.location {
             let location = Location {
@@ -310,13 +313,13 @@ impl Event {
 
     pub async fn get_summary(
         &self,
-        domain: &str,
+        domain: impl AsRef<str>,
         pool: &PgPool,
         timezone: Option<TimeZone>,
     ) -> StackString {
         let mut short_url = None;
         let original_url = self.url.as_ref();
-
+        let domain = domain.as_ref();
         if let Some(original_url) = original_url {
             if let Ok(mut result) =
                 ShortenedLinks::get_by_original_url(original_url.as_str(), pool).await

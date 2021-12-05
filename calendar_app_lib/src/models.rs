@@ -209,8 +209,8 @@ impl CalendarCache {
     }
 
     pub async fn get_by_gcal_id_event_id(
-        gcal_id: &str,
-        event_id: &str,
+        gcal_id: impl AsRef<str>,
+        event_id: impl AsRef<str>,
         pool: &PgPool,
     ) -> Result<Option<CalendarCache>, Error> {
         let conn = pool.get().await?;
@@ -220,13 +220,15 @@ impl CalendarCache {
     }
 
     async fn get_by_gcal_id_event_id_conn<C>(
-        gcal_id: &str,
-        event_id: &str,
+        gcal_id: impl AsRef<str>,
+        event_id: impl AsRef<str>,
         conn: &C,
     ) -> Result<Option<CalendarCache>, Error>
     where
         C: GenericClient + Sync,
     {
+        let gcal_id = gcal_id.as_ref();
+        let event_id = event_id.as_ref();
         let query = query!(
             r#"
                 SELECT * FROM calendar_cache

@@ -70,11 +70,12 @@ impl CalendarSync {
 
     async fn import_calendar_events<'a>(
         &'a self,
-        gcal_id: &'a str,
+        gcal_id: &'a impl AsRef<str>,
         calendar_events: impl IntoIterator<Item = &'a GCalEvent>,
         upsert: bool,
     ) -> Result<Vec<CalendarCache>, Error> {
         let futures = calendar_events.into_iter().map(|item| async move {
+            let gcal_id = gcal_id.as_ref();
             if item.start.is_none() {
                 return Ok(None);
             } else if item.summary.is_none() {
@@ -176,7 +177,7 @@ impl CalendarSync {
             Vec::new()
         };
         let imported = self
-            .import_calendar_events(gcal_id, &calendar_events, false)
+            .import_calendar_events(&gcal_id, calendar_events.iter(), false)
             .await?;
         Ok((exported, imported))
     }
@@ -202,7 +203,7 @@ impl CalendarSync {
             Vec::new()
         };
         let imported = self
-            .import_calendar_events(gcal_id, &calendar_events, true)
+            .import_calendar_events(&gcal_id, calendar_events.iter(), true)
             .await?;
         Ok((exported, imported))
     }

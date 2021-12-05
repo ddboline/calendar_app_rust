@@ -724,7 +724,7 @@ async fn build_calendar_event_body(
         None
     };
     let event = event.map_or_else(
-        || Event::new(&query.gcal_id, "", Utc::now(), Utc::now()),
+        || Event::new(query.gcal_id, StackString::new(), Utc::now(), Utc::now()),
         |event| event.into(),
     );
     let body = format!(
