@@ -3,7 +3,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: "Web App to Display Calendar, Sync with GCal"
-  version: 0.4.26
+  version: 0.5.5
 paths:
   /calendar/index.html:
     get:
@@ -214,9 +214,6 @@ paths:
               schema:
                 items:
                   properties:
-                    id:
-                      description: Calendar ID
-                      type: integer
                     calendar_name:
                       description: Calendar Name
                       type: string
@@ -254,7 +251,6 @@ paths:
                       type: boolean
                   type: object
                   required:
-                    - id
                     - calendar_name
                     - gcal_id
                     - sync
@@ -280,9 +276,6 @@ paths:
                   description: Calendar List Updates
                   items:
                     properties:
-                      id:
-                        description: Calendar ID
-                        type: integer
                       calendar_name:
                         description: Calendar Name
                         type: string
@@ -320,7 +313,6 @@ paths:
                         type: boolean
                     type: object
                     required:
-                      - id
                       - calendar_name
                       - gcal_id
                       - sync
@@ -372,6 +364,9 @@ paths:
                     edit:
                       description: Edit Flag
                       type: boolean
+                    display:
+                      description: Display Flag
+                      type: boolean
                   type: object
                   required:
                     - calendar_name
@@ -379,6 +374,7 @@ paths:
                     - sync
                     - last_modified
                     - edit
+                    - display
                 type: array
         "400":
           description: Bad Request
@@ -544,11 +540,14 @@ paths:
               schema:
                 items:
                   properties:
+                    id:
+                      description: Calendar ID
+                      type: integer
                     gcal_id:
-                      description: GCal Calendar ID
+                      description: Gcal Calendar ID
                       type: string
                     event_id:
-                      description: Event ID
+                      description: Calendar Event ID
                       type: string
                     event_start_time:
                       description: Event Start Time
@@ -574,11 +573,11 @@ paths:
                       nullable: true
                       type: string
                     event_location_lat:
-                      description: Event Location Longitude
+                      description: Event Location Latitude
                       nullable: true
                       type: number
                     event_location_lon:
-                      description: Event Location Latitude
+                      description: Event Location Longitude
                       nullable: true
                       type: number
                     last_modified:
@@ -587,6 +586,7 @@ paths:
                       type: string
                   type: object
                   required:
+                    - id
                     - gcal_id
                     - event_id
                     - event_start_time
@@ -786,9 +786,6 @@ paths:
             application/json:
               schema:
                 properties:
-                  id:
-                    description: Calendar ID
-                    type: integer
                   calendar_name:
                     description: Calendar Name
                     type: string
@@ -826,7 +823,6 @@ paths:
                     type: boolean
                 type: object
                 required:
-                  - id
                   - calendar_name
                   - gcal_id
                   - sync
