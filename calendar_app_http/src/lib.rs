@@ -34,8 +34,6 @@ derive_rweb_schema!(CalendarListWrapper, _CalendarListWrapper);
 #[allow(dead_code)]
 #[derive(Schema)]
 struct _CalendarListWrapper {
-    #[schema(description = "Calendar ID")]
-    id: i32,
     #[schema(description = "Calendar Name")]
     calendar_name: StackString,
     #[schema(description = "GCal Calendar ID")]
@@ -90,4 +88,19 @@ struct _CalendarCacheWrapper {
     event_location_lon: Option<f64>,
     #[schema(description = "Last Modified")]
     last_modified: DateTime<Utc>,
+}
+
+#[cfg(test)]
+mod test {
+    use rweb_helper::derive_rweb_test;
+
+    use crate::{
+        CalendarCacheWrapper, CalendarListWrapper, _CalendarCacheWrapper, _CalendarListWrapper,
+    };
+
+    #[test]
+    fn test_types() {
+        derive_rweb_test!(CalendarListWrapper, _CalendarListWrapper);
+        derive_rweb_test!(CalendarCacheWrapper, _CalendarCacheWrapper);
+    }
 }
