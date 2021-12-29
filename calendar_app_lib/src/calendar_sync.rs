@@ -128,17 +128,17 @@ impl CalendarSync {
                             .and_then(|o| o.email.as_deref())
                             != Some("unknownorganizer@calendar.google.com");
                     if !compare_gcal_events(gcal_event, &event) && update {
-                        Ok(Some(
-                            self.gcal
-                                .as_ref()
-                                .ok_or_else(|| format_err!("No gcal instance found"))?
-                                .update_gcal_event(&gcal_id, event)
-                                .await
-                                .map_err(|e| {
-                                    println!("event {:?} cannot be updated", gcal_event.id);
-                                    e
-                                })?,
-                        ))
+                        if let Ok(new_event) = self
+                            .gcal
+                            .as_ref()
+                            .ok_or_else(|| format_err!("No gcal instance found"))?
+                            .update_gcal_event(&gcal_id, event)
+                            .await
+                        {
+                            Ok(Some(new_event))
+                        } else {
+                            Ok(None)
+                        }
                     } else {
                         Ok(None)
                     }
