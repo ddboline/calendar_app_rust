@@ -23,11 +23,3 @@ pub mod parse_hashnyc;
 pub mod parse_nycruns;
 pub mod pgpool;
 pub mod timezone;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}

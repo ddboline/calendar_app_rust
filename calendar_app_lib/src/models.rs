@@ -577,13 +577,13 @@ impl ShortenedLinks {
 fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> StackString {
     // Encoding multiples of the block size is most efficient.
     let mut block = [0; blake3::guts::BLOCK_LEN];
-    let mut result = Vec::new();
+    let mut result: Vec<StackString> = Vec::new();
     while len > 0 {
         output.fill(&mut block);
         let hex_str = hex::encode(&block[..]);
         let take_bytes = cmp::min(len, block.len() as u64);
         let hex_str = &hex_str[..2 * take_bytes as usize];
-        result.push(hex_str.to_string());
+        result.push(hex_str.into());
         len -= take_bytes;
     }
     result.join("").into()

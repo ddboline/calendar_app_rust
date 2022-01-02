@@ -5,6 +5,7 @@ use futures::future::try_join_all;
 use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
+use stack_string::StackString;
 use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
@@ -24,7 +25,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
         let mut current_date = None;
         let mut current_time = None;
         let mut location = None;
-        let mut name = None;
+        let mut name: Option<StackString> = None;
         let mut event_url = None;
         for a in race.find(Class("_title")) {
             if let Some(url) = a.attr("href") {
@@ -33,7 +34,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                 }
             }
             if let Some(text) = a.text().trim().split('\n').next() {
-                name.replace(text.trim().to_string());
+                name.replace(text.trim().into());
             }
         }
         for date in race.find(Class("_date")) {

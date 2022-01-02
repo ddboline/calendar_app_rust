@@ -9,6 +9,8 @@ use log::debug;
 use stack_string::StackString;
 use std::{fs::create_dir_all, path::Path, sync::Arc};
 
+use stdout_channel::rate_limiter::RateLimiter;
+
 pub use crate::calendar_v3_types::{CalendarListEntry, Event, EventDateTime};
 use crate::{
     calendar_v3_types::{
@@ -17,7 +19,6 @@ use crate::{
         EventsUpdateParams,
     },
     exponential_retry,
-    rate_limiter::RateLimiter,
 };
 
 fn https_client() -> TlsClient {

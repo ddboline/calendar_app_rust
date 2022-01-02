@@ -2,7 +2,7 @@ use anyhow::{format_err, Error};
 use chrono_tz::Tz;
 use derive_more::Into;
 use serde::{Deserialize, Serialize};
-use std::{convert::TryFrom, ops::Deref, str::FromStr};
+use std::{convert::TryFrom, fmt, ops::Deref, str::FromStr};
 
 use stack_string::StackString;
 
@@ -15,6 +15,12 @@ impl Deref for TimeZone {
     type Target = Tz;
     fn deref(&self) -> &Self::Target {
         &self.0
+    }
+}
+
+impl fmt::Display for TimeZone {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(self.0.name())
     }
 }
 

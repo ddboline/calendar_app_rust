@@ -4,7 +4,7 @@ use chrono_tz::Tz;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
-use std::{convert::TryInto, fmt};
+use std::{convert::TryInto, fmt, fmt::Write};
 use url::Url;
 use uuid::Uuid;
 
@@ -348,13 +348,13 @@ impl Event {
             || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
             |short_url| short_url.as_str(),
         );
-
-        let start_time = match timezone {
+        let mut start_time = StackString::new();
+        match timezone {
             Some(tz) => {
                 let tz: Tz = tz.into();
-                self.start_time.with_timezone(&tz).to_string()
+                write!(start_time, "{}", self.start_time.with_timezone(&tz)).unwrap()
             }
-            None => self.start_time.with_timezone(&Local).to_string(),
+            None => write!(start_time, "{}", self.start_time.with_timezone(&Local)).unwrap(),
         };
 
         format!(

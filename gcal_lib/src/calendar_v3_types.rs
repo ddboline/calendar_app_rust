@@ -1950,7 +1950,7 @@ impl std::fmt::Display for AclPatchParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -1984,7 +1984,7 @@ impl std::fmt::Display for AclUpdateParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2034,28 +2034,28 @@ impl std::fmt::Display for AclListParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2107,7 +2107,7 @@ impl std::fmt::Display for AclInsertParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2157,28 +2157,28 @@ impl std::fmt::Display for AclWatchParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2232,42 +2232,42 @@ impl std::fmt::Display for CalendarListListParams {
             write!(
                 f,
                 "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden {
             write!(
                 f,
                 "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2294,7 +2294,7 @@ impl std::fmt::Display for CalendarListInsertParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2348,42 +2348,42 @@ impl std::fmt::Display for CalendarListWatchParams {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.min_access_role {
             write!(
                 f,
                 "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden {
             write!(
                 f,
                 "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2415,7 +2415,7 @@ impl std::fmt::Display for CalendarListUpdateParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2447,7 +2447,7 @@ impl std::fmt::Display for CalendarListPatchParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2540,21 +2540,21 @@ impl std::fmt::Display for SettingsWatchParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2592,21 +2592,21 @@ impl std::fmt::Display for SettingsListParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2742,119 +2742,119 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.shared_extended_property {
             write!(
                 f,
                 "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {
             write!(
                 f,
                 "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.private_extended_property {
             write!(
                 f,
                 "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden_invitations {
             write!(
                 f,
                 "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.single_events {
             write!(
                 f,
                 "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.q {
             write!(
                 f,
                 "&q={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.order_by {
             write!(
                 f,
                 "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.updated_min {
             write!(
                 f,
                 "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2916,42 +2916,42 @@ impl std::fmt::Display for EventsPatchParams {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3003,35 +3003,35 @@ impl std::fmt::Display for EventsInsertParams {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.supports_attachments {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3093,42 +3093,42 @@ impl std::fmt::Display for EventsUpdateParams {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3264,119 +3264,119 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.shared_extended_property {
             write!(
                 f,
                 "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.single_events {
             write!(
                 f,
                 "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {
             write!(
                 f,
                 "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.q {
             write!(
                 f,
                 "&q={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.private_extended_property {
             write!(
                 f,
                 "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.updated_min {
             write!(
                 f,
                 "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.order_by {
             write!(
                 f,
                 "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_max {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3418,20 +3418,19 @@ impl std::fmt::Display for EventsMoveParams {
             f,
             "&destination={}",
             percent_encode(format!("{}", self.destination).as_bytes(), NON_ALPHANUMERIC)
-                .to_string()
         )?;
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3468,14 +3467,14 @@ impl std::fmt::Display for EventsImportParams {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.supports_attachments {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3519,21 +3518,21 @@ impl std::fmt::Display for EventsGetParams {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3571,14 +3570,14 @@ impl std::fmt::Display for EventsDeleteParams {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3648,63 +3647,63 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_max {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.original_start {
             write!(
                 f,
                 "&originalStart={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3742,20 +3741,20 @@ impl std::fmt::Display for EventsQuickAddParams {
         write!(
             f,
             "&text={}",
-            percent_encode(format!("{}", self.text).as_bytes(), NON_ALPHANUMERIC).to_string()
+            percent_encode(format!("{}", self.text).as_bytes(), NON_ALPHANUMERIC)
         )?;
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3818,49 +3817,49 @@ impl std::fmt::Display for CalendarParams {
             write!(
                 f,
                 "&prettyPrint={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.alt {
             write!(
                 f,
                 "&alt={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.oauth_token {
             write!(
                 f,
                 "&oauth_token={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.quota_user {
             write!(
                 f,
                 "&quotaUser={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.key {
             write!(
                 f,
                 "&key={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.fields {
             write!(
                 f,
                 "&fields={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.user_ip {
             write!(
                 f,
                 "&userIp={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC).to_string()
+                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())

@@ -166,7 +166,8 @@ impl CalendarCliOpts {
                         .await?
                 {
                     let event: Event = event.into();
-                    cal_sync.stdout.send(event.to_string());
+                    let event_str = StackString::from_display(&event)?;
+                    cal_sync.stdout.send(event_str);
                 }
             }
             CalendarActions::Import { table, filepath } => {

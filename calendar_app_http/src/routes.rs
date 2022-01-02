@@ -9,7 +9,7 @@ use rweb_helper::{
 };
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt::Write};
 use url::Url;
 
 use calendar_app_lib::{
@@ -84,13 +84,14 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
             } else {
                 "".to_string()
             };
-            let start_time = match cal_sync.config.default_time_zone {
+            let mut start_time = StackString::new();
+            match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    event.start_time.with_timezone(&tz).to_string()
+                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap()
                 },
-                None => event.start_time.with_timezone(&Local).to_string(),
-            };
+                None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
+            }
             Some(format!(
                 r#"
                     <tr text-style="center">
@@ -189,7 +190,7 @@ async fn delete_event_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
             .await?;
         body
     } else {
-        "Event not deleted".to_string()
+        "Event not deleted".into()
     };
     Ok(body)
 }
@@ -216,7 +217,7 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
             calendar
                 .gcal_name
                 .as_ref()
-                .map_or_else(|| calendar.name.to_string(), ToString::to_string)
+                .map_or_else(|| calendar.name.clone(), Clone::clone)
         });
     let calendars = calendars
         .map(|calendar| {
@@ -316,12 +317,13 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
             } else {
                 "".to_string()
             };
-            let start_time = match cal_sync.config.default_time_zone {
+            let mut start_time = StackString::new();
+            match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    event.start_time.with_timezone(&tz).to_string()
+                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap()
                 },
-                None => event.start_time.with_timezone(&Local).to_string(),
+                None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
             };
 
             format!(r#"
@@ -387,15 +389,18 @@ async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
                     let words = line
                         .split_whitespace()
                         .map(|word| {
-                            let mut output_word = word.to_string();
+                            let mut output_word = StackString::new();
                             if let Ok(url) = word.parse::<Url>() {
                                 if url.scheme() == "https" {
-                                    output_word = format!(r#"<a href="{url}">Link</a>"#, url = url);
+                                    output_word =
+                                        format!(r#"<a href="{url}">Link</a>"#, url = url).into()
                                 }
+                            } else {
+                                output_word = word.into();
                             }
                             line_length += output_word.len();
                             if line_length > 60 {
-                                output_word = format!("<br>{}", output_word);
+                                output_word = format!("<br>{}", output_word).into();
                                 line_length = 0;
                             }
                             output_word

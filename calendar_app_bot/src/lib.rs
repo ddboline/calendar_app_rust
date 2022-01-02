@@ -13,11 +13,3 @@
 
 pub mod failure_count;
 pub mod telegram_bot;
-
-#[cfg(test)]
-mod tests {
-    #[test]
-    fn it_works() {
-        assert_eq!(2 + 2, 4);
-    }
-}
