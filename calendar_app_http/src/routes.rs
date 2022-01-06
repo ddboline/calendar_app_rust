@@ -88,7 +88,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
             match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap()
+                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap();
                 },
                 None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
             }
@@ -321,7 +321,7 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
             match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap()
+                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap();
                 },
                 None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
             };
@@ -393,7 +393,7 @@ async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
                             if let Ok(url) = word.parse::<Url>() {
                                 if url.scheme() == "https" {
                                     output_word =
-                                        format!(r#"<a href="{url}">Link</a>"#, url = url).into()
+                                        format!(r#"<a href="{url}">Link</a>"#, url = url).into();
                                 }
                             } else {
                                 output_word = word.into();
@@ -730,7 +730,7 @@ async fn build_calendar_event_body(
     };
     let event = event.map_or_else(
         || Event::new(query.gcal_id, StackString::new(), Utc::now(), Utc::now()),
-        |event| event.into(),
+        Into::into,
     );
     let body = format!(
         r#"

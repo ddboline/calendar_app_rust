@@ -288,7 +288,7 @@ impl CalendarSync {
         let calendars = CalendarList::get_calendars(&self.pool)
             .await?
             .into_iter()
-            .map(|c| c.into());
+            .map(Into::into);
         Ok(calendars)
     }
 
@@ -322,7 +322,7 @@ impl CalendarSync {
         .await?
         .into_iter()
         .sorted_by_key(|event| event.event_start_time)
-        .map(|c| c.into());
+        .map(Into::into);
         Ok(events)
     }
 }

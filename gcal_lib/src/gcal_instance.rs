@@ -86,7 +86,7 @@ impl GCalendarInstance {
         let params = CalendarListListParams {
             show_deleted: Some(true),
             show_hidden: Some(true),
-            page_token: next_page_token.map(|t| t.into()),
+            page_token: next_page_token.map(Into::into),
             ..CalendarListListParams::default()
         };
         exponential_retry(|| async {

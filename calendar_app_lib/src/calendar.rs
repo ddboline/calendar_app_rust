@@ -79,7 +79,7 @@ impl From<Calendar> for CalendarList {
             gcal_name: item.gcal_name,
             gcal_description: item.description,
             gcal_location: item.location.map(|l| l.name),
-            gcal_timezone: item.timezone.map(|z| z.into()),
+            gcal_timezone: item.timezone.map(Into::into),
             sync: false,
             last_modified: Utc::now(),
             edit: false,
@@ -274,12 +274,12 @@ impl Event {
             start_time: item
                 .start
                 .as_ref()
-                .and_then(|s| from_gcal_eventdatetime(s))
+                .and_then(from_gcal_eventdatetime)
                 .ok_or_else(|| format_err!("No start time"))?,
             end_time: item
                 .end
                 .as_ref()
-                .and_then(|s| from_gcal_eventdatetime(s))
+                .and_then(from_gcal_eventdatetime)
                 .ok_or_else(|| format_err!("No start time"))?,
             url: item.html_link.as_ref().and_then(|u| u.parse().ok()),
             name: item
@@ -346,13 +346,13 @@ impl Event {
 
         let url = short_url.as_ref().map_or_else(
             || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
-            |short_url| short_url.as_str(),
+            String::as_str,
         );
         let mut start_time = StackString::new();
         match timezone {
             Some(tz) => {
                 let tz: Tz = tz.into();
-                write!(start_time, "{}", self.start_time.with_timezone(&tz)).unwrap()
+                write!(start_time, "{}", self.start_time.with_timezone(&tz)).unwrap();
             }
             None => write!(start_time, "{}", self.start_time.with_timezone(&Local)).unwrap(),
         };
