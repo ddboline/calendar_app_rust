@@ -2,8 +2,8 @@ use anyhow::{format_err, Error};
 use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use refinery::embed_migrations;
-use stack_string::StackString;
-use std::path::PathBuf;
+use stack_string::{format_sstr, StackString};
+use std::{fmt::Write, path::PathBuf};
 use structopt::StructOpt;
 use tokio::{
     fs::{read, File},
@@ -123,7 +123,7 @@ impl CalendarCliOpts {
                 {
                     cal_sync
                         .stdout
-                        .send(format!("delete {} {}", gcal_id, event_id));
+                        .send(format_sstr!("delete {} {}", gcal_id, event_id));
                     if let Some(event) =
                         CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
                             .await?
@@ -140,7 +140,7 @@ impl CalendarCliOpts {
             }
             CalendarActions::ListCalendars => {
                 for calendar in cal_sync.list_calendars().await? {
-                    cal_sync.stdout.send(format!("{}", calendar));
+                    cal_sync.stdout.send(format_sstr!("{}", calendar));
                 }
             }
             CalendarActions::List {
@@ -166,7 +166,7 @@ impl CalendarCliOpts {
                         .await?
                 {
                     let event: Event = event.into();
-                    let event_str = StackString::from_display(&event)?;
+                    let event_str = StackString::from_display(&event);
                     cal_sync.stdout.send(event_str);
                 }
             }
@@ -189,7 +189,7 @@ impl CalendarCliOpts {
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
                         cal_sync
                             .stdout
-                            .send(format!("calendar_list {}", results?.len()));
+                            .send(format_sstr!("calendar_list {}", results?.len()));
                     }
                     "calendar_cache" => {
                         let events: Vec<CalendarCache> = serde_json::from_slice(&data)?;
@@ -200,7 +200,7 @@ impl CalendarCliOpts {
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
                         cal_sync
                             .stdout
-                            .send(format!("calendar_cache {}", results?.len()));
+                            .send(format_sstr!("calendar_cache {}", results?.len()));
                     }
                     _ => {}
                 }

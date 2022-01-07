@@ -3,9 +3,10 @@ use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use log::debug;
-use stack_string::StackString;
+use stack_string::{format_sstr, StackString};
 use std::{
     collections::{HashMap, HashSet},
+    fmt::Write,
     sync::Arc,
 };
 use stdout_channel::StdoutChannel;
@@ -80,7 +81,7 @@ impl CalendarSync {
                 return Ok(None);
             } else if item.summary.is_none() {
                 self.stdout
-                    .send(format!("{:?} {:?}", item.start, item.description));
+                    .send(format_sstr!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
             let event: CalendarCache = Event::from_gcal_event(item, gcal_id)?.into();
@@ -216,11 +217,11 @@ impl CalendarSync {
 
         let (hashnyc_events, nycruns_events) = try_join!(hashnyc_future, nycruns_future)?;
 
-        output.push(format!("parse_hashnyc {}", hashnyc_events.len()).into());
-        output.push(format!("parse_nycruns {}", nycruns_events.len()).into());
+        output.push(format_sstr!("parse_hashnyc {}", hashnyc_events.len()).into());
+        output.push(format_sstr!("parse_nycruns {}", nycruns_events.len()).into());
 
         let inserted = self.sync_calendar_list().await?;
-        output.push(format!("inserted {} calendars", inserted.len()).into());
+        output.push(format_sstr!("inserted {} calendars", inserted.len()).into());
 
         let gcal_set: HashSet<_> = inserted.iter().map(|cal| cal.gcal_id.clone()).collect();
 
@@ -238,7 +239,7 @@ impl CalendarSync {
                 self.sync_future_events(&calendar.gcal_id, calendar.edit)
                     .await?
             };
-            let result = format!(
+            let result = format_sstr!(
                 "future events {} {} {}",
                 calendar.calendar_name,
                 exported.len(),

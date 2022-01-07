@@ -8,7 +8,7 @@ use rweb_helper::{
     html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, RwebResponse,
 };
 use serde::{Deserialize, Serialize};
-use stack_string::StackString;
+use stack_string::{format_sstr, StackString};
 use std::{collections::HashMap, fmt::Write};
 use url::Url;
 
@@ -42,7 +42,7 @@ pub async fn calendar_index(
 
 #[derive(RwebResponse)]
 #[response(description = "Agenda", content = "html")]
-struct AgendaResponse(HtmlBase<String, Error>);
+struct AgendaResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/agenda")]
 pub async fn agenda(
@@ -53,7 +53,7 @@ pub async fn agenda(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
+async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
@@ -76,23 +76,22 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
             };
             let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
             let delete = if cal.edit {
-                format!(
+                format_sstr!(
                     r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventAgenda('{gcal_id}', '{event_id}')">"#,
                     gcal_id=event.gcal_id,
                     event_id=event.event_id,
                 )
             } else {
-                "".to_string()
+                "".into()
             };
-            let mut start_time = StackString::new();
-            match cal_sync.config.default_time_zone {
+            let start_time = match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap();
+                    StackString::from_display(event.start_time.with_timezone(&tz))
                 },
-                None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
-            }
-            Some(format!(
+                None => StackString::from_display(event.start_time.with_timezone(&Local)),
+            };
+            Some(format_sstr!(
                 r#"
                     <tr text-style="center">
                     <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{cal_name}')"></td>
@@ -111,7 +110,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<String> {
             ))
         })
         .join("");
-    let body = format!(
+    let body = format_sstr!(
         r#"
         <table border="1" class="dataframe">
         <thead><th>Calendar</th><th>Event</th><th>Start Time</th></thead>
@@ -162,7 +161,7 @@ pub struct GcalEventID {
     content = "html",
     status = "CREATED"
 )]
-struct DeleteEventResponse(HtmlBase<String, Error>);
+struct DeleteEventResponse(HtmlBase<StackString, Error>);
 
 #[delete("/calendar/delete_event")]
 pub async fn delete_event(
@@ -175,12 +174,15 @@ pub async fn delete_event(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn delete_event_body(payload: GcalEventID, cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn delete_event_body(
+    payload: GcalEventID,
+    cal_sync: &CalendarSync,
+) -> HttpResult<StackString> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
     {
-        let body = format!("delete {} {}", &payload.gcal_id, &payload.event_id);
+        let body = format_sstr!("delete {} {}", &payload.gcal_id, &payload.event_id);
         event.delete(&cal_sync.pool).await?;
         cal_sync
             .gcal
@@ -197,7 +199,7 @@ async fn delete_event_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
 
 #[derive(RwebResponse)]
 #[response(description = "List Calendars", content = "html")]
-struct ListCalendarsResponse(HtmlBase<String, Error>);
+struct ListCalendarsResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/list_calendars")]
 pub async fn list_calendars(
@@ -208,7 +210,7 @@ pub async fn list_calendars(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString> {
     let calendars = cal_sync
         .list_calendars()
         .await?
@@ -222,22 +224,22 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
     let calendars = calendars
         .map(|calendar| {
             let create_event = if calendar.edit {
-                format!(r#"
+                format_sstr!(r#"
                     <input type="button" name="create_event" value="Create Event" onclick="buildEvent('{}')">
                 "#, calendar.gcal_id)
             } else {
-                "".to_string()
+                "".into()
             };
             let make_visible = if calendar.display {
-                format!(r#"
+                format_sstr!(r#"
                     <input type="button" name="hide_calendar" value="Hide" onclick="calendarDisplay('{}', false)">
                 "#, calendar.gcal_id)
             } else {
-                format!(r#"
+                format_sstr!(r#"
                 <input type="button" name="show_calendar" value="Show" onclick="calendarDisplay('{}', true)">
                 "#, calendar.gcal_id)
             };
-            format!(r#"
+            format_sstr!(r#"
                 <tr text-style="center">
                 <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{calendar_name}')"></td>
                 <td>{description}</td>
@@ -251,7 +253,7 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<String> {
             )
         }).join("");
 
-    let body = format!(
+    let body = format_sstr!(
         r#"
         <table border="1" class="dataframe">
         <thead>
@@ -279,7 +281,7 @@ pub struct ListEventsRequest {
 
 #[derive(RwebResponse)]
 #[response(description = "List Events", content = "html")]
-struct ListEventsResponse(HtmlBase<String, Error>);
+struct ListEventsResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/list_events")]
 pub async fn list_events(
@@ -292,7 +294,10 @@ pub async fn list_events(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn list_events_body(
+    query: ListEventsRequest,
+    cal_sync: &CalendarSync,
+) -> HttpResult<StackString> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
@@ -300,7 +305,7 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
         .collect();
     let cal = match calendar_map.get(&query.calendar_name) {
         Some(cal) => cal,
-        None => return Ok("".to_string()),
+        None => return Ok("".into()),
     };
     let min_time = query.min_time.map(Into::into);
     let max_time = query.max_time.map(Into::into);
@@ -308,25 +313,24 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
         .sorted_by_key(|event| event.start_time)
         .map(|event| {
             let delete = if cal.edit {
-                format!(
+                format_sstr!(
                     r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventList('{gcal_id}', '{event_id}', '{calendar_name}')">"#,
                     gcal_id=event.gcal_id,
                     event_id=event.event_id,
                     calendar_name=query.calendar_name,
                 )
             } else {
-                "".to_string()
+                "".into()
             };
-            let mut start_time = StackString::new();
-            match cal_sync.config.default_time_zone {
+            let start_time = match cal_sync.config.default_time_zone {
                 Some(tz) => {
                     let tz: Tz = tz.into();
-                    write!(start_time, "{}", event.start_time.with_timezone(&tz)).unwrap();
+                    StackString::from_display(event.start_time.with_timezone(&tz))
                 },
-                None => write!(start_time, "{}", event.start_time.with_timezone(&Local)).unwrap(),
+                None => StackString::from_display(event.start_time.with_timezone(&Local)),
             };
 
-            format!(r#"
+            format_sstr!(r#"
                     <tr text-style="center">
                     <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
                     <td>{start}</td>
@@ -342,7 +346,7 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
                 delete=delete
             )
         }).join("");
-    let body = format!(
+    let body = format_sstr!(
         r#"
         <table border="1" class="dataframe">
         <thead>
@@ -351,14 +355,15 @@ async fn list_events_body(query: ListEventsRequest, cal_sync: &CalendarSync) -> 
         </thead>
         <tbody>{}</tbody>
         </table>"#,
-        cal.gcal_id, events
+        cal.gcal_id,
+        events
     );
     Ok(body)
 }
 
 #[derive(RwebResponse)]
 #[response(description = "Event Details", content = "html", status = "CREATED")]
-struct EventDetailResponse(HtmlBase<String, Error>);
+struct EventDetailResponse(HtmlBase<StackString, Error>);
 
 #[post("/calendar/event_detail")]
 pub async fn event_detail(
@@ -371,13 +376,16 @@ pub async fn event_detail(
     Ok(HtmlBase::new(body).into())
 }
 
-async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> HttpResult<String> {
+async fn event_detail_body(
+    payload: GcalEventID,
+    cal_sync: &CalendarSync,
+) -> HttpResult<StackString> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
     {
         let event: Event = event.into();
-        let mut output = vec![format!(
+        let mut output = vec![format_sstr!(
             r#"<tr text-style="center"><td>Name</td><td>{}</td></tr>"#,
             &event.name
         )];
@@ -393,54 +401,56 @@ async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
                             if let Ok(url) = word.parse::<Url>() {
                                 if url.scheme() == "https" {
                                     output_word =
-                                        format!(r#"<a href="{url}">Link</a>"#, url = url).into();
+                                        format_sstr!(r#"<a href="{url}">Link</a>"#, url = url)
+                                            .into();
                                 }
                             } else {
                                 output_word = word.into();
                             }
                             line_length += output_word.len();
                             if line_length > 60 {
-                                output_word = format!("<br>{}", output_word).into();
+                                output_word = format_sstr!("<br>{}", output_word).into();
                                 line_length = 0;
                             }
                             output_word
                         })
                         .join(" ");
-                    format!("\t\t{}", words)
+                    format_sstr!("\t\t{}", words)
                 })
                 .join("");
-            output.push(format!(
+            output.push(format_sstr!(
                 r#"<tr text-style="center"><td>Description</td><td>{}</td></tr>"#,
                 &description
             ));
         }
         if let Some(url) = &event.url {
-            output.push(format!(
+            output.push(format_sstr!(
                 r#"<tr text-style="center"><td>Url</td><td><a href={url}>Link</a></td></tr>"#,
                 url = url.as_str()
             ));
         }
         if let Some(location) = &event.location {
-            output.push(format!(
+            output.push(format_sstr!(
                 r#"<tr text-style="center"><td>Location</td><td>{}</td></tr>"#,
                 location.name
             ));
             if let Some((lat, lon)) = &location.lat_lon {
-                output.push(format!(
+                output.push(format_sstr!(
                     r#"<tr text-style="center"><td>Lat,Lon:</td><td>{},{}</td></tr>"#,
-                    lat, lon
+                    lat,
+                    lon
                 ));
             }
         }
-        output.push(format!(
+        output.push(format_sstr!(
             r#"<tr text-style="center"><td>Start Time</td><td>{}</td></tr>"#,
             event.start_time.with_timezone(&Local)
         ));
-        output.push(format!(
+        output.push(format_sstr!(
             r#"<tr text-style="center"><td>End Time</td><td>{}</td></tr>"#,
             event.end_time.with_timezone(&Local)
         ));
-        format!(
+        format_sstr!(
             r#"
             <table border="1" class="dataframe">
             <tbody>{}</tbody>
@@ -448,7 +458,7 @@ async fn event_detail_body(payload: GcalEventID, cal_sync: &CalendarSync) -> Htt
             output.join("")
         )
     } else {
-        "".to_string()
+        "".into()
     };
     Ok(body)
 }
@@ -649,7 +659,7 @@ pub async fn user(#[filter = "LoggedUser::filter"] user: LoggedUser) -> WarpResu
 
 #[derive(RwebResponse)]
 #[response(description = "Shortened Link", content = "html")]
-struct ShortenedLinkResponse(HtmlBase<String, Error>);
+struct ShortenedLinkResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/link/{link}")]
 pub async fn link_shortener(
@@ -664,7 +674,7 @@ async fn link_shortener_body(
     link: &str,
     cal_sync: &CalendarSync,
     shortened_urls: &UrlCache,
-) -> HttpResult<String> {
+) -> HttpResult<StackString> {
     let config = &cal_sync.config;
 
     if let Some(link) = shortened_urls.read().await.get(link) {
@@ -674,7 +684,7 @@ async fn link_shortener_body(
 
     let pool = &cal_sync.pool;
     if let Some(link) = ShortenedLinks::get_by_shortened_url(link, pool).await? {
-        let body = format!(
+        let body = format_sstr!(
             r#"<script>window.location.replace("{}")</script>"#,
             link.original_url
         );
@@ -684,14 +694,15 @@ async fn link_shortener_body(
             .insert(link.original_url, link.shortened_url);
         Ok(body)
     } else {
-        Ok("No url found".to_string())
+        Ok("No url found".into())
     }
 }
 
 fn format_short_link(domain: &str, link: &str) -> StackString {
-    format!(
+    format_sstr!(
         r#"<script>window.location.replace("https://{}/calendar/link/{}")</script>"#,
-        domain, link
+        domain,
+        link
     )
     .into()
 }
@@ -706,7 +717,7 @@ pub struct BuildEventRequest {
 
 #[derive(RwebResponse)]
 #[response(description = "Build Calendar Event", content = "html")]
-struct BuildCalendarEventResponse(HtmlBase<String, Error>);
+struct BuildCalendarEventResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/create_calendar_event")]
 pub async fn build_calendar_event(
@@ -722,7 +733,7 @@ pub async fn build_calendar_event(
 async fn build_calendar_event_body(
     query: BuildEventRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<String> {
+) -> HttpResult<StackString> {
     let event = if let Some(event_id) = &query.event_id {
         CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, event_id, &cal_sync.pool).await?
     } else {
@@ -732,7 +743,7 @@ async fn build_calendar_event_body(
         || Event::new(query.gcal_id, StackString::new(), Utc::now(), Utc::now()),
         Into::into,
     );
-    let body = format!(
+    let body = format_sstr!(
         r#"
         <form action="javascript:createCalendarEvent();">
             Calendar ID: <input type="text" name="gcal_id" id="gcal_id" value="{gcal_id}"/><br>

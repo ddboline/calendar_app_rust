@@ -3,8 +3,8 @@ use chrono::{DateTime, Utc};
 use derive_more::Into;
 use postgres_query::{client::GenericClient, query, query_dyn, FromSqlRow, Parameter};
 use serde::{Deserialize, Serialize};
-use stack_string::StackString;
-use std::{cmp, io};
+use stack_string::{format_sstr, StackString};
+use std::{cmp, fmt::Write, io};
 
 use crate::pgpool::{PgPool, PgTransaction};
 
@@ -275,12 +275,12 @@ impl CalendarCache {
             conditions.push("event_end_time >= $min_time");
             bindings.push(("min_time", min_time));
         }
-        let query = format!(
+        let query = format_sstr!(
             "SELECT * FROM calendar_cache WHERE gcal_id = $gcal_id {}",
             if conditions.is_empty() {
                 "".into()
             } else {
-                format!(" AND {}", conditions.join(" AND "))
+                format_sstr!(" AND {}", conditions.join(" AND "))
             }
         );
         let mut query_bindings: Vec<_> =

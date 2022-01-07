@@ -5,8 +5,8 @@ use rweb::{
     openapi::{self, Info},
     Filter, Reply,
 };
-use stack_string::StackString;
-use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
+use stack_string::{format_sstr, StackString};
+use std::{collections::HashMap, fmt::Write, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{sync::RwLock, time::interval};
 
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
@@ -133,7 +133,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
         .or(spec_json_path)
         .or(spec_yaml_path)
         .recover(error_response);
-    let addr: SocketAddr = format!("{}:{}", config.host, config.port).parse()?;
+    let addr: SocketAddr = format_sstr!("{}:{}", config.host, config.port).parse()?;
     rweb::serve(routes).bind(addr).await;
     Ok(())
 }
@@ -142,7 +142,11 @@ async fn run_app(config: &Config) -> Result<(), Error> {
 mod tests {
     use anyhow::Error;
     use maplit::hashmap;
-    use std::env::{remove_var, set_var};
+    use stack_string::format_sstr;
+    use std::{
+        env::{remove_var, set_var},
+        fmt::Write,
+    };
 
     use auth_server_http::app::run_test_app;
     use auth_server_lib::get_random_string;
@@ -158,7 +162,7 @@ mod tests {
     async fn test_run_app() -> Result<(), Error> {
         set_var("TESTENV", "true");
 
-        let email = format!("{}@localhost", get_random_string(32));
+        let email = format_sstr!("{}@localhost", get_random_string(32));
         let password = get_random_string(32);
 
         let auth_port: u32 = 54321;
@@ -184,13 +188,13 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
         let client = reqwest::Client::builder().cookie_store(true).build()?;
-        let url = format!("http://localhost:{}/api/auth", auth_port);
+        let url = format_sstr!("http://localhost:{}/api/auth", auth_port);
         let data = hashmap! {
             "email" => &email,
             "password" => &password,
         };
         let result = client
-            .post(&url)
+            .post(url.as_str())
             .json(&data)
             .send()
             .await?
@@ -199,9 +203,9 @@ mod tests {
             .await?;
         println!("{}", result);
 
-        let url = format!("http://localhost:{}/calendar/index.html", test_port);
+        let url = format_sstr!("http://localhost:{}/calendar/index.html", test_port);
         let result = client
-            .get(&url)
+            .get(url.as_str())
             .send()
             .await?
             .error_for_status()?

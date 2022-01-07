@@ -3,7 +3,7 @@ use chrono::{DateTime, Local, NaiveDate, Utc};
 use chrono_tz::Tz;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use stack_string::StackString;
+use stack_string::{format_sstr, StackString};
 use std::{convert::TryInto, fmt, fmt::Write};
 use url::Url;
 use uuid::Uuid;
@@ -129,7 +129,7 @@ impl fmt::Display for Event {
         if let Some(description) = &self.description {
             let description = description
                 .split('\n')
-                .map(|x| format!("\t\t{}", x))
+                .map(|x| format_sstr!("\t\t{}", x))
                 .join("\n");
             writeln!(f, "{}", description)?;
         }
@@ -308,7 +308,7 @@ impl Event {
             location: self.location.as_ref().map(|l| l.name.to_string()),
             ..GCalEvent::default()
         };
-        Ok((self.gcal_id.as_str().into(), event))
+        Ok((self.gcal_id.clone(), event))
     }
 
     pub async fn get_summary(
@@ -325,9 +325,10 @@ impl Event {
                 ShortenedLinks::get_by_original_url(original_url.as_str(), pool).await
             {
                 if let Some(result) = result.pop() {
-                    short_url.replace(format!(
+                    short_url.replace(format_sstr!(
                         "https://{}/calendar/link/{}",
-                        domain, &result.shortened_url
+                        domain,
+                        &result.shortened_url
                     ));
                 }
             }
@@ -335,9 +336,10 @@ impl Event {
                 if let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await
                 {
                     if result.insert_shortened_link(pool).await.is_ok() {
-                        short_url.replace(format!(
+                        short_url.replace(format_sstr!(
                             "https://{}/calendar/link/{}",
-                            domain, &result.shortened_url
+                            domain,
+                            &result.shortened_url
                         ));
                     }
                 }
@@ -346,22 +348,24 @@ impl Event {
 
         let url = short_url.as_ref().map_or_else(
             || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
-            String::as_str,
+            StackString::as_str,
         );
-        let mut start_time = StackString::new();
-        match timezone {
+        let start_time = match timezone {
             Some(tz) => {
                 let tz: Tz = tz.into();
-                write!(start_time, "{}", self.start_time.with_timezone(&tz)).unwrap();
+                StackString::from_display(self.start_time.with_timezone(&tz))
             }
-            None => write!(start_time, "{}", self.start_time.with_timezone(&Local)).unwrap(),
+            None => StackString::from_display(self.start_time.with_timezone(&Local)),
         };
 
-        format!(
+        format_sstr!(
             "{} {} {} {} {}",
-            start_time, self.name, self.gcal_id, self.event_id, url,
+            start_time,
+            self.name,
+            self.gcal_id,
+            self.event_id,
+            url,
         )
-        .into()
     }
 }
 

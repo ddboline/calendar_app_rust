@@ -6,8 +6,8 @@ use common::{
     TlsClient,
 };
 use log::debug;
-use stack_string::StackString;
-use std::{fs::create_dir_all, path::Path, sync::Arc};
+use stack_string::{format_sstr, StackString};
+use std::{fmt::Write, fs::create_dir_all, path::Path, sync::Arc};
 
 use stdout_channel::rate_limiter::RateLimiter;
 
@@ -43,7 +43,7 @@ impl GCalendarInstance {
         let https = https_client();
         let sec = yup_oauth2::read_application_secret(gcal_secret_file).await?;
 
-        let token_file = gcal_token_path.join(format!("{}.json", session_name));
+        let token_file = gcal_token_path.join(format_sstr!("{}.json", session_name));
 
         let parent = gcal_token_path;
 

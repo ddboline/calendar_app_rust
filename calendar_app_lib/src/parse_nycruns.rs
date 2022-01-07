@@ -5,8 +5,8 @@ use futures::future::try_join_all;
 use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
-use stack_string::StackString;
-use std::{collections::HashMap, sync::Arc};
+use stack_string::{format_sstr, StackString};
+use std::{collections::HashMap, fmt::Write, sync::Arc};
 use url::Url;
 
 use crate::{
@@ -29,7 +29,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
         let mut event_url = None;
         for a in race.find(Class("_title")) {
             if let Some(url) = a.attr("href") {
-                if let Ok(url) = format!("{}{}", BASE_URL, url).parse::<Url>() {
+                if let Ok(url) = format_sstr!("{}{}", BASE_URL, url).parse::<Url>() {
                     event_url.replace(url);
                 }
             }

@@ -4,8 +4,8 @@ use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
-use stack_string::StackString;
-use std::{collections::HashMap, sync::Arc};
+use stack_string::{format_sstr, StackString};
+use std::{collections::HashMap, fmt::Write, sync::Arc};
 
 use crate::{
     calendar::{Event, Location},
@@ -43,7 +43,7 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     let date = date.trim();
                     // Local::parse_from_str(&date, "%A %B %d ")
                     if let Some(year) = year {
-                        let date = format!("{} {}", date, year);
+                        let date = format_sstr!("{} {}", date, year);
                         let dt = New_York.datetime_from_str(&date, "%A %B %d %l:%M %P %Y")?;
                         let dt = dt.with_timezone(&Utc);
                         start_time.replace(dt);

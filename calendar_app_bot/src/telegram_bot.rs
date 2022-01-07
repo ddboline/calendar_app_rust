@@ -5,8 +5,8 @@ use deadqueue::unlimited::Queue;
 use futures::{try_join, StreamExt};
 use im::HashMap;
 use lazy_static::lazy_static;
-use stack_string::StackString;
-use std::{collections::VecDeque, sync::Arc};
+use stack_string::{format_sstr, StackString};
+use std::{collections::VecDeque, fmt::Write, sync::Arc};
 use telegram_bot::{
     types::Update, Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind,
     ToChatRef, UpdateKind, UserId,
@@ -97,11 +97,8 @@ impl TelegramBot {
                         if data.starts_with("/init") {
                             self.update_telegram_chat_id(message.from.id, chat_id)
                                 .await?;
-                            self.api
-                                .send(
-                                    message.text_reply(format!("Initializing chat_id {}", chat_id)),
-                                )
-                                .await?;
+                            let reply = format_sstr!("Initializing chat_id {}", chat_id);
+                            self.api.send(message.text_reply(reply.as_str())).await?;
                         } else if data.starts_with("/cal") {
                             for event in self.cal_sync.list_agenda(0, 1).await? {
                                 self.send_message(
@@ -120,12 +117,13 @@ impl TelegramBot {
                     }
                 } else {
                     // Answer message with "Hi".
-                    self.api
-                        .send(message.text_reply(format!(
-                            "Hi, {}, user_id {}! You just wrote '{}'",
-                            &message.from.first_name, &message.from.id, data
-                        )))
-                        .await?;
+                    let reply = format_sstr!(
+                        "Hi, {}, user_id {}! You just wrote '{}'",
+                        &message.from.first_name,
+                        &message.from.id,
+                        data
+                    );
+                    self.api.send(message.text_reply(reply.as_str())).await?;
                 }
             }
         }
