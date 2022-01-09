@@ -217,11 +217,11 @@ impl CalendarSync {
 
         let (hashnyc_events, nycruns_events) = try_join!(hashnyc_future, nycruns_future)?;
 
-        output.push(format_sstr!("parse_hashnyc {}", hashnyc_events.len()).into());
-        output.push(format_sstr!("parse_nycruns {}", nycruns_events.len()).into());
+        output.push(format_sstr!("parse_hashnyc {}", hashnyc_events.len()));
+        output.push(format_sstr!("parse_nycruns {}", nycruns_events.len()));
 
         let inserted = self.sync_calendar_list().await?;
-        output.push(format_sstr!("inserted {} calendars", inserted.len()).into());
+        output.push(format_sstr!("inserted {} calendars", inserted.len()));
 
         let gcal_set: HashSet<_> = inserted.iter().map(|cal| cal.gcal_id.clone()).collect();
 
@@ -244,8 +244,7 @@ impl CalendarSync {
                 calendar.calendar_name,
                 exported.len(),
                 inserted.len()
-            )
-            .into();
+            );
             Ok(result)
         });
         let results: Result<Vec<_>, Error> = try_join_all(futures).await;

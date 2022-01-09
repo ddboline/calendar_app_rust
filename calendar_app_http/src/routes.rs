@@ -401,15 +401,14 @@ async fn event_detail_body(
                             if let Ok(url) = word.parse::<Url>() {
                                 if url.scheme() == "https" {
                                     output_word =
-                                        format_sstr!(r#"<a href="{url}">Link</a>"#, url = url)
-                                            .into();
+                                        format_sstr!(r#"<a href="{url}">Link</a>"#, url = url);
                                 }
                             } else {
                                 output_word = word.into();
                             }
                             line_length += output_word.len();
                             if line_length > 60 {
-                                output_word = format_sstr!("<br>{}", output_word).into();
+                                output_word = format_sstr!("<br>{}", output_word);
                                 line_length = 0;
                             }
                             output_word
@@ -679,7 +678,7 @@ async fn link_shortener_body(
 
     if let Some(link) = shortened_urls.read().await.get(link) {
         let body = format_short_link(&config.domain, link);
-        return Ok(body.into());
+        return Ok(body);
     }
 
     let pool = &cal_sync.pool;
@@ -704,7 +703,6 @@ fn format_short_link(domain: &str, link: &str) -> StackString {
         domain,
         link
     )
-    .into()
 }
 
 #[derive(Serialize, Deserialize, Debug, Schema)]
