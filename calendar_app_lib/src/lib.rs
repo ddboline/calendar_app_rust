@@ -23,3 +23,19 @@ pub mod parse_hashnyc;
 pub mod parse_nycruns;
 pub mod pgpool;
 pub mod timezone;
+
+use chrono::{DateTime, Local, Utc};
+use chrono_tz::Tz;
+use stack_string::StackString;
+
+use crate::config::Config;
+
+pub fn get_default_or_local_time(dt: DateTime<Utc>, config: &Config) -> StackString {
+    match config.default_time_zone {
+        Some(tz) => {
+            let tz: Tz = tz.into();
+            StackString::from_display(dt.with_timezone(&tz))
+        }
+        None => StackString::from_display(dt.with_timezone(&Local)),
+    }
+}
