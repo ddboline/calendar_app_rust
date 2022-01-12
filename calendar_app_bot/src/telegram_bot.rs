@@ -107,7 +107,7 @@ impl TelegramBot {
                                         .get_summary(
                                             &self.cal_sync.config.domain,
                                             &self.pool,
-                                            self.cal_sync.config.default_time_zone,
+                                            &self.cal_sync.config,
                                         )
                                         .await,
                                 )
@@ -154,7 +154,7 @@ impl TelegramBot {
                                 .get_summary(
                                     &self.cal_sync.config.domain,
                                     &self.pool,
-                                    self.cal_sync.config.default_time_zone,
+                                    &self.cal_sync.config,
                                 )
                                 .await,
                         )
@@ -169,7 +169,7 @@ impl TelegramBot {
                                     .get_summary(
                                         &self.cal_sync.config.domain,
                                         &self.pool,
-                                        self.cal_sync.config.default_time_zone,
+                                        &self.cal_sync.config,
                                     )
                                     .await,
                             )

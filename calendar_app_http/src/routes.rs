@@ -1,6 +1,5 @@
 use anyhow::format_err;
 use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
-use chrono_tz::Tz;
 use futures::future::try_join_all;
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
@@ -15,6 +14,7 @@ use url::Url;
 use calendar_app_lib::{
     calendar::Event,
     calendar_sync::CalendarSync,
+    get_default_or_local_time,
     models::{CalendarCache, CalendarList, ShortenedLinks},
 };
 
@@ -84,13 +84,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
             } else {
                 "".into()
             };
-            let start_time = match cal_sync.config.default_time_zone {
-                Some(tz) => {
-                    let tz: Tz = tz.into();
-                    StackString::from_display(event.start_time.with_timezone(&tz))
-                },
-                None => StackString::from_display(event.start_time.with_timezone(&Local)),
-            };
+            let start_time = get_default_or_local_time(event.start_time, &cal_sync.config);
             Some(format_sstr!(
                 r#"
                     <tr text-style="center">
@@ -322,13 +316,8 @@ async fn list_events_body(
             } else {
                 "".into()
             };
-            let start_time = match cal_sync.config.default_time_zone {
-                Some(tz) => {
-                    let tz: Tz = tz.into();
-                    StackString::from_display(event.start_time.with_timezone(&tz))
-                },
-                None => StackString::from_display(event.start_time.with_timezone(&Local)),
-            };
+            let start_time = get_default_or_local_time(event.start_time, &cal_sync.config);
+            let end_time = get_default_or_local_time(event.end_time, &cal_sync.config);
 
             format_sstr!(r#"
                     <tr text-style="center">
@@ -340,7 +329,7 @@ async fn list_events_body(
                 "#,
                 name=event.name,
                 start=start_time,
-                end=event.end_time.with_timezone(&Local),
+                end=end_time,
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
                 delete=delete

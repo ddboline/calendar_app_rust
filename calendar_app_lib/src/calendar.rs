@@ -1,6 +1,5 @@
 use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
-use chrono_tz::Tz;
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
@@ -11,6 +10,8 @@ use uuid::Uuid;
 use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
 
 use crate::{
+    config::Config,
+    get_default_or_local_time,
     latitude::Latitude,
     longitude::Longitude,
     models::{CalendarCache, CalendarList, ShortenedLinks},
@@ -315,7 +316,7 @@ impl Event {
         &self,
         domain: impl AsRef<str>,
         pool: &PgPool,
-        timezone: Option<TimeZone>,
+        config: &Config,
     ) -> StackString {
         let mut short_url = None;
         let original_url = self.url.as_ref();
@@ -350,13 +351,7 @@ impl Event {
             || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
             StackString::as_str,
         );
-        let start_time = match timezone {
-            Some(tz) => {
-                let tz: Tz = tz.into();
-                StackString::from_display(self.start_time.with_timezone(&tz))
-            }
-            None => StackString::from_display(self.start_time.with_timezone(&Local)),
-        };
+        let start_time = get_default_or_local_time(self.start_time, config);
 
         format_sstr!(
             "{} {} {} {} {}",

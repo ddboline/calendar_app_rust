@@ -100,11 +100,7 @@ impl CalendarCliOpts {
                 for event in cal_sync.list_agenda(1, 2).await? {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(
-                                &cal_sync.config.domain,
-                                &cal_sync.pool,
-                                cal_sync.config.default_time_zone,
-                            )
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool, &cal_sync.config)
                             .await,
                     );
                 }
@@ -151,11 +147,7 @@ impl CalendarCliOpts {
                 for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
                     cal_sync.stdout.send(
                         event
-                            .get_summary(
-                                &cal_sync.config.domain,
-                                &cal_sync.pool,
-                                cal_sync.config.default_time_zone,
-                            )
+                            .get_summary(&cal_sync.config.domain, &cal_sync.pool, &cal_sync.config)
                             .await,
                     );
                 }
