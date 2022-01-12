@@ -432,11 +432,11 @@ async fn event_detail_body(
         }
         output.push(format_sstr!(
             r#"<tr text-style="center"><td>Start Time</td><td>{}</td></tr>"#,
-            event.start_time.with_timezone(&Local)
+            get_default_or_local_time(event.start_time, &cal_sync.config)
         ));
         output.push(format_sstr!(
             r#"<tr text-style="center"><td>End Time</td><td>{}</td></tr>"#,
-            event.end_time.with_timezone(&Local)
+            get_default_or_local_time(event.end_time, &cal_sync.config)
         ));
         format_sstr!(
             r#"
