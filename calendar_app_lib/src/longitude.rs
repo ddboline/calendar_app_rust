@@ -14,7 +14,7 @@ impl TryFrom<f64> for Longitude {
         if item >= -180.0 && item <= 180.0 {
             Ok(Self(item))
         } else {
-            Err(format_err!("{} is not a valid latitude", item))
+            Err(format_err!("{item} is not a valid latitude"))
         }
     }
 }

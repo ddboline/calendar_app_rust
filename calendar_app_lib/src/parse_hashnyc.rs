@@ -43,7 +43,7 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     let date = date.trim();
                     // Local::parse_from_str(&date, "%A %B %d ")
                     if let Some(year) = year {
-                        let date = format_sstr!("{} {}", date, year);
+                        let date = format_sstr!("{date} {year}");
                         let dt = New_York.datetime_from_str(&date, "%A %B %d %l:%M %P %Y")?;
                         let dt = dt.with_timezone(&Utc);
                         start_time.replace(dt);

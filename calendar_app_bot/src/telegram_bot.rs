@@ -97,7 +97,7 @@ impl TelegramBot {
                         if data.starts_with("/init") {
                             self.update_telegram_chat_id(message.from.id, chat_id)
                                 .await?;
-                            let reply = format_sstr!("Initializing chat_id {}", chat_id);
+                            let reply = format_sstr!("Initializing chat_id {chat_id}");
                             self.api.send(message.text_reply(reply.as_str())).await?;
                         } else if data.starts_with("/cal") {
                             for event in self.cal_sync.list_agenda(0, 1).await? {
@@ -118,10 +118,9 @@ impl TelegramBot {
                 } else {
                     // Answer message with "Hi".
                     let reply = format_sstr!(
-                        "Hi, {}, user_id {}! You just wrote '{}'",
-                        &message.from.first_name,
-                        &message.from.id,
-                        data
+                        "Hi, {n}, user_id {i}! You just wrote '{data}'",
+                        n = message.from.first_name,
+                        i = message.from.id,
                     );
                     self.api.send(message.text_reply(reply.as_str())).await?;
                 }

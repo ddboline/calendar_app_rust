@@ -29,7 +29,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
         let mut event_url = None;
         for a in race.find(Class("_title")) {
             if let Some(url) = a.attr("href") {
-                if let Ok(url) = format_sstr!("{}{}", BASE_URL, url).parse::<Url>() {
+                if let Ok(url) = format_sstr!("{BASE_URL}{url}").parse::<Url>() {
                     event_url.replace(url);
                 }
             }

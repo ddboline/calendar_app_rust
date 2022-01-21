@@ -188,7 +188,7 @@ mod tests {
         tokio::time::sleep(std::time::Duration::from_secs(10)).await;
 
         let client = reqwest::Client::builder().cookie_store(true).build()?;
-        let url = format_sstr!("http://localhost:{}/api/auth", auth_port);
+        let url = format_sstr!("http://localhost:{auth_port}/api/auth");
         let data = hashmap! {
             "email" => &email,
             "password" => &password,
@@ -203,7 +203,7 @@ mod tests {
             .await?;
         println!("{}", result);
 
-        let url = format_sstr!("http://localhost:{}/calendar/index.html", test_port);
+        let url = format_sstr!("http://localhost:{test_port}/calendar/index.html");
         let result = client
             .get(url.as_str())
             .send()

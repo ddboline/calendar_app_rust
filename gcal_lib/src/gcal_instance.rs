@@ -47,7 +47,7 @@ impl GCalendarInstance {
         let https = https_client();
         let sec = yup_oauth2::read_application_secret(gcal_secret_file).await?;
 
-        let token_file = gcal_token_path.join(format_sstr!("{}.json", session_name));
+        let token_file = gcal_token_path.join(format_sstr!("{session_name}.json"));
 
         let parent = gcal_token_path;
 

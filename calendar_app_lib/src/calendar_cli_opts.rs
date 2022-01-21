@@ -119,7 +119,7 @@ impl CalendarCliOpts {
                 {
                     cal_sync
                         .stdout
-                        .send(format_sstr!("delete {} {}", gcal_id, event_id));
+                        .send(format_sstr!("delete {gcal_id} {event_id}"));
                     if let Some(event) =
                         CalendarCache::get_by_gcal_id_event_id(&gcal_id, &event_id, &cal_sync.pool)
                             .await?
@@ -136,7 +136,7 @@ impl CalendarCliOpts {
             }
             CalendarActions::ListCalendars => {
                 for calendar in cal_sync.list_calendars().await? {
-                    cal_sync.stdout.send(format_sstr!("{}", calendar));
+                    cal_sync.stdout.send(format_sstr!("{calendar}"));
                 }
             }
             CalendarActions::List {

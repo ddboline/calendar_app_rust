@@ -99,8 +99,6 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
                 event_name=event.name,
-                start_time=start_time,
-                delete=delete,
             ))
         })
         .join("");
@@ -108,9 +106,8 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
         r#"
         <table border="1" class="dataframe">
         <thead><th>Calendar</th><th>Event</th><th>Start Time</th></thead>
-        <tbody>{}</tbody>
-        </table>"#,
-        events
+        <tbody>{events}</tbody>
+        </table>"#
     );
     Ok(body)
 }
@@ -242,8 +239,6 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString>
                 </tr>"#,
                 calendar_name=calendar.name,
                 description=calendar.description.as_ref().map_or_else(|| "", StackString::as_str),
-                create_event=create_event,
-                make_visible=make_visible,
             )
         }).join("");
 
@@ -256,9 +251,8 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString>
         <th></th>
         <th><input type="button" name="sync_all" value="Full Sync" onclick="syncCalendarsFull();"/></th>
         </thead>
-        <tbody>{}</tbody>
+        <tbody>{calendars}</tbody>
         </table>"#,
-        calendars
     );
     Ok(body)
 }
@@ -322,17 +316,14 @@ async fn list_events_body(
             format_sstr!(r#"
                     <tr text-style="center">
                     <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
-                    <td>{start}</td>
-                    <td>{end}</td>
+                    <td>{start_time}</td>
+                    <td>{end_time}</td>
                     <td>{delete}</td>
                     </tr>
                 "#,
                 name=event.name,
-                start=start_time,
-                end=end_time,
                 gcal_id=event.gcal_id,
                 event_id=event.event_id,
-                delete=delete
             )
         }).join("");
     let body = format_sstr!(
@@ -340,12 +331,11 @@ async fn list_events_body(
         <table border="1" class="dataframe">
         <thead>
         <th>Event</th><th>Start Time</th><th>End Time</th>
-        <th><input type="button" name="create_event" value="Create Event" onclick="buildEvent('{}')"></th>
+        <th><input type="button" name="create_event" value="Create Event" onclick="buildEvent('{gcal_id}')"></th>
         </thead>
-        <tbody>{}</tbody>
+        <tbody>{events}</tbody>
         </table>"#,
-        cal.gcal_id,
-        events
+        gcal_id = cal.gcal_id
     );
     Ok(body)
 }
@@ -389,32 +379,29 @@ async fn event_detail_body(
                             let mut output_word = StackString::new();
                             if let Ok(url) = word.parse::<Url>() {
                                 if url.scheme() == "https" {
-                                    output_word =
-                                        format_sstr!(r#"<a href="{url}">Link</a>"#, url = url);
+                                    output_word = format_sstr!(r#"<a href="{url}">Link</a>"#);
                                 }
                             } else {
                                 output_word = word.into();
                             }
                             line_length += output_word.len();
                             if line_length > 60 {
-                                output_word = format_sstr!("<br>{}", output_word);
+                                output_word = format_sstr!("<br>{output_word}");
                                 line_length = 0;
                             }
                             output_word
                         })
                         .join(" ");
-                    format_sstr!("\t\t{}", words)
+                    format_sstr!("\t\t{words}")
                 })
                 .join("");
             output.push(format_sstr!(
-                r#"<tr text-style="center"><td>Description</td><td>{}</td></tr>"#,
-                &description
+                r#"<tr text-style="center"><td>Description</td><td>{description}</td></tr>"#,
             ));
         }
         if let Some(url) = &event.url {
             output.push(format_sstr!(
-                r#"<tr text-style="center"><td>Url</td><td><a href={url}>Link</a></td></tr>"#,
-                url = url.as_str()
+                r#"<tr text-style="center"><td>Url</td><td><a href={url}>Link</a></td></tr>"#
             ));
         }
         if let Some(location) = &event.location {
@@ -424,9 +411,7 @@ async fn event_detail_body(
             ));
             if let Some((lat, lon)) = &location.lat_lon {
                 output.push(format_sstr!(
-                    r#"<tr text-style="center"><td>Lat,Lon:</td><td>{},{}</td></tr>"#,
-                    lat,
-                    lon
+                    r#"<tr text-style="center"><td>Lat,Lon:</td><td>{lat},{lon}</td></tr>"#
                 ));
             }
         }
@@ -688,9 +673,7 @@ async fn link_shortener_body(
 
 fn format_short_link(domain: &str, link: &str) -> StackString {
     format_sstr!(
-        r#"<script>window.location.replace("https://{}/calendar/link/{}")</script>"#,
-        domain,
-        link
+        r#"<script>window.location.replace("https://{domain}/calendar/link/{link}")</script>"#
     )
 }
 

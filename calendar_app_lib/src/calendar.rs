@@ -40,9 +40,9 @@ pub struct Calendar {
 
 impl fmt::Display for Calendar {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(
+        writeln!(
             f,
-            "name: {}\tid: {}\n{}{}{}{}\n",
+            "name: {}\tid: {}\n{}{}{}{}",
             self.name,
             self.gcal_id,
             self.gcal_name.as_ref().map_or("", StackString::as_str),
@@ -130,22 +130,22 @@ impl fmt::Display for Event {
         if let Some(description) = &self.description {
             let description = description
                 .split('\n')
-                .map(|x| format_sstr!("\t\t{}", x))
+                .map(|x| format_sstr!("\t\t{x}"))
                 .join("\n");
-            writeln!(f, "{}", description)?;
+            f.write_str(&description)?;
         }
         if let Some(url) = &self.url {
-            writeln!(f, "\t\t{}", url.as_str())?;
+            writeln!(f, "\t\t{url}")?;
         }
         if let Some(location) = &self.location {
             writeln!(f, "\t\t{}", location.name)?;
             if let Some((lat, lon)) = &location.lat_lon {
-                writeln!(f, "\t\t{} {}", lat, lon)?;
+                writeln!(f, "\t\t{lat} {lon}")?;
             }
         }
         writeln!(
             f,
-            "\t\t{} - {}\n",
+            "\t\t{} - {}",
             self.start_time.with_timezone(&Local),
             self.end_time.with_timezone(&Local)
         )
@@ -327,9 +327,8 @@ impl Event {
             {
                 if let Some(result) = result.pop() {
                     short_url.replace(format_sstr!(
-                        "https://{}/calendar/link/{}",
-                        domain,
-                        &result.shortened_url
+                        "https://{domain}/calendar/link/{url}",
+                        url = result.shortened_url
                     ));
                 }
             }
@@ -338,9 +337,8 @@ impl Event {
                 {
                     if result.insert_shortened_link(pool).await.is_ok() {
                         short_url.replace(format_sstr!(
-                            "https://{}/calendar/link/{}",
-                            domain,
-                            &result.shortened_url
+                            "https://{domain}/calendar/link/{url}",
+                            url = result.shortened_url
                         ));
                     }
                 }
@@ -354,12 +352,10 @@ impl Event {
         let start_time = get_default_or_local_time(self.start_time, config);
 
         format_sstr!(
-            "{} {} {} {} {}",
-            start_time,
-            self.name,
-            self.gcal_id,
-            self.event_id,
-            url,
+            "{start_time} {n} {i} {e} {url}",
+            n = self.name,
+            i = self.gcal_id,
+            e = self.event_id,
         )
     }
 }
