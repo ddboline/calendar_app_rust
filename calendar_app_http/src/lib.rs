@@ -64,8 +64,6 @@ derive_rweb_schema!(CalendarCacheWrapper, _CalendarCacheWrapper);
 #[allow(dead_code)]
 #[derive(Schema)]
 struct _CalendarCacheWrapper {
-    #[schema(description = "Calendar ID")]
-    id: i32,
     #[schema(description = "Gcal Calendar ID")]
     gcal_id: StackString,
     #[schema(description = "Calendar Event ID")]

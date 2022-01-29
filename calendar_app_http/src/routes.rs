@@ -541,8 +541,6 @@ async fn calendar_cache_events(
 
 #[derive(Clone, Debug, Serialize, Deserialize, Schema)]
 pub struct CalendarCacheRequest {
-    #[schema(description = "Calendar ID")]
-    pub id: i32,
     #[schema(description = "GCal Calendar ID")]
     pub gcal_id: StackString,
     #[schema(description = "Calendar Event ID")]
