@@ -3,7 +3,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: "Web App to Display Calendar, Sync with GCal"
-  version: 0.5.5
+  version: 0.5.13
 paths:
   /calendar/index.html:
     get:
@@ -402,9 +402,6 @@ paths:
               schema:
                 items:
                   properties:
-                    id:
-                      description: Calendar ID
-                      type: integer
                     gcal_id:
                       description: Gcal Calendar ID
                       type: string
@@ -448,7 +445,6 @@ paths:
                       type: string
                   type: object
                   required:
-                    - id
                     - gcal_id
                     - event_id
                     - event_start_time
@@ -474,9 +470,6 @@ paths:
                   description: Calendar Events Update
                   items:
                     properties:
-                      id:
-                        description: Calendar ID
-                        type: integer
                       gcal_id:
                         description: GCal Calendar ID
                         type: string
@@ -520,7 +513,6 @@ paths:
                         type: string
                     type: object
                     required:
-                      - id
                       - gcal_id
                       - event_id
                       - event_start_time
@@ -540,9 +532,6 @@ paths:
               schema:
                 items:
                   properties:
-                    id:
-                      description: Calendar ID
-                      type: integer
                     gcal_id:
                       description: Gcal Calendar ID
                       type: string
@@ -586,7 +575,6 @@ paths:
                       type: string
                   type: object
                   required:
-                    - id
                     - gcal_id
                     - event_id
                     - event_start_time
