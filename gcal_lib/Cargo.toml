@@ -1,6 +1,6 @@
 [package]
 name = "gcal_lib"
-version = "0.5.14"
+version = "0.5.15"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -20,8 +20,8 @@ env_logger = "0.9"
 deadqueue = "0.2"
 async-google-apis-common = { git = "https://github.com/ddboline/async-google-apis.git" }
 tokio = {version="1.17", features=["full"]}
-stack-string = { version="0.6", features=["postgres_types"] }
-stdout-channel = "0.4"
+stack-string = { version="0.7", features=["postgres_types"] }
+stdout-channel = "0.5"
 
 [dev-dependencies]
 calendar_app_lib = {path="../calendar_app_lib"}
