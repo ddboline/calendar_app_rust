@@ -243,7 +243,7 @@ impl Event {
     ) -> Self {
         Self {
             gcal_id: gcal_id.into(),
-            event_id: Uuid::new_v4().to_string().replace("-", "").into(),
+            event_id: Uuid::new_v4().to_string().replace('-', "").into(),
             start_time,
             end_time,
             url: None,
