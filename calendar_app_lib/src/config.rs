@@ -70,10 +70,13 @@ fn default_secret_path() -> PathBuf {
 }
 
 impl Config {
+    #[must_use]
     pub fn new() -> Self {
         Self::default()
     }
 
+    /// # Errors
+    /// Returns error if config init fails
     pub fn init_config() -> Result<Self, Error> {
         let fname = Path::new("config.env");
         let config_dir = dirs::config_dir().ok_or_else(|| format_err!("No CONFIG directory"))?;

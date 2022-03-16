@@ -16,6 +16,8 @@ use crate::{
 const CALID: &str = "8hfjg0d8ls2od3s9bd1k1v9jtc@group.calendar.google.com";
 const URL: &str = "https://hashnyc.com/?days=all";
 
+/// # Errors
+/// Return error if parsing datetime string fails
 pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
     let mut events = Vec::new();
     for table in Document::from(body).find(Name("table")) {
@@ -88,6 +90,8 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
     Ok(events)
 }
 
+/// # Errors
+/// Return error if `get_by_gcal_id` fails, reqwest call fals, `parse_nycruns_text` fails, or any db update fails.
 pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?

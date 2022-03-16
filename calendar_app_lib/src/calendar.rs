@@ -1,4 +1,3 @@
-use anyhow::{format_err, Error};
 use chrono::{DateTime, Local, NaiveDate, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
@@ -90,6 +89,7 @@ impl From<Calendar> for CalendarList {
 }
 
 impl Calendar {
+    #[must_use]
     pub fn from_gcal_entry(item: &CalendarListEntry) -> Option<Self> {
         if item.deleted.unwrap_or(false) {
             None
@@ -253,10 +253,7 @@ impl Event {
         }
     }
 
-    pub fn from_gcal_event(
-        item: &GCalEvent,
-        gcal_id: impl Into<StackString>,
-    ) -> Result<Self, Error> {
+    pub fn from_gcal_event(item: &GCalEvent, gcal_id: impl Into<StackString>) -> Option<Self> {
         let mut loc = None;
         if let Some(name) = &item.location {
             let location = Location {
@@ -265,35 +262,20 @@ impl Event {
             };
             loc.replace(location);
         }
-        Ok(Self {
+        Some(Self {
             gcal_id: gcal_id.into(),
-            event_id: item
-                .id
-                .as_ref()
-                .ok_or_else(|| format_err!("No event id"))?
-                .into(),
-            start_time: item
-                .start
-                .as_ref()
-                .and_then(from_gcal_eventdatetime)
-                .ok_or_else(|| format_err!("No start time"))?,
-            end_time: item
-                .end
-                .as_ref()
-                .and_then(from_gcal_eventdatetime)
-                .ok_or_else(|| format_err!("No start time"))?,
+            event_id: item.id.as_ref()?.into(),
+            start_time: item.start.as_ref().and_then(from_gcal_eventdatetime)?,
+            end_time: item.end.as_ref().and_then(from_gcal_eventdatetime)?,
             url: item.html_link.as_ref().and_then(|u| u.parse().ok()),
-            name: item
-                .summary
-                .as_ref()
-                .ok_or_else(|| format_err!("No name for event"))?
-                .into(),
+            name: item.summary.as_ref()?.into(),
             description: item.description.as_ref().map(Into::into),
             location: loc,
         })
     }
 
-    pub fn to_gcal_event(&self) -> Result<(StackString, GCalEvent), Error> {
+    #[must_use]
+    pub fn to_gcal_event(&self) -> (StackString, GCalEvent) {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
@@ -309,7 +291,7 @@ impl Event {
             location: self.location.as_ref().map(|l| l.name.to_string()),
             ..GCalEvent::default()
         };
-        Ok((self.gcal_id.clone(), event))
+        (self.gcal_id.clone(), event)
     }
 
     pub async fn get_summary(
@@ -398,10 +380,10 @@ mod tests {
             Utc::now() + Duration::days(1),
             Utc::now() + Duration::days(1) + Duration::hours(1),
         );
-        let (cal_id, event) = event.to_gcal_event()?;
+        let (cal_id, event) = event.to_gcal_event();
         let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
         let event_id = event.id.clone().unwrap();
-        let event = Event::from_gcal_event(&event, cal_id.as_str())?;
+        let event = Event::from_gcal_event(&event, cal_id.as_str()).unwrap();
         assert_eq!(event.name.as_str(), "Test Event");
         gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str())
             .await?;

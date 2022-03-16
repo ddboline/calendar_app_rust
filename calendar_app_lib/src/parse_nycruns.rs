@@ -19,6 +19,8 @@ const CALID: &str = "ufdpqtvophgg2qn643rducu1a4@group.calendar.google.com";
 const BASE_URL: &str = "https://nycruns.com";
 const URL: &str = "https://nycruns.com/races/?show=registerable";
 
+/// # Errors
+/// Return error if parsing datetime fails
 pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
     let mut events = Vec::new();
     for race in Document::from(body).find(Class("_race")) {
@@ -88,6 +90,8 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
     Ok(events)
 }
 
+/// # Errors
+/// Return error if `get_by_gcal_id` fails, reqwest call fals, `parse_nycruns_text` fails, or any db update fails.
 pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?

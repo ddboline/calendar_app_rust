@@ -23,6 +23,7 @@ pub struct CalendarList {
 }
 
 impl CalendarList {
+    #[must_use]
     pub fn new(calendar_name: &str, gcal_id: &str) -> Self {
         Self {
             calendar_name: calendar_name.into(),
@@ -38,12 +39,16 @@ impl CalendarList {
         }
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!("SELECT * FROM calendar_list");
         let conn = pool.get().await?;
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
         Self::get_by_gcal_id_conn(gcal_id, &conn)
@@ -51,6 +56,8 @@ impl CalendarList {
             .map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_gcal_id_conn<C>(gcal_id: &str, conn: &C) -> Result<Option<Self>, Error>
     where
         C: GenericClient + Sync,
@@ -62,6 +69,8 @@ impl CalendarList {
         query.fetch_opt(conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn update_display(&self, pool: &PgPool) -> Result<(), Error> {
         let query = query!(
             r#"
@@ -77,6 +86,8 @@ impl CalendarList {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn update(&self, pool: &PgPool) -> Result<(), Error> {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
@@ -85,6 +96,7 @@ impl CalendarList {
         tran.commit().await?;
         Ok(())
     }
+
     async fn update_conn<C>(&self, conn: &C) -> Result<(), Error>
     where
         C: GenericClient + Sync,
@@ -111,6 +123,8 @@ impl CalendarList {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
         #[derive(FromSqlRow, Into)]
         struct Wrap(DateTime<Utc>);
@@ -121,6 +135,8 @@ impl CalendarList {
         Ok(result.map(Into::into))
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!(
             r#"
@@ -161,6 +177,8 @@ impl CalendarList {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn upsert(&self, pool: &PgPool) -> Result<Option<Self>, Error> {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
@@ -193,12 +211,16 @@ pub struct CalendarCache {
 }
 
 impl CalendarCache {
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_all_events(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         let query = query!("SELECT * FROM calendar_cache");
         let conn = pool.get().await?;
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         let query = query!(
             "SELECT * FROM calendar_cache WHERE gcal_id=$gcal_id",
@@ -208,6 +230,8 @@ impl CalendarCache {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_gcal_id_event_id(
         gcal_id: impl AsRef<str>,
         event_id: impl AsRef<str>,
@@ -240,6 +264,8 @@ impl CalendarCache {
         query.fetch_opt(conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_datetime(
         min_time: DateTime<Utc>,
         max_time: DateTime<Utc>,
@@ -258,6 +284,8 @@ impl CalendarCache {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_gcal_id_datetime(
         gcal_id: &str,
         min_time: Option<DateTime<Utc>>,
@@ -291,6 +319,8 @@ impl CalendarCache {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn update(&self, pool: &PgPool) -> Result<(), Error> {
         let conn = pool.get().await?;
         self.update_conn(&conn).await?;
@@ -330,6 +360,8 @@ impl CalendarCache {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn delete(&self, pool: &PgPool) -> Result<(), Error> {
         let query = query!(
             "DELETE FROM calendar_cache WHERE event_id=$event_id AND gcal_id=$gcal_id",
@@ -341,6 +373,8 @@ impl CalendarCache {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
         #[derive(FromSqlRow, Into)]
         struct Wrap(DateTime<Utc>);
@@ -350,6 +384,8 @@ impl CalendarCache {
         Ok(result.map(Into::into))
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!(
             "SELECT * FROM calendar_cache WHERE last_modified >= $modified",
@@ -359,6 +395,8 @@ impl CalendarCache {
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn insert(&self, pool: &PgPool) -> Result<(), Error> {
         let conn = pool.get().await?;
         self.insert_conn(&conn).await?;
@@ -396,6 +434,8 @@ impl CalendarCache {
         Ok(())
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn upsert(&self, pool: &PgPool) -> Result<(), Error> {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
@@ -421,12 +461,16 @@ pub struct AuthorizedUsers {
 }
 
 impl AuthorizedUsers {
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!("SELECT * FROM authorized_users");
         let conn = pool.get().await?;
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn update_authorized_users(&self, pool: &PgPool) -> Result<(), Error> {
         let query = query!(
             r#"
@@ -453,6 +497,8 @@ pub struct ShortenedLinks {
 }
 
 impl ShortenedLinks {
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_original_url(
         original_url: &str,
         pool: &PgPool,
@@ -474,6 +520,8 @@ impl ShortenedLinks {
         query.fetch(conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_by_shortened_url(
         shortened_url: &str,
         pool: &PgPool,
@@ -498,12 +546,16 @@ impl ShortenedLinks {
         query.fetch_opt(conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!("SELECT * FROM shortened_links");
         let conn = pool.get().await?;
         query.fetch(&conn).await.map_err(Into::into)
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn get_or_create(original_url: &str, pool: &PgPool) -> Result<Self, Error> {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
@@ -548,6 +600,8 @@ impl ShortenedLinks {
         }
     }
 
+    /// # Errors
+    /// Returns error if db query fails
     pub async fn insert_shortened_link(&self, pool: &PgPool) -> Result<(), Error> {
         let conn = pool.get().await?;
         self.insert_shortened_link_conn(&conn).await?;

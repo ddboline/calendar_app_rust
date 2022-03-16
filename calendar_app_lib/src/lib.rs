@@ -1,4 +1,3 @@
-#![allow(clippy::must_use_candidate)]
 #![allow(clippy::too_many_lines)]
 #![allow(clippy::module_name_repetitions)]
 #![allow(clippy::cast_precision_loss)]
@@ -6,11 +5,6 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::similar_names)]
-#![allow(clippy::shadow_unrelated)]
-#![allow(clippy::missing_errors_doc)]
-#![allow(clippy::used_underscore_binding)]
-#![allow(clippy::manual_range_contains)]
-#![allow(clippy::default_trait_access)]
 
 pub mod calendar;
 pub mod calendar_cli_opts;
@@ -30,6 +24,7 @@ use stack_string::StackString;
 
 use crate::config::Config;
 
+#[must_use]
 pub fn get_default_or_local_time(dt: DateTime<Utc>, config: &Config) -> StackString {
     match config.default_time_zone {
         Some(tz) => {

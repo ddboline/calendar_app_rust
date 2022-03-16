@@ -30,6 +30,8 @@ pub struct AppState {
     pub shortened_urls: Arc<UrlCache>,
 }
 
+/// # Errors
+/// Returns error if `init_config` or `get_secrets` fail
 pub async fn start_app() -> Result<(), Error> {
     let config = Config::init_config()?;
     get_secrets(&config.secret_path, &config.jwt_secret_path).await?;

@@ -54,6 +54,8 @@ fn login_html() -> impl Reply {
     )
 }
 
+/// # Errors
+/// Function is `Infallible` and never returns an error
 pub async fn error_response(err: Rejection) -> Result<Box<dyn Reply>, Infallible> {
     let code: StatusCode;
     let message: &str;

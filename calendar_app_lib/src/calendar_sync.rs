@@ -48,6 +48,8 @@ impl CalendarSync {
         }
     }
 
+    /// # Errors
+    /// Returns error if any `upsert` call fails
     pub async fn sync_calendar_list(&self) -> Result<Vec<CalendarList>, Error> {
         let calendar_list = self
             .gcal
@@ -84,7 +86,7 @@ impl CalendarSync {
                     .send(format_sstr!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
-            let event: CalendarCache = Event::from_gcal_event(item, gcal_id)?.into();
+            let event: CalendarCache = Event::from_gcal_event(item, gcal_id).ok_or_else(|| format_err!("Failed to convert event"))?.into();
             if upsert {
                 event.upsert(&self.pool).await?;
                 Ok(Some(event))
@@ -120,7 +122,7 @@ impl CalendarSync {
             async move {
                 let event_id = item.event_id.as_str();
                 let event: Event = item.clone().into();
-                let (gcal_id, event) = event.to_gcal_event()?;
+                let (gcal_id, event) = event.to_gcal_event();
                 if let Some(gcal_event) = event_map.get(event_id) {
                     let update = update
                         && gcal_event
@@ -158,6 +160,8 @@ impl CalendarSync {
         Ok(result?.into_iter().flatten().collect())
     }
 
+    /// # Errors
+    /// Returns error if api calls fail
     pub async fn sync_full_calendar(
         &self,
         gcal_id: &str,
@@ -183,6 +187,8 @@ impl CalendarSync {
         Ok((exported, imported))
     }
 
+    /// # Errors
+    /// Returns error if api calls fail
     pub async fn sync_future_events(
         &self,
         gcal_id: &str,
@@ -209,6 +215,8 @@ impl CalendarSync {
         Ok((exported, imported))
     }
 
+    /// # Errors
+    /// Returns error if api calls fail
     pub async fn run_syncing(&self, full: bool) -> Result<Vec<StackString>, Error> {
         let mut output = Vec::new();
 
@@ -253,6 +261,8 @@ impl CalendarSync {
         Ok(output)
     }
 
+    /// # Errors
+    /// Returns error if api calls fail
     pub async fn list_agenda(
         &self,
         days_before: i64,
@@ -284,6 +294,8 @@ impl CalendarSync {
         Ok(events)
     }
 
+    /// # Errors
+    /// Returns error if `get_calendars` fails
     pub async fn list_calendars(&self) -> Result<impl Iterator<Item = Calendar>, Error> {
         let calendars = CalendarList::get_calendars(&self.pool)
             .await?
@@ -292,6 +304,8 @@ impl CalendarSync {
         Ok(calendars)
     }
 
+    /// # Errors
+    /// Returns error if `get_by_gcal_id_datetime` fails
     pub async fn list_events(
         &self,
         gcal_id: &str,

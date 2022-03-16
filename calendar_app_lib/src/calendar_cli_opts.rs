@@ -87,6 +87,8 @@ pub struct CalendarCliOpts {
 }
 
 impl CalendarCliOpts {
+    /// # Errors
+    /// Returns error if api calls fail
     pub async fn parse_opts() -> Result<(), Error> {
         let opts = Self::from_args();
         let action = opts.action.unwrap_or(CalendarActions::PrintAgenda);
