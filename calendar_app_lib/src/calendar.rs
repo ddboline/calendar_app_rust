@@ -353,7 +353,7 @@ mod tests {
     use crate::{calendar::Event, config::Config};
 
     #[test]
-    fn test_new_evet() {
+    fn test_new_event() {
         let event = Event::new(
             "ddboline@gmail.com",
             "Test event",
@@ -385,6 +385,7 @@ mod tests {
         let event_id = event.id.clone().unwrap();
         let event = Event::from_gcal_event(&event, cal_id.as_str()).unwrap();
         assert_eq!(event.name.as_str(), "Test Event");
+
         gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str())
             .await?;
         Ok(())
