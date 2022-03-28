@@ -85,7 +85,9 @@ impl CalendarSync {
                     .send(format_sstr!("{:?} {:?}", item.start, item.description));
                 return Ok(None);
             }
-            let event: CalendarCache = Event::from_gcal_event(item, gcal_id).ok_or_else(|| format_err!("Failed to convert event"))?.into();
+            let event: CalendarCache = Event::from_gcal_event(item, gcal_id)
+                .ok_or_else(|| format_err!("Failed to convert event"))?
+                .into();
             if upsert {
                 event.upsert(&self.pool).await?;
                 Ok(Some(event))

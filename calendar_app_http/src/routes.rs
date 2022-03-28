@@ -8,7 +8,7 @@ use rweb_helper::{
 };
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
-use std::{collections::HashMap};
+use std::collections::HashMap;
 use url::Url;
 
 use calendar_app_lib::{

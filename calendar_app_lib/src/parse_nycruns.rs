@@ -91,7 +91,8 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
 }
 
 /// # Errors
-/// Return error if `get_by_gcal_id` fails, reqwest call fals, `parse_nycruns_text` fails, or any db update fails.
+/// Return error if `get_by_gcal_id` fails, reqwest call fals,
+/// `parse_nycruns_text` fails, or any db update fails.
 pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?

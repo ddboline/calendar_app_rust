@@ -3,7 +3,7 @@ use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use refinery::embed_migrations;
 use stack_string::{format_sstr, StackString};
-use std::{path::PathBuf};
+use std::path::PathBuf;
 use structopt::StructOpt;
 use tokio::{
     fs::{read, File},

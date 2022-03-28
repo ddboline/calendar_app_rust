@@ -145,9 +145,7 @@ mod tests {
     use anyhow::Error;
     use maplit::hashmap;
     use stack_string::format_sstr;
-    use std::{
-        env::{remove_var, set_var},
-    };
+    use std::env::{remove_var, set_var};
 
     use auth_server_http::app::run_test_app;
     use auth_server_lib::get_random_string;
