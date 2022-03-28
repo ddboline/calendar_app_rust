@@ -2,7 +2,7 @@ use chrono::{DateTime, Local, NaiveDate, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
-use std::{convert::TryInto, fmt, fmt::Write};
+use std::{convert::TryInto, fmt};
 use url::Url;
 use uuid::Uuid;
 

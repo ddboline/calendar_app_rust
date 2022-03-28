@@ -5,7 +5,7 @@ use futures::future::try_join_all;
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
 use stack_string::{format_sstr, StackString};
-use std::{collections::HashMap, fmt::Write, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 
 use crate::{
     calendar::{Event, Location},

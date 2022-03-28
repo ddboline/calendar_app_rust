@@ -6,7 +6,7 @@ use rweb::{
     Filter, Reply,
 };
 use stack_string::{format_sstr, StackString};
-use std::{collections::HashMap, fmt::Write, net::SocketAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{sync::RwLock, time::interval};
 
 use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
@@ -147,7 +147,6 @@ mod tests {
     use stack_string::format_sstr;
     use std::{
         env::{remove_var, set_var},
-        fmt::Write,
     };
 
     use auth_server_http::app::run_test_app;

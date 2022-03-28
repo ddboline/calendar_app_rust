@@ -6,7 +6,7 @@ use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
 use stack_string::{format_sstr, StackString};
-use std::{collections::HashMap, fmt::Write, sync::Arc};
+use std::{collections::HashMap, sync::Arc};
 use url::Url;
 
 use crate::{

@@ -4,7 +4,7 @@ use derive_more::Into;
 use postgres_query::{client::GenericClient, query, query_dyn, FromSqlRow, Parameter};
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
-use std::{cmp, fmt::Write, io};
+use std::{cmp, io};
 
 use crate::pgpool::{PgPool, PgTransaction};
 

@@ -7,7 +7,7 @@ use common::{
 };
 use log::debug;
 use stack_string::{format_sstr, StackString};
-use std::{fmt::Write, fs::create_dir_all, path::Path, sync::Arc};
+use std::{fs::create_dir_all, path::Path, sync::Arc};
 
 use stdout_channel::rate_limiter::RateLimiter;
 

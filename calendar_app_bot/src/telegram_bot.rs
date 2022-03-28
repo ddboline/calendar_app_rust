@@ -6,7 +6,7 @@ use futures::{try_join, StreamExt};
 use im::HashMap;
 use lazy_static::lazy_static;
 use stack_string::{format_sstr, StackString};
-use std::{collections::VecDeque, fmt::Write, sync::Arc};
+use std::{collections::VecDeque, sync::Arc};
 use telegram_bot::{
     types::Update, Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind,
     ToChatRef, UpdateKind, UserId,
