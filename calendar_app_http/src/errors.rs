@@ -13,6 +13,7 @@ use serde::Serialize;
 use stack_string::StackString;
 use std::{borrow::Cow, convert::Infallible, fmt::Debug};
 use thiserror::Error;
+use time_tz::system::Error as TzError;
 use tokio::task::JoinError;
 
 use crate::logged_user::TRIGGER_DB_UPDATE;
@@ -31,6 +32,8 @@ pub enum ServiceError {
     IoError(#[from] std::io::Error),
     #[error("tokio join error {0}")]
     JoinError(#[from] JoinError),
+    #[error("TzError {0}")]
+    TzError(#[from] TzError),
 }
 
 impl Reject for ServiceError {}

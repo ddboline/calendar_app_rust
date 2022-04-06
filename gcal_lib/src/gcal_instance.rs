@@ -1,9 +1,8 @@
 use anyhow::{format_err, Error};
 use async_google_apis_common as common;
-use chrono::{DateTime, Utc, MAX_DATETIME, MIN_DATETIME};
 use common::{
     yup_oauth2::{self, InstalledFlowAuthenticator},
-    TlsClient,
+    OffsetDateTime, TlsClient,
 };
 use log::debug;
 use stack_string::{format_sstr, StackString};
@@ -122,14 +121,14 @@ impl GCalendarInstance {
     async fn gcal_events(
         &self,
         gcal_id: &str,
-        min_time: Option<DateTime<Utc>>,
-        max_time: Option<DateTime<Utc>>,
+        time_min: Option<OffsetDateTime>,
+        time_max: Option<OffsetDateTime>,
         next_page_token: Option<&str>,
     ) -> Result<Events, Error> {
         let params = EventsListParams {
             calendar_id: gcal_id.into(),
-            time_min: Some(min_time.unwrap_or(MIN_DATETIME)),
-            time_max: Some(max_time.unwrap_or(MAX_DATETIME)),
+            time_min: time_min.map(Into::into),
+            time_max: time_max.map(Into::into),
             page_token: next_page_token.map(Into::into),
             ..EventsListParams::default()
         };
@@ -143,8 +142,8 @@ impl GCalendarInstance {
     pub async fn get_gcal_events(
         &self,
         gcal_id: &str,
-        min_time: Option<DateTime<Utc>>,
-        max_time: Option<DateTime<Utc>>,
+        min_time: Option<OffsetDateTime>,
+        max_time: Option<OffsetDateTime>,
     ) -> Result<Vec<Event>, Error> {
         let mut output = Vec::new();
         let mut next_page_token: Option<StackString> = None;
@@ -193,6 +192,7 @@ impl GCalendarInstance {
             ..EventsInsertParams::default()
         };
         self.rate_limit.acquire().await;
+        println!("cal_events {:?}", gcal_event);
         self.cal_events.insert(&params, &gcal_event).await
     }
 
@@ -231,14 +231,13 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
             == event1.start.as_ref().map(|s| s.date.as_ref()))
         && (event0.start.as_ref().map(|s| s.time_zone.as_ref())
             == event1.start.as_ref().map(|s| s.time_zone.as_ref()))
-        && (event0.start.as_ref().map(|s| s.date_time.as_ref())
-            == event1.start.as_ref().map(|s| s.date_time.as_ref()))
+        && (event0.start.as_ref().map(|s| s.date_time)
+            == event1.start.as_ref().map(|s| s.date_time))
         && (event0.end.as_ref().map(|s| s.date.as_ref())
             == event1.end.as_ref().map(|s| s.date.as_ref()))
         && (event0.end.as_ref().map(|s| s.time_zone.as_ref())
             == event1.end.as_ref().map(|s| s.time_zone.as_ref()))
-        && (event0.end.as_ref().map(|s| s.date_time.as_ref())
-            == event1.end.as_ref().map(|s| s.date_time.as_ref()))
+        && (event0.end.as_ref().map(|s| s.date_time) == event1.end.as_ref().map(|s| s.date_time))
         && (event0.summary == event1.summary)
         && (event0.description == event1.description)
         && (event0.location == event1.location)
@@ -247,8 +246,8 @@ pub fn compare_gcal_events(event0: &Event, event1: &Event) -> bool {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
-    use chrono::{Duration, Utc};
     use log::debug;
+    use time::{Duration, OffsetDateTime};
 
     use calendar_app_lib::config::Config;
 
@@ -277,11 +276,12 @@ mod tests {
             "ddboline@gmail.com",
         )
         .await?;
+        let now = OffsetDateTime::now_utc();
         let events = gcal
             .get_gcal_events(
                 "ddboline@gmail.com",
-                Some(Utc::now() - Duration::days(10)),
-                Some(Utc::now() + Duration::days(10)),
+                Some(now - Duration::days(10)),
+                Some(now + Duration::days(10)),
             )
             .await?;
         debug!("{:#?}", events);

@@ -10,10 +10,9 @@ pub mod errors;
 pub mod logged_user;
 pub mod routes;
 
-use chrono::{DateTime, Utc};
 use derive_more::{From, Into};
 use rweb::Schema;
-use rweb_helper::derive_rweb_schema;
+use rweb_helper::{derive_rweb_schema, DateTimeType};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 
@@ -42,7 +41,7 @@ struct _CalendarListWrapper {
     #[schema(description = "Sync Flag")]
     sync: bool,
     #[schema(description = "Last Modified")]
-    last_modified: DateTime<Utc>,
+    last_modified: DateTimeType,
     #[schema(description = "Edit Flag")]
     edit: bool,
     #[schema(description = "Display Flag")]
@@ -62,9 +61,9 @@ struct _CalendarCacheWrapper {
     #[schema(description = "Calendar Event ID")]
     event_id: StackString,
     #[schema(description = "Event Start Time")]
-    event_start_time: DateTime<Utc>,
+    event_start_time: DateTimeType,
     #[schema(description = "Event End Time")]
-    event_end_time: DateTime<Utc>,
+    event_end_time: DateTimeType,
     #[schema(description = "Event URL")]
     event_url: Option<StackString>,
     #[schema(description = "Event Name")]
@@ -78,7 +77,7 @@ struct _CalendarCacheWrapper {
     #[schema(description = "Event Location Longitude")]
     event_location_lon: Option<f64>,
     #[schema(description = "Last Modified")]
-    last_modified: DateTime<Utc>,
+    last_modified: DateTimeType,
 }
 
 #[cfg(test)]

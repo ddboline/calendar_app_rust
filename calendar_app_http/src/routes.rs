@@ -1,14 +1,16 @@
 use anyhow::format_err;
-use chrono::{DateTime, Duration, Local, NaiveDate, NaiveDateTime, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
-    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, RwebResponse,
+    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, DateTimeType,
+    DateType, RwebResponse,
 };
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::collections::HashMap;
+use time::{macros::format_description, Duration, OffsetDateTime};
+use time_tz::OffsetDateTimeExt;
 use url::Url;
 
 use calendar_app_lib::{
@@ -16,6 +18,7 @@ use calendar_app_lib::{
     calendar_sync::CalendarSync,
     get_default_or_local_time,
     models::{CalendarCache, CalendarList, ShortenedLinks},
+    timezone::TimeZone,
 };
 
 use crate::{
@@ -262,9 +265,9 @@ pub struct ListEventsRequest {
     #[schema(description = "Calendar Name")]
     pub calendar_name: StackString,
     #[schema(description = "Earliest Date")]
-    pub min_time: Option<NaiveDate>,
+    pub min_time: Option<DateType>,
     #[schema(description = "Latest Date")]
-    pub max_time: Option<NaiveDate>,
+    pub max_time: Option<DateType>,
 }
 
 #[derive(RwebResponse)]
@@ -439,7 +442,7 @@ async fn event_detail_body(
 #[derive(Serialize, Deserialize, Schema)]
 pub struct MinModifiedQuery {
     #[schema(description = "")]
-    pub min_modified: Option<DateTime<Utc>>,
+    pub min_modified: Option<DateTimeType>,
 }
 
 #[derive(RwebResponse)]
@@ -463,7 +466,7 @@ async fn calendar_list_object(
 ) -> HttpResult<Vec<CalendarListWrapper>> {
     let min_modified = query
         .min_modified
-        .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
+        .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
     let cal_list = CalendarList::get_recent(min_modified, &cal_sync.pool)
         .await?
         .into_iter()
@@ -533,7 +536,7 @@ async fn calendar_cache_events(
 ) -> HttpResult<Vec<CalendarCache>> {
     let min_modified = query
         .min_modified
-        .map_or_else(|| Utc::now() - Duration::days(7), Into::into);
+        .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
     CalendarCache::get_recent(min_modified, &cal_sync.pool)
         .await
         .map_err(Into::into)
@@ -546,9 +549,9 @@ pub struct CalendarCacheRequest {
     #[schema(description = "Calendar Event ID")]
     pub event_id: StackString,
     #[schema(description = "Event Start Time")]
-    pub event_start_time: DateTime<Utc>,
+    pub event_start_time: DateTimeType,
     #[schema(description = "Event End Time")]
-    pub event_end_time: DateTime<Utc>,
+    pub event_end_time: DateTimeType,
     #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
     #[schema(description = "Event Name")]
@@ -562,7 +565,7 @@ pub struct CalendarCacheRequest {
     #[schema(description = "Event Location Longitude")]
     pub event_location_lon: Option<f64>,
     #[schema(description = "Last Modified")]
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: DateTimeType,
 }
 
 impl From<CalendarCacheRequest> for CalendarCache {
@@ -570,15 +573,15 @@ impl From<CalendarCacheRequest> for CalendarCache {
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time,
-            event_end_time: item.event_end_time,
+            event_start_time: item.event_start_time.into(),
+            event_end_time: item.event_end_time.into(),
             event_url: item.event_url.map(Into::into),
             event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified,
+            last_modified: item.last_modified.into(),
         }
     }
 }
@@ -708,7 +711,14 @@ async fn build_calendar_event_body(
         None
     };
     let event = event.map_or_else(
-        || Event::new(query.gcal_id, StackString::new(), Utc::now(), Utc::now()),
+        || {
+            Event::new(
+                query.gcal_id,
+                StackString::new(),
+                OffsetDateTime::now_utc(),
+                OffsetDateTime::now_utc(),
+            )
+        },
         Into::into,
     );
     let body = format_sstr!(
@@ -729,10 +739,18 @@ async fn build_calendar_event_body(
     "#,
         gcal_id = event.gcal_id,
         event_id = event.event_id,
-        start_date = event.start_time.naive_local().date(),
-        start_time = event.start_time.naive_local().time().format("%H:%M"),
-        end_date = event.end_time.naive_local().date(),
-        end_time = event.end_time.naive_local().time().format("%H:%M"),
+        start_date = event.start_time.date(),
+        start_time = event
+            .start_time
+            .time()
+            .format(format_description!("[hour]:[minute]"))
+            .unwrap_or_else(|_| "00:00".into()),
+        end_date = event.end_time.date(),
+        end_time = event
+            .end_time
+            .time()
+            .format(format_description!("[hour]:[minute]"))
+            .unwrap_or_else(|_| "00:00".into()),
         event_name = event.name,
         event_location_name = event.location.as_ref().map_or("", |l| l.name.as_str()),
         event_description = event.description.as_ref().map_or("", StackString::as_str),
@@ -747,9 +765,9 @@ pub struct CreateCalendarEventRequest {
     #[schema(description = "Event ID")]
     pub event_id: StackString,
     #[schema(description = "Event Start Time")]
-    pub event_start_datetime: NaiveDateTime,
+    pub event_start_datetime: DateTimeType,
     #[schema(description = "Event End Time")]
-    pub event_end_datetime: NaiveDateTime,
+    pub event_end_datetime: DateTimeType,
     #[schema(description = "Event URL")]
     pub event_url: Option<StackString>,
     #[schema(description = "Event Name")]
@@ -783,18 +801,9 @@ async fn create_calendar_event_body(
     payload: CreateCalendarEventRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<String> {
-    let start_datetime = payload.event_start_datetime;
-    let start_datetime = Local
-        .from_local_datetime(&start_datetime)
-        .single()
-        .unwrap()
-        .with_timezone(&Utc);
-    let end_datetime = payload.event_end_datetime;
-    let end_datetime = Local
-        .from_local_datetime(&end_datetime)
-        .single()
-        .unwrap()
-        .with_timezone(&Utc);
+    let local = TimeZone::local().into();
+    let start_datetime = payload.event_start_datetime.to_timezone(local);
+    let end_datetime = payload.event_end_datetime.to_timezone(local);
 
     let event = CalendarCache {
         gcal_id: payload.gcal_id,
@@ -807,7 +816,7 @@ async fn create_calendar_event_body(
         event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
-        last_modified: Utc::now(),
+        last_modified: OffsetDateTime::now_utc(),
     };
 
     event.upsert(&cal_sync.pool).await?;

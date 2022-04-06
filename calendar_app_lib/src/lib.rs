@@ -18,19 +18,34 @@ pub mod parse_nycruns;
 pub mod pgpool;
 pub mod timezone;
 
-use chrono::{DateTime, Local, Utc};
-use chrono_tz::Tz;
+use anyhow::Error;
+use derive_more::{From, Into};
 use stack_string::StackString;
+use std::str::FromStr;
+use time::{
+    format_description::well_known::Rfc3339, macros::format_description, Date, OffsetDateTime,
+};
+use time_tz::OffsetDateTimeExt;
 
-use crate::config::Config;
+use crate::{config::Config, timezone::TimeZone};
 
 #[must_use]
-pub fn get_default_or_local_time(dt: DateTime<Utc>, config: &Config) -> StackString {
-    match config.default_time_zone {
-        Some(tz) => {
-            let tz: Tz = tz.into();
-            StackString::from_display(dt.with_timezone(&tz))
-        }
-        None => StackString::from_display(dt.with_timezone(&Local)),
+pub fn get_default_or_local_time(dt: OffsetDateTime, config: &Config) -> StackString {
+    let tz = config.default_time_zone.unwrap_or_else(TimeZone::local);
+    match dt.to_timezone(tz.into()).format(&Rfc3339) {
+        Ok(s) => s.into(),
+        Err(_) => unreachable!(),
+    }
+}
+
+#[derive(Into, From, Debug)]
+pub struct DateType(Date);
+
+impl FromStr for DateType {
+    type Err = Error;
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        Date::parse(s, format_description!("[year]-[month]-[day]"))
+            .map(Self)
+            .map_err(Into::into)
     }
 }

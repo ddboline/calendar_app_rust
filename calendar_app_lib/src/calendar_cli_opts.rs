@@ -1,10 +1,10 @@
 use anyhow::{format_err, Error};
-use chrono::{Duration, NaiveDate, Utc};
 use futures::future::try_join_all;
 use refinery::embed_migrations;
 use stack_string::{format_sstr, StackString};
 use std::path::PathBuf;
 use structopt::StructOpt;
+use time::{Duration, OffsetDateTime};
 use tokio::{
     fs::{read, File},
     io::{stdin, stdout, AsyncReadExt, AsyncWrite, AsyncWriteExt},
@@ -16,6 +16,7 @@ use crate::{
     config::Config,
     models::{CalendarCache, CalendarList},
     pgpool::PgPool,
+    DateType,
 };
 
 embed_migrations!("../migrations");
@@ -46,10 +47,10 @@ pub enum CalendarActions {
         gcal_id: StackString,
         #[structopt(long)]
         /// Earliest date to consider (defaults to 1 week in the past)
-        min_date: Option<NaiveDate>,
+        min_date: Option<DateType>,
         #[structopt(long)]
         /// Latest date to consider (default to 1 week from today)
-        max_date: Option<NaiveDate>,
+        max_date: Option<DateType>,
     },
     /// Display full details of an event
     Detail {
@@ -146,7 +147,10 @@ impl CalendarCliOpts {
                 min_date,
                 max_date,
             } => {
-                for event in cal_sync.list_events(&gcal_id, min_date, max_date).await? {
+                for event in cal_sync
+                    .list_events(&gcal_id, min_date.map(Into::into), max_date.map(Into::into))
+                    .await?
+                {
                     cal_sync.stdout.send(
                         event
                             .get_summary(&cal_sync.config.domain, &cal_sync.pool, &cal_sync.config)
@@ -207,13 +211,13 @@ impl CalendarCliOpts {
                 };
                 match table.as_str() {
                     "calendar_list" => {
-                        let max_modified = Utc::now() - Duration::days(7);
+                        let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
                         let calendars =
                             CalendarList::get_recent(max_modified, &cal_sync.pool).await?;
                         file.write_all(&serde_json::to_vec(&calendars)?).await?;
                     }
                     "calendar_cache" => {
-                        let max_modified = Utc::now() - Duration::days(7);
+                        let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
                         let events =
                             CalendarCache::get_recent(max_modified, &cal_sync.pool).await?;
                         file.write_all(&serde_json::to_vec(&events)?).await?;

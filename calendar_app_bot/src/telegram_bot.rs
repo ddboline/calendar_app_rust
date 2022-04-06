@@ -1,6 +1,5 @@
 use anyhow::Error;
 use arc_swap::ArcSwap;
-use chrono::{DateTime, Datelike, Duration, NaiveDate, NaiveDateTime, NaiveTime, Utc};
 use deadqueue::unlimited::Queue;
 use futures::{try_join, StreamExt};
 use im::HashMap;
@@ -11,9 +10,10 @@ use telegram_bot::{
     types::Update, Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind,
     ToChatRef, UpdateKind, UserId,
 };
+use time::{Duration, OffsetDateTime};
 use tokio::{
     select,
-    time::{self, sleep, timeout},
+    time::{sleep, timeout},
 };
 
 use calendar_app_lib::{
@@ -57,7 +57,7 @@ impl TelegramBot {
     pub async fn telegram_worker(&self) -> Result<(), Error> {
         loop {
             FAILURE_COUNT.check()?;
-            match timeout(time::Duration::from_secs(3600), self.bot_handler()).await {
+            match timeout(std::time::Duration::from_secs(3600), self.bot_handler()).await {
                 Ok(Ok(_)) | Err(_) => FAILURE_COUNT.reset()?,
                 Ok(Err(_)) => FAILURE_COUNT.increment()?,
             }
@@ -130,21 +130,15 @@ impl TelegramBot {
     }
 
     pub async fn notification_handler(&self) -> Result<(), Error> {
-        let now = Utc::now();
+        let now = OffsetDateTime::now_utc();
         let mut events: VecDeque<_> = self.cal_sync.list_agenda(0, 1).await?.collect();
-        let mut agenda_datetime = DateTime::<Utc>::from_utc(
-            NaiveDateTime::new(
-                NaiveDate::from_ymd(now.year(), now.month(), now.day()),
-                NaiveTime::from_hms(12, 0, 0),
-            ),
-            Utc,
-        );
+        let mut agenda_datetime = now.date().with_hms(12, 0, 0)?.assume_utc();
         loop {
             FAILURE_COUNT.check()?;
-            let now = Utc::now();
+            let now = OffsetDateTime::now_utc();
             for chat_id in TELEGRAM_USERIDS.load().values().flatten() {
                 if now > agenda_datetime {
-                    agenda_datetime = agenda_datetime + Duration::days(1);
+                    agenda_datetime += Duration::days(1);
                     events = self.cal_sync.list_agenda(0, 1).await?.collect();
                     for event in &events {
                         self.send_message(
@@ -180,7 +174,7 @@ impl TelegramBot {
                     }
                 }
             }
-            sleep(time::Duration::from_secs(60)).await;
+            sleep(std::time::Duration::from_secs(60)).await;
         }
     }
 
@@ -208,7 +202,7 @@ impl TelegramBot {
             } else {
                 FAILURE_COUNT.increment()?;
             }
-            sleep(time::Duration::from_secs(60)).await;
+            sleep(std::time::Duration::from_secs(60)).await;
         }
     }
 

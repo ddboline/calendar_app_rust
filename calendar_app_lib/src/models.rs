@@ -1,10 +1,10 @@
 use anyhow::Error;
-use chrono::{DateTime, Utc};
 use derive_more::Into;
 use postgres_query::{client::GenericClient, query, query_dyn, FromSqlRow, Parameter};
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::{cmp, io};
+use time::OffsetDateTime;
 
 use crate::pgpool::{PgPool, PgTransaction};
 
@@ -17,7 +17,7 @@ pub struct CalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
     pub edit: bool,
     pub display: bool,
 }
@@ -33,7 +33,7 @@ impl CalendarList {
             gcal_location: None,
             gcal_timezone: None,
             sync: false,
-            last_modified: Utc::now(),
+            last_modified: OffsetDateTime::now_utc(),
             edit: false,
             display: false,
         }
@@ -125,9 +125,9 @@ impl CalendarList {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<OffsetDateTime>, Error> {
         #[derive(FromSqlRow, Into)]
-        struct Wrap(DateTime<Utc>);
+        struct Wrap(OffsetDateTime);
 
         let query = query!("SELECT max(last_modified) FROM calendar_list");
         let conn = pool.get().await?;
@@ -137,7 +137,7 @@ impl CalendarList {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_recent(modified: OffsetDateTime, pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!(
             r#"
                 SELECT * FROM calendar_list
@@ -199,15 +199,15 @@ impl CalendarList {
 pub struct CalendarCache {
     pub event_id: StackString,
     pub gcal_id: StackString,
-    pub event_start_time: DateTime<Utc>,
-    pub event_end_time: DateTime<Utc>,
+    pub event_start_time: OffsetDateTime,
+    pub event_end_time: OffsetDateTime,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
 }
 
 impl CalendarCache {
@@ -267,8 +267,8 @@ impl CalendarCache {
     /// # Errors
     /// Returns error if db query fails
     pub async fn get_by_datetime(
-        min_time: DateTime<Utc>,
-        max_time: DateTime<Utc>,
+        min_time: OffsetDateTime,
+        max_time: OffsetDateTime,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
         let query = query!(
@@ -288,8 +288,8 @@ impl CalendarCache {
     /// Returns error if db query fails
     pub async fn get_by_gcal_id_datetime(
         gcal_id: &str,
-        min_time: Option<DateTime<Utc>>,
-        max_time: Option<DateTime<Utc>>,
+        min_time: Option<OffsetDateTime>,
+        max_time: Option<OffsetDateTime>,
         pool: &PgPool,
     ) -> Result<Vec<CalendarCache>, Error> {
         let mut conditions = vec!["gcal_id = $gcal_id"];
@@ -375,9 +375,9 @@ impl CalendarCache {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<DateTime<Utc>>, Error> {
+    pub async fn get_max_modified(pool: &PgPool) -> Result<Option<OffsetDateTime>, Error> {
         #[derive(FromSqlRow, Into)]
-        struct Wrap(DateTime<Utc>);
+        struct Wrap(OffsetDateTime);
         let query = query!("SELECT max(last_modified) FROM calendar_cache");
         let conn = pool.get().await?;
         let result: Option<Wrap> = query.fetch_opt(&conn).await?;
@@ -386,7 +386,7 @@ impl CalendarCache {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_recent(modified: DateTime<Utc>, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_recent(modified: OffsetDateTime, pool: &PgPool) -> Result<Vec<Self>, Error> {
         let query = query!(
             "SELECT * FROM calendar_cache WHERE last_modified >= $modified",
             modified = modified
@@ -493,7 +493,7 @@ impl AuthorizedUsers {
 pub struct ShortenedLinks {
     pub shortened_url: StackString,
     pub original_url: StackString,
-    pub last_modified: DateTime<Utc>,
+    pub last_modified: OffsetDateTime,
 }
 
 impl ShortenedLinks {
@@ -589,7 +589,7 @@ impl ShortenedLinks {
             let output = Self {
                 original_url: original_url.into(),
                 shortened_url: shortened_url.into(),
-                last_modified: Utc::now(),
+                last_modified: OffsetDateTime::now_utc(),
             };
             output.insert_shortened_link_conn(conn).await?;
 

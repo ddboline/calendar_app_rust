@@ -25,7 +25,9 @@
 //!
 //! THIS FILE HAS BEEN GENERATED -- SAVE ANY MODIFICATIONS BEFORE REPLACING.
 
+use crate::datetimetype::DateTimeType;
 use async_google_apis_common::*;
+use time::format_description::well_known::Rfc3339;
 
 /// Scopes of this API. Convertible to their string representation with `AsRef`.
 #[derive(Debug, Clone, Copy)]
@@ -136,7 +138,7 @@ pub struct FreeBusyRequest {
     /// RFC3339.
     #[serde(rename = "timeMax")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub time_max: Option<DateTimeType>,
     /// List of calendars and/or groups to query.
     #[serde(rename = "items")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -151,7 +153,7 @@ pub struct FreeBusyRequest {
     /// RFC3339.
     #[serde(rename = "timeMin")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_min: Option<DateTime<Utc>>,
+    pub time_min: Option<DateTimeType>,
     /// Maximal number of calendars for which FreeBusy information is to be
     /// provided. Optional. Maximum value is 50.
     #[serde(rename = "calendarExpansionMax")]
@@ -366,7 +368,7 @@ pub struct EventDateTime {
     /// explicitly specified in timeZone.
     #[serde(rename = "dateTime")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub date_time: Option<DateTime<Utc>>,
+    pub date_time: Option<DateTimeType>,
     /// The time zone in which the time is specified. (Formatted as an IANA Time
     /// Zone Database name, e.g. "Europe/Zurich".) For recurring events this
     /// field is required and specifies the time zone in which the recurrence is
@@ -583,7 +585,7 @@ pub struct Event {
     /// Read-only.
     #[serde(rename = "created")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<DateTime<Utc>>,
+    pub created: Option<DateTimeType>,
     /// Extended properties of the event.
     #[serde(rename = "extendedProperties")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -651,7 +653,7 @@ pub struct Event {
     /// Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
+    pub updated: Option<DateTimeType>,
     /// The color of the event. This is an ID referring to an entry in the event
     /// section of the colors definition (see the  colors endpoint). Optional.
     #[serde(rename = "colorId")]
@@ -822,11 +824,11 @@ pub struct FreeBusyResponse {
     /// DateTime: The end of the interval.
     #[serde(rename = "timeMax")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub time_max: Option<DateTimeType>,
     /// DateTime: The start of the interval.
     #[serde(rename = "timeMin")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_min: Option<DateTime<Utc>>,
+    pub time_min: Option<DateTimeType>,
 }
 
 ///
@@ -1121,7 +1123,7 @@ pub struct Colors {
     /// timestamp). Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
+    pub updated: Option<DateTimeType>,
     /// A global palette of calendar colors, mapping from the color ID to its
     /// definition. A calendarListEntry resource refers to one of these color
     /// IDs in its color field. Read-only.
@@ -1253,11 +1255,11 @@ pub struct TimePeriod {
     /// DateTime: The (inclusive) start of the time period.
     #[serde(rename = "start")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub start: Option<DateTime<Utc>>,
+    pub start: Option<DateTimeType>,
     /// DateTime: The (exclusive) end of the time period.
     #[serde(rename = "end")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<DateTime<Utc>>,
+    pub end: Option<DateTimeType>,
 }
 
 ///
@@ -1317,7 +1319,7 @@ pub struct Events {
     /// timestamp). Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTime<Utc>>,
+    pub updated: Option<DateTimeType>,
     /// Token used at a later point in time to retrieve only the entries that
     /// have changed since this result was returned. Omitted if further results
     /// are available, in which case nextPageToken is provided.
@@ -2626,7 +2628,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMin is set, timeMax must be greater
     /// than timeMin.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub time_max: Option<DateTimeType>,
     /// Whether to include deleted events (with status equals "cancelled") in
     /// the result. Cancelled instances of recurring events (but not the
     /// underlying recurring event) will still be included if showDeleted and
@@ -2701,7 +2703,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMax is set, timeMin must be smaller
     /// than timeMax.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
+    pub time_min: Option<DateTimeType>,
     /// The maximum number of attendees to include in the response. If there are
     /// more than the specified number of attendees, only the participant is
     /// returned. Optional.
@@ -2733,7 +2735,7 @@ pub struct EventsListParams {
     /// this time will always be included regardless of showDeleted. Optional.
     /// The default is not to filter by last modification time.
     #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTime<Utc>>,
+    pub updated_min: Option<DateTimeType>,
 }
 
 impl std::fmt::Display for EventsListParams {
@@ -2742,7 +2744,10 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.show_deleted {
@@ -2812,7 +2817,10 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.max_attendees {
@@ -3186,7 +3194,7 @@ pub struct EventsWatchParams {
     /// provided but are ignored. If timeMax is set, timeMin must be smaller
     /// than timeMax.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
+    pub time_min: Option<DateTimeType>,
     /// Free text search terms to find events that match these terms in any
     /// field, except for extended properties. Optional.
     #[serde(rename = "q")]
@@ -3201,7 +3209,7 @@ pub struct EventsWatchParams {
     /// this time will always be included regardless of showDeleted. Optional.
     /// The default is not to filter by last modification time.
     #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTime<Utc>>,
+    pub updated_min: Option<DateTimeType>,
     /// The order of the events returned in the result. Optional. The default is
     /// an unspecified, stable order.
     #[serde(rename = "orderBy")]
@@ -3244,7 +3252,7 @@ pub struct EventsWatchParams {
     /// provided but are ignored. If timeMin is set, timeMax must be greater
     /// than timeMin.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub time_max: Option<DateTimeType>,
     /// The maximum number of attendees to include in the response. If there are
     /// more than the specified number of attendees, only the participant is
     /// returned. Optional.
@@ -3313,7 +3321,10 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.q {
@@ -3362,7 +3373,10 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.max_attendees {
@@ -3617,7 +3631,7 @@ pub struct EventsInstancesParams {
     /// by. Optional. The default is not to filter by start time. Must be an
     /// RFC3339 timestamp with mandatory time zone offset.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTime<Utc>>,
+    pub time_max: Option<DateTimeType>,
     /// Token specifying which result page to return. Optional.
     #[serde(rename = "pageToken")]
     pub page_token: Option<String>,
@@ -3630,7 +3644,7 @@ pub struct EventsInstancesParams {
     /// Optional. The default is not to filter by end time. Must be an RFC3339
     /// timestamp with mandatory time zone offset.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTime<Utc>>,
+    pub time_min: Option<DateTimeType>,
     /// Whether to include deleted events (with status equals "cancelled") in
     /// the result. Cancelled instances of recurring events will still be
     /// included if singleEvents is False. Optional. The default is False.
@@ -3668,7 +3682,10 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&timeMax={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.page_token {
@@ -3689,7 +3706,10 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&timeMin={}",
-                percent_encode(v.to_rfc3339().as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(
+                    v.format(&Rfc3339).unwrap_or_else(|_| "".into()).as_bytes(),
+                    NON_ALPHANUMERIC
+                )
             )?;
         }
         if let Some(ref v) = self.show_deleted {
