@@ -12,6 +12,7 @@
 #![allow(clippy::needless_late_init)]
 
 pub mod calendar_v3_types;
+pub mod datetimetype;
 pub mod gcal_instance;
 
 use anyhow::Error;

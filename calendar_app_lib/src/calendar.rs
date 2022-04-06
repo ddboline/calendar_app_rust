@@ -1,8 +1,9 @@
-use chrono::{DateTime, Local, NaiveDate, Utc};
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::{convert::TryInto, fmt};
+use time::{Date, OffsetDateTime};
+use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt, TimeZone as TzTimeZone};
 use url::Url;
 use uuid::Uuid;
 
@@ -16,6 +17,7 @@ use crate::{
     models::{CalendarCache, CalendarList, ShortenedLinks},
     pgpool::PgPool,
     timezone::TimeZone,
+    DateType,
 };
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]
@@ -81,7 +83,7 @@ impl From<Calendar> for CalendarList {
             gcal_location: item.location.map(|l| l.name),
             gcal_timezone: item.timezone.map(Into::into),
             sync: false,
-            last_modified: Utc::now(),
+            last_modified: OffsetDateTime::now_utc(),
             edit: false,
             display: false,
         }
@@ -116,8 +118,8 @@ impl Calendar {
 pub struct Event {
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub start_time: DateTime<Utc>,
-    pub end_time: DateTime<Utc>,
+    pub start_time: OffsetDateTime,
+    pub end_time: OffsetDateTime,
     pub url: Option<Url>,
     pub name: StackString,
     pub description: Option<StackString>,
@@ -143,11 +145,12 @@ impl fmt::Display for Event {
                 writeln!(f, "\t\t{lat} {lon}")?;
             }
         }
+        let local = TimeZone::local().into();
         writeln!(
             f,
             "\t\t{} - {}",
-            self.start_time.with_timezone(&Local),
-            self.end_time.with_timezone(&Local)
+            self.start_time.to_timezone(local),
+            self.end_time.to_timezone(local),
         )
     }
 }
@@ -201,36 +204,41 @@ impl From<Event> for CalendarCache {
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(_, lon)| lon.into())),
             event_location_name: item.location.map(|l| l.name),
-            last_modified: Utc::now(),
+            last_modified: OffsetDateTime::now_utc(),
         }
     }
 }
 
-fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<DateTime<Utc>> {
+fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<OffsetDateTime> {
     dt.date_time.as_ref().map_or_else(
         || {
             dt.date.as_ref().and_then(|date| {
-                let date: Option<NaiveDate> = date.parse().ok();
+                let date: Option<DateType> = date.parse().ok();
+                let date: Option<Date> = date.map(Into::into);
+                let local = TimeZone::local();
                 dt.time_zone
                     .as_ref()
                     .and_then(|tz| tz.parse::<TimeZone>().ok())
                     .map_or_else(
                         || {
-                            use chrono::TimeZone;
                             date.and_then(|d| {
-                                Local.from_local_datetime(&d.and_hms(0, 0, 0)).single()
+                                d.with_hms(0, 0, 0)
+                                    .ok()
+                                    .map(|dt| dt.assume_timezone(local.into()))
                             })
-                            .map(|d| d.with_timezone(&Utc))
+                            .map(|d| d.to_timezone(TimeZone::utc().into()))
                         },
                         |tz| {
-                            use chrono::TimeZone;
-                            date.and_then(|d| tz.from_local_datetime(&d.and_hms(0, 0, 0)).single())
-                                .map(|d| d.with_timezone(&Utc))
+                            date.and_then(|d| {
+                                d.with_hms(0, 0, 0)
+                                    .ok()
+                                    .map(|dt| dt.assume_timezone(tz.into()))
+                            })
                         },
                     )
             })
         },
-        |date_time| Some(*date_time),
+        |date_time| Some((*date_time).into()),
     )
 }
 
@@ -238,8 +246,8 @@ impl Event {
     pub fn new(
         gcal_id: impl Into<StackString>,
         name: impl Into<StackString>,
-        start_time: DateTime<Utc>,
-        end_time: DateTime<Utc>,
+        start_time: OffsetDateTime,
+        end_time: OffsetDateTime,
     ) -> Self {
         Self {
             gcal_id: gcal_id.into(),
@@ -279,11 +287,11 @@ impl Event {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
-                date_time: Some(self.start_time),
+                date_time: Some(self.start_time.into()),
                 ..EventDateTime::default()
             }),
             end: Some(EventDateTime {
-                date_time: Some(self.end_time),
+                date_time: Some(self.end_time.into()),
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),
@@ -345,8 +353,8 @@ impl Event {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
-    use chrono::{Duration, Utc};
     use log::debug;
+    use time::{Duration, OffsetDateTime};
 
     use gcal_lib::gcal_instance::GCalendarInstance;
 
@@ -357,8 +365,8 @@ mod tests {
         let event = Event::new(
             "ddboline@gmail.com",
             "Test event",
-            Utc::now(),
-            Utc::now() + Duration::hours(1),
+            OffsetDateTime::now_utc(),
+            OffsetDateTime::now_utc() + Duration::hours(1),
         );
         debug!("{:#?}", event);
         assert_eq!(&event.name, "Test event");
@@ -377,11 +385,14 @@ mod tests {
         let event = Event::new(
             "ddboline@gmail.com",
             "Test Event",
-            Utc::now() + Duration::days(1),
-            Utc::now() + Duration::days(1) + Duration::hours(1),
+            OffsetDateTime::now_utc() + Duration::days(1),
+            OffsetDateTime::now_utc() + Duration::days(1) + Duration::hours(1),
         );
         let (cal_id, event) = event.to_gcal_event();
+        let js = serde_json::to_string(&event)?;
+        println!("{js}");
         let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
+        println!("event {event:?}");
         let event_id = event.id.clone().unwrap();
         let event = Event::from_gcal_event(&event, cal_id.as_str()).unwrap();
         assert_eq!(event.name.as_str(), "Test Event");

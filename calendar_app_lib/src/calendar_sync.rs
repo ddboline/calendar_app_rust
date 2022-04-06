@@ -1,5 +1,4 @@
 use anyhow::{format_err, Error};
-use chrono::{Duration, Local, NaiveDate, TimeZone, Utc};
 use futures::future::try_join_all;
 use itertools::Itertools;
 use log::debug;
@@ -9,6 +8,8 @@ use std::{
     sync::Arc,
 };
 use stdout_channel::StdoutChannel;
+use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime};
+use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt};
 use tokio::try_join;
 
 use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
@@ -20,6 +21,7 @@ use crate::{
     parse_hashnyc::parse_hashnyc,
     parse_nycruns::parse_nycruns,
     pgpool::PgPool,
+    timezone::TimeZone,
 };
 
 #[derive(Clone)]
@@ -199,12 +201,16 @@ impl CalendarSync {
             .gcal
             .as_ref()
             .ok_or_else(|| format_err!("No gcal instance found"))?
-            .get_gcal_events(gcal_id, Some(Utc::now()), None)
+            .get_gcal_events(gcal_id, Some(OffsetDateTime::now_utc()), None)
             .await?;
         let exported = if edit {
-            let database_events =
-                CalendarCache::get_by_gcal_id_datetime(gcal_id, Some(Utc::now()), None, &self.pool)
-                    .await?;
+            let database_events = CalendarCache::get_by_gcal_id_datetime(
+                gcal_id,
+                Some(OffsetDateTime::now_utc()),
+                None,
+                &self.pool,
+            )
+            .await?;
             self.export_calendar_events(&calendar_events, &database_events, true)
                 .await?
         } else {
@@ -269,8 +275,8 @@ impl CalendarSync {
         days_before: i64,
         days_after: i64,
     ) -> Result<impl Iterator<Item = Event>, Error> {
-        let min_time = Utc::now() - Duration::days(days_before);
-        let max_time = Utc::now() + Duration::days(days_after);
+        let min_time = OffsetDateTime::now_utc() - Duration::days(days_before);
+        let max_time = OffsetDateTime::now_utc() + Duration::days(days_after);
 
         let (calendar_map, events) = try_join!(
             self.list_calendars(),
@@ -310,23 +316,22 @@ impl CalendarSync {
     pub async fn list_events(
         &self,
         gcal_id: &str,
-        min_date: Option<NaiveDate>,
-        max_date: Option<NaiveDate>,
+        min_date: Option<Date>,
+        max_date: Option<Date>,
     ) -> Result<impl Iterator<Item = Event>, Error> {
         let min_date = min_date
-            .and_then(|d| {
-                Local
-                    .from_local_datetime(&d.and_hms(0, 0, 0))
-                    .single()
-                    .map(|x| x.with_timezone(&Utc))
-            })
-            .unwrap_or_else(|| (Utc::now() - Duration::weeks(1)));
+            .and_then(|d| d.with_hms(0, 0, 0).ok().map(PrimitiveDateTime::assume_utc))
+            .unwrap_or_else(|| (OffsetDateTime::now_utc() - Duration::weeks(1)));
         let max_date = max_date
-            .and_then(|d| d.checked_add_signed(Duration::days(1)))
-            .and_then(|d| Local.from_local_datetime(&d.and_hms(0, 0, 0)).single())
+            .and_then(|d| d.checked_add(Duration::days(1)))
+            .and_then(|d| {
+                d.with_hms(0, 0, 0)
+                    .ok()
+                    .map(|dt| dt.assume_timezone(TimeZone::local().into()))
+            })
             .map_or_else(
-                || (Utc::now() + Duration::weeks(2)),
-                |d| d.with_timezone(&Utc),
+                || (OffsetDateTime::now_utc() + Duration::weeks(2)),
+                |d| d.to_timezone(TimeZone::utc().into()),
             );
         let events = CalendarCache::get_by_gcal_id_datetime(
             gcal_id,

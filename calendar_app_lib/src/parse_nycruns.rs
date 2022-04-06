@@ -1,12 +1,12 @@
 use anyhow::Error;
-use chrono::{Duration, NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
 use stack_string::{format_sstr, StackString};
 use std::{collections::HashMap, sync::Arc};
+use time::{macros::format_description, Date, Duration, PrimitiveDateTime, Time};
+use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt, PrimitiveDateTimeExt};
 use url::Url;
 
 use crate::{
@@ -40,7 +40,12 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
             }
         }
         for date in race.find(Class("_date")) {
-            let dt = NaiveDate::parse_from_str(&date.text(), "%A, %B %d, %Y")?;
+            let dt = Date::parse(
+                &date.text(),
+                format_description!(
+                    "[weekday repr:long], [month repr:long] [day padding:none], [year]"
+                ),
+            )?;
             current_date.replace(dt);
         }
         for loc in race.find(Class("_subtitle")) {
@@ -49,11 +54,15 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                 if class.contains("_start-time") {
                     let items: SmallVec<[&str; 4]> = text.split_whitespace().collect();
                     let time_str = items[(items.len() - 2)..].join(" ");
-                    if let Ok(time) = NaiveTime::parse_from_str(&time_str, "%l:%M %p") {
+                    if let Ok(time) = Time::parse(
+                        &time_str,
+                        format_description!("[hour padding:none]:[minute] [period case:upper]"),
+                    ) {
                         current_time.replace(time);
-                    } else if let Ok(time) =
-                        NaiveTime::parse_from_str(items[items.len() - 1], "%l:%M%p")
-                    {
+                    } else if let Ok(time) = Time::parse(
+                        items[items.len() - 1],
+                        format_description!("[hour padding:none]:[minute][period case:upper]"),
+                    ) {
                         current_time.replace(time);
                     } else {
                         debug!("{:?}", items);
@@ -66,23 +75,18 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
         if let Some(name) = name {
             if let Some(current_date) = current_date {
                 if let Some(current_time) = current_time {
-                    let current_datetime = NaiveDateTime::new(current_date, current_time);
-                    if let Some(start_time) = New_York
-                        .from_local_datetime(&current_datetime)
-                        .single()
-                        .map(|d| d.with_timezone(&Utc))
-                    {
-                        let end_time = start_time + Duration::hours(1);
-                        let mut event = Event::new(CALID, &name, start_time, end_time);
-                        if let Some(location) = location {
-                            event.location.replace(Location {
-                                name: location,
-                                ..Location::default()
-                            });
-                        }
-                        event.url = event_url;
-                        events.push(event);
+                    let current_datetime = PrimitiveDateTime::new(current_date, current_time);
+                    let start_time = current_datetime.assume_timezone(NEW_YORK);
+                    let end_time = start_time + Duration::hours(1);
+                    let mut event = Event::new(CALID, &name, start_time, end_time);
+                    if let Some(location) = location {
+                        event.location.replace(Location {
+                            name: location,
+                            ..Location::default()
+                        });
                     }
+                    event.url = event_url;
+                    events.push(event);
                 }
             }
         }
@@ -98,7 +102,7 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         .await?
         .into_iter()
         .map(|event| {
-            let start_time = event.event_start_time.with_timezone(&New_York);
+            let start_time = event.event_start_time.to_timezone(NEW_YORK);
             (start_time, event)
         })
         .collect();
@@ -109,7 +113,7 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         let current_event_map = current_event_map.clone();
         async move {
             let mut event: CalendarCache = event.into();
-            let start_time = event.event_start_time.with_timezone(&New_York);
+            let start_time = event.event_start_time.to_timezone(NEW_YORK);
             if let Some(existing_event) = current_event_map.get(&start_time) {
                 if event.event_name != existing_event.event_name
                     || event.event_description != existing_event.event_description

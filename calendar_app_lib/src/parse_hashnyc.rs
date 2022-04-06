@@ -1,11 +1,11 @@
 use anyhow::Error;
-use chrono::{Duration, TimeZone, Utc};
-use chrono_tz::America::New_York;
 use futures::future::try_join_all;
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
 use stack_string::{format_sstr, StackString};
 use std::{collections::HashMap, sync::Arc};
+use time::{macros::format_description, Duration, PrimitiveDateTime};
+use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt};
 
 use crate::{
     calendar::{Event, Location},
@@ -46,8 +46,13 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     // Local::parse_from_str(&date, "%A %B %d ")
                     if let Some(year) = year {
                         let date = format_sstr!("{date} {year}");
-                        let dt = New_York.datetime_from_str(&date, "%A %B %d %l:%M %P %Y")?;
-                        let dt = dt.with_timezone(&Utc);
+                        let fmt = format_description!(
+                            "[weekday repr:long case_sensitive:false]  [month repr:long \
+                             case_sensitive:false] [day padding:none] [hour \
+                             padding:space]:[minute padding:zero] [period case:lower] [year]"
+                        );
+                        let dt = PrimitiveDateTime::parse(&date, fmt)?;
+                        let dt = dt.assume_utc();
                         start_time.replace(dt);
                     }
                 } else {
@@ -98,7 +103,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         .await?
         .into_iter()
         .map(|event| {
-            let start_time = event.event_start_time.with_timezone(&New_York);
+            let start_time = event.event_start_time.to_timezone(NEW_YORK);
             (start_time, event)
         })
         .collect();
@@ -110,7 +115,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
         let current_event_map = current_event_map.clone();
         async move {
             let mut event: CalendarCache = event.into();
-            let start_time = event.event_start_time.with_timezone(&New_York);
+            let start_time = event.event_start_time.to_timezone(NEW_YORK);
 
             if let Some(existing_event) = current_event_map.get(&start_time) {
                 if event.event_name != existing_event.event_name
