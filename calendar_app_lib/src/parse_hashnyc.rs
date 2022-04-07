@@ -48,8 +48,8 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                         let date = format_sstr!("{date} {year}");
                         let fmt = format_description!(
                             "[weekday repr:long case_sensitive:false]  [month repr:long \
-                             case_sensitive:false] [day padding:none] [hour \
-                             padding:space]:[minute padding:zero] [period case:lower] [year]"
+                             case_sensitive:false] [day padding:none]  [hour \
+                             padding:none]:[minute padding:zero] [period case:lower] [year]"
                         );
                         let dt = PrimitiveDateTime::parse(&date, fmt)?;
                         let dt = dt.assume_utc();
