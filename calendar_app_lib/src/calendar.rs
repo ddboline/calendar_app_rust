@@ -389,16 +389,11 @@ mod tests {
             OffsetDateTime::now_utc() + Duration::days(1) + Duration::hours(1),
         );
         let (cal_id, event) = event.to_gcal_event();
-        let js = serde_json::to_string(&event)?;
-        println!("{js}");
-        let event = gcal.insert_gcal_event(cal_id.as_str(), event).await?;
-        println!("event {event:?}");
-        let event_id = event.id.clone().unwrap();
-        let event = Event::from_gcal_event(&event, cal_id.as_str()).unwrap();
-        assert_eq!(event.name.as_str(), "Test Event");
-
-        gcal.delete_gcal_event(cal_id.as_str(), event_id.as_str())
-            .await?;
+        let event = gcal.insert_gcal_event(&cal_id, event).await?;
+        let event_id = event.id.as_ref().unwrap();
+        let event = Event::from_gcal_event(&event, &cal_id).unwrap();
+        assert_eq!(&event.name, "Test Event");
+        gcal.delete_gcal_event(&cal_id, &event_id).await?;
         Ok(())
     }
 }
