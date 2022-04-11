@@ -155,7 +155,8 @@ impl TelegramBot {
                     }
                 } else {
                     while let Some(event) = events.front() {
-                        if now > event.start_time - Duration::minutes(5) {
+                        let start_time: OffsetDateTime = event.start_time.into();
+                        if now > start_time - Duration::minutes(5) {
                             self.send_message(
                                 *chat_id,
                                 &event

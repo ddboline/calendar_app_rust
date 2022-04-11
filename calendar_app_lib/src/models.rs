@@ -6,6 +6,8 @@ use stack_string::{format_sstr, StackString};
 use std::{cmp, io};
 use time::OffsetDateTime;
 
+use gcal_lib::date_time_wrapper::DateTimeWrapper;
+
 use crate::pgpool::{PgPool, PgTransaction};
 
 #[derive(FromSqlRow, Clone, Debug, Serialize, Deserialize)]
@@ -17,7 +19,7 @@ pub struct CalendarList {
     pub gcal_location: Option<StackString>,
     pub gcal_timezone: Option<StackString>,
     pub sync: bool,
-    pub last_modified: OffsetDateTime,
+    pub last_modified: DateTimeWrapper,
     pub edit: bool,
     pub display: bool,
 }
@@ -33,7 +35,7 @@ impl CalendarList {
             gcal_location: None,
             gcal_timezone: None,
             sync: false,
-            last_modified: OffsetDateTime::now_utc(),
+            last_modified: DateTimeWrapper::now(),
             edit: false,
             display: false,
         }
@@ -199,15 +201,15 @@ impl CalendarList {
 pub struct CalendarCache {
     pub event_id: StackString,
     pub gcal_id: StackString,
-    pub event_start_time: OffsetDateTime,
-    pub event_end_time: OffsetDateTime,
+    pub event_start_time: DateTimeWrapper,
+    pub event_end_time: DateTimeWrapper,
     pub event_url: Option<StackString>,
     pub event_name: StackString,
     pub event_description: Option<StackString>,
     pub event_location_name: Option<StackString>,
     pub event_location_lat: Option<f64>,
     pub event_location_lon: Option<f64>,
-    pub last_modified: OffsetDateTime,
+    pub last_modified: DateTimeWrapper,
 }
 
 impl CalendarCache {
@@ -493,7 +495,7 @@ impl AuthorizedUsers {
 pub struct ShortenedLinks {
     pub shortened_url: StackString,
     pub original_url: StackString,
-    pub last_modified: OffsetDateTime,
+    pub last_modified: DateTimeWrapper,
 }
 
 impl ShortenedLinks {
@@ -589,7 +591,7 @@ impl ShortenedLinks {
             let output = Self {
                 original_url: original_url.into(),
                 shortened_url: shortened_url.into(),
-                last_modified: OffsetDateTime::now_utc(),
+                last_modified: DateTimeWrapper::now(),
             };
             output.insert_shortened_link_conn(conn).await?;
 

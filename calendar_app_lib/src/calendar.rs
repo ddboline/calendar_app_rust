@@ -7,7 +7,10 @@ use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt, TimeZone as TzTimeZone};
 use url::Url;
 use uuid::Uuid;
 
-use gcal_lib::gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime};
+use gcal_lib::{
+    date_time_wrapper::DateTimeWrapper,
+    gcal_instance::{CalendarListEntry, Event as GCalEvent, EventDateTime},
+};
 
 use crate::{
     config::Config,
@@ -83,7 +86,7 @@ impl From<Calendar> for CalendarList {
             gcal_location: item.location.map(|l| l.name),
             gcal_timezone: item.timezone.map(Into::into),
             sync: false,
-            last_modified: OffsetDateTime::now_utc(),
+            last_modified: DateTimeWrapper::now(),
             edit: false,
             display: false,
         }
@@ -118,8 +121,8 @@ impl Calendar {
 pub struct Event {
     pub gcal_id: StackString,
     pub event_id: StackString,
-    pub start_time: OffsetDateTime,
-    pub end_time: OffsetDateTime,
+    pub start_time: DateTimeWrapper,
+    pub end_time: DateTimeWrapper,
     pub url: Option<Url>,
     pub name: StackString,
     pub description: Option<StackString>,
@@ -204,7 +207,7 @@ impl From<Event> for CalendarCache {
                 .as_ref()
                 .and_then(|l| l.lat_lon.map(|(_, lon)| lon.into())),
             event_location_name: item.location.map(|l| l.name),
-            last_modified: OffsetDateTime::now_utc(),
+            last_modified: DateTimeWrapper::now(),
         }
     }
 }
@@ -252,8 +255,8 @@ impl Event {
         Self {
             gcal_id: gcal_id.into(),
             event_id: Uuid::new_v4().to_string().replace('-', "").into(),
-            start_time,
-            end_time,
+            start_time: start_time.into(),
+            end_time: end_time.into(),
             url: None,
             name: name.into(),
             description: None,
@@ -273,8 +276,12 @@ impl Event {
         Some(Self {
             gcal_id: gcal_id.into(),
             event_id: item.id.as_ref()?.into(),
-            start_time: item.start.as_ref().and_then(from_gcal_eventdatetime)?,
-            end_time: item.end.as_ref().and_then(from_gcal_eventdatetime)?,
+            start_time: item
+                .start
+                .as_ref()
+                .and_then(from_gcal_eventdatetime)?
+                .into(),
+            end_time: item.end.as_ref().and_then(from_gcal_eventdatetime)?.into(),
             url: item.html_link.as_ref().and_then(|u| u.parse().ok()),
             name: item.summary.as_ref()?.into(),
             description: item.description.as_ref().map(Into::into),
@@ -287,11 +294,11 @@ impl Event {
         let event = GCalEvent {
             id: Some(self.event_id.to_string()),
             start: Some(EventDateTime {
-                date_time: Some(self.start_time.into()),
+                date_time: Some(self.start_time),
                 ..EventDateTime::default()
             }),
             end: Some(EventDateTime {
-                date_time: Some(self.end_time.into()),
+                date_time: Some(self.end_time),
                 ..EventDateTime::default()
             }),
             summary: Some(self.name.to_string()),
@@ -339,7 +346,7 @@ impl Event {
             || original_url.map_or_else(|| self.event_id.as_str(), Url::as_str),
             StackString::as_str,
         );
-        let start_time = get_default_or_local_time(self.start_time, config);
+        let start_time = get_default_or_local_time(self.start_time.into(), config);
 
         format_sstr!(
             "{start_time} {n} {i} {e} {url}",

@@ -87,7 +87,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
             } else {
                 "".into()
             };
-            let start_time = get_default_or_local_time(event.start_time, &cal_sync.config);
+            let start_time = get_default_or_local_time(event.start_time.into(), &cal_sync.config);
             Some(format_sstr!(
                 r#"
                     <tr text-style="center">
@@ -313,8 +313,8 @@ async fn list_events_body(
             } else {
                 "".into()
             };
-            let start_time = get_default_or_local_time(event.start_time, &cal_sync.config);
-            let end_time = get_default_or_local_time(event.end_time, &cal_sync.config);
+            let start_time = get_default_or_local_time(event.start_time.into(), &cal_sync.config);
+            let end_time = get_default_or_local_time(event.end_time.into(), &cal_sync.config);
 
             format_sstr!(r#"
                     <tr text-style="center">
@@ -420,11 +420,11 @@ async fn event_detail_body(
         }
         output.push(format_sstr!(
             r#"<tr text-style="center"><td>Start Time</td><td>{}</td></tr>"#,
-            get_default_or_local_time(event.start_time, &cal_sync.config)
+            get_default_or_local_time(event.start_time.into(), &cal_sync.config)
         ));
         output.push(format_sstr!(
             r#"<tr text-style="center"><td>End Time</td><td>{}</td></tr>"#,
-            get_default_or_local_time(event.end_time, &cal_sync.config)
+            get_default_or_local_time(event.end_time.into(), &cal_sync.config)
         ));
         format_sstr!(
             r#"
@@ -570,18 +570,21 @@ pub struct CalendarCacheRequest {
 
 impl From<CalendarCacheRequest> for CalendarCache {
     fn from(item: CalendarCacheRequest) -> Self {
+        let event_start_time: OffsetDateTime = item.event_start_time.into();
+        let event_end_time: OffsetDateTime = item.event_end_time.into();
+        let last_modified: OffsetDateTime = item.last_modified.into();
         Self {
             gcal_id: item.gcal_id,
             event_id: item.event_id,
-            event_start_time: item.event_start_time.into(),
-            event_end_time: item.event_end_time.into(),
+            event_start_time: event_start_time.into(),
+            event_end_time: event_end_time.into(),
             event_url: item.event_url.map(Into::into),
             event_name: item.event_name,
             event_description: item.event_description.map(Into::into),
             event_location_name: item.event_location_name.map(Into::into),
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
-            last_modified: item.last_modified.into(),
+            last_modified: last_modified.into(),
         }
     }
 }
@@ -808,15 +811,15 @@ async fn create_calendar_event_body(
     let event = CalendarCache {
         gcal_id: payload.gcal_id,
         event_id: payload.event_id,
-        event_start_time: start_datetime,
-        event_end_time: end_datetime,
+        event_start_time: start_datetime.into(),
+        event_end_time: end_datetime.into(),
         event_url: payload.event_url,
         event_name: payload.event_name,
         event_description: payload.event_description,
         event_location_name: payload.event_location_name.map(Into::into),
         event_location_lat: None,
         event_location_lon: None,
-        last_modified: OffsetDateTime::now_utc(),
+        last_modified: OffsetDateTime::now_utc().into(),
     };
 
     event.upsert(&cal_sync.pool).await?;

@@ -25,7 +25,7 @@
 //!
 //! THIS FILE HAS BEEN GENERATED -- SAVE ANY MODIFICATIONS BEFORE REPLACING.
 
-use crate::datetimetype::DateTimeType;
+use crate::date_time_wrapper::DateTimeWrapper;
 use async_google_apis_common::*;
 use time::format_description::well_known::Rfc3339;
 
@@ -138,7 +138,7 @@ pub struct FreeBusyRequest {
     /// RFC3339.
     #[serde(rename = "timeMax")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTimeType>,
+    pub time_max: Option<DateTimeWrapper>,
     /// List of calendars and/or groups to query.
     #[serde(rename = "items")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -153,7 +153,7 @@ pub struct FreeBusyRequest {
     /// RFC3339.
     #[serde(rename = "timeMin")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_min: Option<DateTimeType>,
+    pub time_min: Option<DateTimeWrapper>,
     /// Maximal number of calendars for which FreeBusy information is to be
     /// provided. Optional. Maximum value is 50.
     #[serde(rename = "calendarExpansionMax")]
@@ -368,7 +368,7 @@ pub struct EventDateTime {
     /// explicitly specified in timeZone.
     #[serde(rename = "dateTime")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub date_time: Option<DateTimeType>,
+    pub date_time: Option<DateTimeWrapper>,
     /// The time zone in which the time is specified. (Formatted as an IANA Time
     /// Zone Database name, e.g. "Europe/Zurich".) For recurring events this
     /// field is required and specifies the time zone in which the recurrence is
@@ -585,7 +585,7 @@ pub struct Event {
     /// Read-only.
     #[serde(rename = "created")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub created: Option<DateTimeType>,
+    pub created: Option<DateTimeWrapper>,
     /// Extended properties of the event.
     #[serde(rename = "extendedProperties")]
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -653,7 +653,7 @@ pub struct Event {
     /// Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTimeType>,
+    pub updated: Option<DateTimeWrapper>,
     /// The color of the event. This is an ID referring to an entry in the event
     /// section of the colors definition (see the  colors endpoint). Optional.
     #[serde(rename = "colorId")]
@@ -824,11 +824,11 @@ pub struct FreeBusyResponse {
     /// DateTime: The end of the interval.
     #[serde(rename = "timeMax")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_max: Option<DateTimeType>,
+    pub time_max: Option<DateTimeWrapper>,
     /// DateTime: The start of the interval.
     #[serde(rename = "timeMin")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub time_min: Option<DateTimeType>,
+    pub time_min: Option<DateTimeWrapper>,
 }
 
 ///
@@ -1123,7 +1123,7 @@ pub struct Colors {
     /// timestamp). Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTimeType>,
+    pub updated: Option<DateTimeWrapper>,
     /// A global palette of calendar colors, mapping from the color ID to its
     /// definition. A calendarListEntry resource refers to one of these color
     /// IDs in its color field. Read-only.
@@ -1255,11 +1255,11 @@ pub struct TimePeriod {
     /// DateTime: The (inclusive) start of the time period.
     #[serde(rename = "start")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub start: Option<DateTimeType>,
+    pub start: Option<DateTimeWrapper>,
     /// DateTime: The (exclusive) end of the time period.
     #[serde(rename = "end")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub end: Option<DateTimeType>,
+    pub end: Option<DateTimeWrapper>,
 }
 
 ///
@@ -1319,7 +1319,7 @@ pub struct Events {
     /// timestamp). Read-only.
     #[serde(rename = "updated")]
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub updated: Option<DateTimeType>,
+    pub updated: Option<DateTimeWrapper>,
     /// Token used at a later point in time to retrieve only the entries that
     /// have changed since this result was returned. Omitted if further results
     /// are available, in which case nextPageToken is provided.
@@ -2628,7 +2628,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMin is set, timeMax must be greater
     /// than timeMin.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTimeType>,
+    pub time_max: Option<DateTimeWrapper>,
     /// Whether to include deleted events (with status equals "cancelled") in
     /// the result. Cancelled instances of recurring events (but not the
     /// underlying recurring event) will still be included if showDeleted and
@@ -2703,7 +2703,7 @@ pub struct EventsListParams {
     /// provided but are ignored. If timeMax is set, timeMin must be smaller
     /// than timeMax.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTimeType>,
+    pub time_min: Option<DateTimeWrapper>,
     /// The maximum number of attendees to include in the response. If there are
     /// more than the specified number of attendees, only the participant is
     /// returned. Optional.
@@ -2735,7 +2735,7 @@ pub struct EventsListParams {
     /// this time will always be included regardless of showDeleted. Optional.
     /// The default is not to filter by last modification time.
     #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTimeType>,
+    pub updated_min: Option<DateTimeWrapper>,
 }
 
 impl std::fmt::Display for EventsListParams {
@@ -3194,7 +3194,7 @@ pub struct EventsWatchParams {
     /// provided but are ignored. If timeMax is set, timeMin must be smaller
     /// than timeMax.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTimeType>,
+    pub time_min: Option<DateTimeWrapper>,
     /// Free text search terms to find events that match these terms in any
     /// field, except for extended properties. Optional.
     #[serde(rename = "q")]
@@ -3209,7 +3209,7 @@ pub struct EventsWatchParams {
     /// this time will always be included regardless of showDeleted. Optional.
     /// The default is not to filter by last modification time.
     #[serde(rename = "updatedMin")]
-    pub updated_min: Option<DateTimeType>,
+    pub updated_min: Option<DateTimeWrapper>,
     /// The order of the events returned in the result. Optional. The default is
     /// an unspecified, stable order.
     #[serde(rename = "orderBy")]
@@ -3252,7 +3252,7 @@ pub struct EventsWatchParams {
     /// provided but are ignored. If timeMin is set, timeMax must be greater
     /// than timeMin.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTimeType>,
+    pub time_max: Option<DateTimeWrapper>,
     /// The maximum number of attendees to include in the response. If there are
     /// more than the specified number of attendees, only the participant is
     /// returned. Optional.
@@ -3631,7 +3631,7 @@ pub struct EventsInstancesParams {
     /// by. Optional. The default is not to filter by start time. Must be an
     /// RFC3339 timestamp with mandatory time zone offset.
     #[serde(rename = "timeMax")]
-    pub time_max: Option<DateTimeType>,
+    pub time_max: Option<DateTimeWrapper>,
     /// Token specifying which result page to return. Optional.
     #[serde(rename = "pageToken")]
     pub page_token: Option<String>,
@@ -3644,7 +3644,7 @@ pub struct EventsInstancesParams {
     /// Optional. The default is not to filter by end time. Must be an RFC3339
     /// timestamp with mandatory time zone offset.
     #[serde(rename = "timeMin")]
-    pub time_min: Option<DateTimeType>,
+    pub time_min: Option<DateTimeWrapper>,
     /// Whether to include deleted events (with status equals "cancelled") in
     /// the result. Cancelled instances of recurring events will still be
     /// included if singleEvents is False. Optional. The default is False.

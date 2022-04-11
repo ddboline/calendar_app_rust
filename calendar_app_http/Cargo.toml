@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.6.0"
+version = "0.6.1"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -31,12 +31,12 @@ indexmap = "1.0"
 derive_more = "0.99"
 serde_yaml = "0.8"
 uuid = "0.8"
-rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.4.7" }
+rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.4.9" }
 reqwest = {version="0.11", default_features = false, features=["cookies", "json", "rustls-tls", "stream"]}
 stack-string = { version="0.7", features=["postgres_types", "rweb-openapi"] }
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.0"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.1"}
 
 [dev-dependencies]
 maplit = "1.0"
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.0"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.0"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.1"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.8.1"}
