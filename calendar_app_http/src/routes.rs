@@ -25,7 +25,7 @@ use crate::{
     app::{AppState, UrlCache},
     errors::ServiceError as Error,
     logged_user::LoggedUser,
-    CalendarCacheWrapper, CalendarListWrapper,
+    CalendarCacheWrapper, CalendarListWrapper, MinModifiedQuery,
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
@@ -437,12 +437,6 @@ async fn event_detail_body(
         "".into()
     };
     Ok(body)
-}
-
-#[derive(Serialize, Deserialize, Schema)]
-pub struct MinModifiedQuery {
-    #[schema(description = "")]
-    pub min_modified: Option<DateTimeType>,
 }
 
 #[derive(RwebResponse)]

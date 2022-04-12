@@ -16,6 +16,8 @@ use rweb_helper::{derive_rweb_schema, DateTimeType};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 
+use gcal_lib::date_time_wrapper::DateTimeWrapper;
+
 use calendar_app_lib::models::{CalendarCache, CalendarList};
 
 #[derive(Clone, Debug, Serialize, Deserialize, Into, From)]
@@ -80,17 +82,33 @@ struct _CalendarCacheWrapper {
     last_modified: DateTimeType,
 }
 
+#[derive(Serialize, Deserialize)]
+pub struct MinModifiedQuery {
+    pub min_modified: Option<DateTimeWrapper>,
+}
+
+derive_rweb_schema!(MinModifiedQuery, _MinModifiedQuery);
+
+#[allow(dead_code)]
+#[derive(Schema)]
+struct _MinModifiedQuery {
+    #[schema(description = "Min Modified Date")]
+    min_modified: Option<DateTimeType>,
+}
+
 #[cfg(test)]
 mod test {
     use rweb_helper::derive_rweb_test;
 
     use crate::{
         CalendarCacheWrapper, CalendarListWrapper, _CalendarCacheWrapper, _CalendarListWrapper,
+        MinModifiedQuery, _MinModifiedQuery,
     };
 
     #[test]
     fn test_types() {
         derive_rweb_test!(CalendarListWrapper, _CalendarListWrapper);
         derive_rweb_test!(CalendarCacheWrapper, _CalendarCacheWrapper);
+        derive_rweb_test!(MinModifiedQuery, _MinModifiedQuery);
     }
 }
