@@ -3,7 +3,7 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
-    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, DateTimeType,
+    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase,
     DateType, RwebResponse,
 };
 use serde::{Deserialize, Serialize};
@@ -26,6 +26,7 @@ use crate::{
     errors::ServiceError as Error,
     logged_user::LoggedUser,
     CalendarCacheWrapper, CalendarListWrapper, MinModifiedQuery,
+    CalendarCacheRequest, CreateCalendarEventRequest,
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
@@ -536,53 +537,6 @@ async fn calendar_cache_events(
         .map_err(Into::into)
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize, Schema)]
-pub struct CalendarCacheRequest {
-    #[schema(description = "GCal Calendar ID")]
-    pub gcal_id: StackString,
-    #[schema(description = "Calendar Event ID")]
-    pub event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    pub event_start_time: DateTimeType,
-    #[schema(description = "Event End Time")]
-    pub event_end_time: DateTimeType,
-    #[schema(description = "Event URL")]
-    pub event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
-    pub event_name: StackString,
-    #[schema(description = "Event Description")]
-    pub event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
-    pub event_location_name: Option<StackString>,
-    #[schema(description = "Event Location Latitude")]
-    pub event_location_lat: Option<f64>,
-    #[schema(description = "Event Location Longitude")]
-    pub event_location_lon: Option<f64>,
-    #[schema(description = "Last Modified")]
-    pub last_modified: DateTimeType,
-}
-
-impl From<CalendarCacheRequest> for CalendarCache {
-    fn from(item: CalendarCacheRequest) -> Self {
-        let event_start_time: OffsetDateTime = item.event_start_time.into();
-        let event_end_time: OffsetDateTime = item.event_end_time.into();
-        let last_modified: OffsetDateTime = item.last_modified.into();
-        Self {
-            gcal_id: item.gcal_id,
-            event_id: item.event_id,
-            event_start_time: event_start_time.into(),
-            event_end_time: event_end_time.into(),
-            event_url: item.event_url.map(Into::into),
-            event_name: item.event_name,
-            event_description: item.event_description.map(Into::into),
-            event_location_name: item.event_location_name.map(Into::into),
-            event_location_lat: item.event_location_lat,
-            event_location_lon: item.event_location_lon,
-            last_modified: last_modified.into(),
-        }
-    }
-}
-
 #[derive(Serialize, Deserialize, Schema)]
 pub struct CalendarCacheUpdateRequest {
     #[schema(description = "Calendar Events Update")]
@@ -753,26 +707,6 @@ async fn build_calendar_event_body(
         event_description = event.description.as_ref().map_or("", StackString::as_str),
     );
     Ok(body)
-}
-
-#[derive(Serialize, Deserialize, Schema)]
-pub struct CreateCalendarEventRequest {
-    #[schema(description = "GCal Calendar ID")]
-    pub gcal_id: StackString,
-    #[schema(description = "Event ID")]
-    pub event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    pub event_start_datetime: DateTimeType,
-    #[schema(description = "Event End Time")]
-    pub event_end_datetime: DateTimeType,
-    #[schema(description = "Event URL")]
-    pub event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
-    pub event_name: StackString,
-    #[schema(description = "Event Description")]
-    pub event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
-    pub event_location_name: Option<StackString>,
 }
 
 #[derive(RwebResponse)]
