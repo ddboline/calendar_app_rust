@@ -76,7 +76,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
             if let Some(current_date) = current_date {
                 if let Some(current_time) = current_time {
                     let current_datetime = PrimitiveDateTime::new(current_date, current_time);
-                    let start_time = current_datetime.assume_timezone(NEW_YORK);
+                    let start_time = current_datetime.assume_timezone(NEW_YORK).unwrap();
                     let end_time = start_time + Duration::hours(1);
                     let mut event = Event::new(CALID, &name, start_time, end_time);
                     if let Some(location) = location {

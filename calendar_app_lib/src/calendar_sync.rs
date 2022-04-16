@@ -331,7 +331,7 @@ impl CalendarSync {
             })
             .map_or_else(
                 || (OffsetDateTime::now_utc() + Duration::weeks(2)),
-                |d| d.to_timezone(TimeZone::utc().into()),
+                |d| d.unwrap().to_timezone(TimeZone::utc().into()),
             );
         let events = CalendarCache::get_by_gcal_id_datetime(
             gcal_id,

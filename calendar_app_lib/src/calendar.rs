@@ -229,13 +229,13 @@ fn from_gcal_eventdatetime(dt: &EventDateTime) -> Option<OffsetDateTime> {
                                     .ok()
                                     .map(|dt| dt.assume_timezone(local.into()))
                             })
-                            .map(|d| d.to_timezone(TimeZone::utc().into()))
+                            .map(|d| d.unwrap().to_timezone(TimeZone::utc().into()))
                         },
                         |tz| {
                             date.and_then(|d| {
                                 d.with_hms(0, 0, 0)
                                     .ok()
-                                    .map(|dt| dt.assume_timezone(tz.into()))
+                                    .map(|dt| dt.assume_timezone(tz.into()).unwrap())
                             })
                         },
                     )
