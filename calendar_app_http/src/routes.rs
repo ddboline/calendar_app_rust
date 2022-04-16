@@ -3,8 +3,8 @@ use futures::future::try_join_all;
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
-    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase,
-    DateType, RwebResponse,
+    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, DateType,
+    RwebResponse,
 };
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
@@ -25,8 +25,8 @@ use crate::{
     app::{AppState, UrlCache},
     errors::ServiceError as Error,
     logged_user::LoggedUser,
-    CalendarCacheWrapper, CalendarListWrapper, MinModifiedQuery,
-    CalendarCacheRequest, CreateCalendarEventRequest,
+    CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper, CreateCalendarEventRequest,
+    MinModifiedQuery,
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;

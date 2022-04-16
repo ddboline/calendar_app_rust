@@ -202,9 +202,9 @@ mod test {
     use rweb_helper::derive_rweb_test;
 
     use crate::{
-        CalendarCacheWrapper, CalendarListWrapper, _CalendarCacheWrapper, _CalendarListWrapper,
-        MinModifiedQuery, _MinModifiedQuery, CalendarCacheRequest, _CalendarCacheRequest,
-        CreateCalendarEventRequest, _CreateCalendarEventRequest,
+        CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper,
+        CreateCalendarEventRequest, MinModifiedQuery, _CalendarCacheRequest, _CalendarCacheWrapper,
+        _CalendarListWrapper, _CreateCalendarEventRequest, _MinModifiedQuery,
     };
 
     #[test]
