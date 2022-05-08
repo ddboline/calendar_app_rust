@@ -24,7 +24,7 @@ tokio = {version="1.17", features=["full"]}
 stack-string = { version="0.7", features=["postgres_types"] }
 stdout-channel = "0.5"
 bytes = "1.1"
-postgres-types = {version="0.2", features=["with-time-0_3", "with-uuid-0_8", "with-serde_json-1", "derive"]}
+postgres-types = {version="0.2", features=["with-time-0_3", "with-uuid-1", "with-serde_json-1", "derive"]}
 
 [dev-dependencies]
 calendar_app_lib = {path="../calendar_app_lib"}
