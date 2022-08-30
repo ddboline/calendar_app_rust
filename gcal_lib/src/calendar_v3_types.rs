@@ -28,6 +28,7 @@
 use crate::date_time_wrapper::DateTimeWrapper;
 use async_google_apis_common::*;
 use time::format_description::well_known::Rfc3339;
+use std::fmt::Write;
 
 /// Scopes of this API. Convertible to their string representation with `AsRef`.
 #[derive(Debug, Clone, Copy)]
@@ -3978,7 +3979,7 @@ impl ColorsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4082,7 +4083,7 @@ impl ChannelsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4185,7 +4186,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4221,7 +4222,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4257,7 +4258,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4293,7 +4294,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4328,7 +4329,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4365,7 +4366,7 @@ impl CalendarsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4474,7 +4475,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4510,7 +4511,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4547,7 +4548,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4583,7 +4584,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4619,7 +4620,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4654,7 +4655,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4690,7 +4691,7 @@ impl AclService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4793,7 +4794,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4826,7 +4827,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4856,7 +4857,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4896,7 +4897,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4937,7 +4938,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -4973,7 +4974,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5008,7 +5009,7 @@ impl CalendarListService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5115,7 +5116,7 @@ impl SettingsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5146,7 +5147,7 @@ impl SettingsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5178,7 +5179,7 @@ impl SettingsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5286,7 +5287,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5322,7 +5323,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5358,7 +5359,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5395,7 +5396,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5431,7 +5432,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5468,7 +5469,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5504,7 +5505,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5541,7 +5542,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5577,7 +5578,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5613,7 +5614,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5648,7 +5649,7 @@ impl EventsService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
@@ -5754,7 +5755,7 @@ impl FreebusyService {
 
         let mut url_params = format!("?{params}", params = params);
         if let Some(ref api_params) = &params.calendar_params {
-            url_params.push_str(&format!("{}", api_params));
+            write!(url_params, "{}", api_params)?;
         }
 
         let full_uri = format!("{}{}", path, url_params);
