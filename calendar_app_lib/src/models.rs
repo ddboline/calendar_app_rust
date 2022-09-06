@@ -598,6 +598,7 @@ impl ShortenedLinks {
             let output = ShortenedLinks::get_by_shortened_url_conn(shortened_url, conn)
                 .await?
                 .expect("Something went wrong");
+            tran.commit().await?;
             Ok(output)
         }
     }
