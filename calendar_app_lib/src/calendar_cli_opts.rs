@@ -204,11 +204,12 @@ impl CalendarCliOpts {
                 }
             }
             CalendarActions::Export { table, filepath } => {
-                let mut file: Box<dyn AsyncWrite + Unpin> = if let Some(filepath) = filepath {
-                    Box::new(File::create(&filepath).await?)
-                } else {
-                    Box::new(stdout())
-                };
+                let mut file: Box<dyn AsyncWrite + Unpin + Send + Sync> =
+                    if let Some(filepath) = filepath {
+                        Box::new(File::create(&filepath).await?)
+                    } else {
+                        Box::new(stdout())
+                    };
                 match table.as_str() {
                     "calendar_list" => {
                         let max_modified = OffsetDateTime::now_utc() - Duration::days(7);

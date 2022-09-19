@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_rust"
-version = "0.6.9"
+version = "0.6.10"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -20,7 +20,7 @@ calendar_app_bot = {path="calendar_app_bot"}
 calendar_app_lib = {path="calendar_app_lib"}
 calendar_app_http = {path="calendar_app_http"}
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
-tokio = {version="1.19", features=["full"]}
+tokio = {version="1.21", features=["full"]}
 anyhow = "1.0"
 env_logger = "0.9"
 log = "0.4"

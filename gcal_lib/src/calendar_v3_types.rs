@@ -27,8 +27,8 @@
 
 use crate::date_time_wrapper::DateTimeWrapper;
 use async_google_apis_common::*;
-use time::format_description::well_known::Rfc3339;
 use std::fmt::Write;
+use time::format_description::well_known::Rfc3339;
 
 /// Scopes of this API. Convertible to their string representation with `AsRef`.
 #[derive(Debug, Clone, Copy)]
