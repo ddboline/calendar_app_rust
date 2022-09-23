@@ -110,8 +110,7 @@ impl TelegramBot {
                                             &self.cal_sync.config,
                                         )
                                         .await,
-                                )
-                                .await?;
+                                )?;
                             }
                         }
                     }
@@ -150,8 +149,7 @@ impl TelegramBot {
                                     &self.cal_sync.config,
                                 )
                                 .await,
-                        )
-                        .await?;
+                        )?;
                     }
                 } else {
                     while let Some(event) = events.front() {
@@ -166,8 +164,7 @@ impl TelegramBot {
                                         &self.cal_sync.config,
                                     )
                                     .await,
-                            )
-                            .await?;
+                            )?;
                             events.pop_front();
                         } else {
                             break;
@@ -179,7 +176,7 @@ impl TelegramBot {
         }
     }
 
-    pub async fn send_message(&self, chat: ChatId, msg: &str) -> Result<(), Error> {
+    pub fn send_message(&self, chat: ChatId, msg: &str) -> Result<(), Error> {
         self.queue.push((chat, msg.into()));
         Ok(())
     }

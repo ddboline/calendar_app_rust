@@ -1,9 +1,9 @@
 use anyhow::{format_err, Error};
+use clap::Parser;
 use futures::future::try_join_all;
 use refinery::embed_migrations;
 use stack_string::{format_sstr, StackString};
 use std::path::PathBuf;
-use structopt::StructOpt;
 use time::{Duration, OffsetDateTime};
 use tokio::{
     fs::{read, File},
@@ -21,7 +21,7 @@ use crate::{
 
 embed_migrations!("../migrations");
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 pub enum CalendarActions {
     /// Print today's Agenda
     PrintAgenda,
@@ -31,10 +31,10 @@ pub enum CalendarActions {
     SyncCalendarsFull,
     /// Delete Calendar Event
     Delete {
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Google Calendar Id
         gcal_id: StackString,
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Google Event Id
         event_id: StackString,
     },
@@ -42,48 +42,48 @@ pub enum CalendarActions {
     ListCalendars,
     /// List Events in a Single Calendar
     List {
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Google Calendar Id
         gcal_id: StackString,
-        #[structopt(long)]
+        #[clap(long)]
         /// Earliest date to consider (defaults to 1 week in the past)
         min_date: Option<DateType>,
-        #[structopt(long)]
+        #[clap(long)]
         /// Latest date to consider (default to 1 week from today)
         max_date: Option<DateType>,
     },
     /// Display full details of an event
     Detail {
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Google Calendar Id
         gcal_id: StackString,
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Google Event Id
         event_id: StackString,
     },
     /// Import into table
     Import {
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Table name
         table: StackString,
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Input file (if missinge will read from stdin)
         filepath: Option<PathBuf>,
     },
     Export {
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Table name
         table: StackString,
-        #[structopt(short, long)]
+        #[clap(short, long)]
         /// Input file (if missinge will read from stdin)
         filepath: Option<PathBuf>,
     },
     RunMigrations,
 }
 
-#[derive(StructOpt, Debug)]
+#[derive(Parser, Debug)]
 pub struct CalendarCliOpts {
-    #[structopt(subcommand)]
+    #[clap(subcommand)]
     action: Option<CalendarActions>,
 }
 
