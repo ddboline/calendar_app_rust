@@ -1,77 +1,76 @@
----
 openapi: 3.0.1
 info:
   title: Calendar Web App
-  description: "Web App to Display Calendar, Sync with GCal"
-  version: 0.5.13
+  description: Web App to Display Calendar, Sync with GCal
+  version: 0.6.11
 paths:
   /calendar/index.html:
     get:
       responses:
-        "200":
+        '200':
           description: Main Page
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/agenda:
     get:
       responses:
-        "200":
+        '200':
           description: Agenda
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/sync_calendars:
     get:
       responses:
-        "200":
+        '200':
           description: Sync Output
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/sync_calendars_full:
     get:
       responses:
-        "200":
+        '200':
           description: Sync Output
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/delete_event:
     delete:
@@ -88,80 +87,80 @@ paths:
                   type: string
               type: object
               required:
-                - gcal_id
-                - event_id
+              - gcal_id
+              - event_id
         required: true
       responses:
-        "201":
+        '201':
           description: Delete Event Output
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/list_calendars:
     get:
       responses:
-        "200":
+        '200':
           description: List Calendars
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/list_events:
     get:
       parameters:
-        - name: calendar_name
-          in: query
-          required: true
-          schema:
-            description: Calendar Name
-            type: string
-        - name: min_time
-          in: query
-          required: false
-          schema:
-            description: Earliest Date
-            format: date
-            nullable: true
-            type: string
-        - name: max_time
-          in: query
-          required: false
-          schema:
-            description: Latest Date
-            format: date
-            nullable: true
-            type: string
+      - name: calendar_name
+        in: query
+        required: true
+        schema:
+          description: Calendar Name
+          type: string
+      - name: min_time
+        in: query
+        required: false
+        schema:
+          description: Earliest Date
+          format: date
+          nullable: true
+          type: string
+      - name: max_time
+        in: query
+        required: false
+        schema:
+          description: Latest Date
+          format: date
+          nullable: true
+          type: string
       responses:
-        "200":
+        '200':
           description: List Events
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/event_detail:
     post:
@@ -178,36 +177,37 @@ paths:
                   type: string
               type: object
               required:
-                - gcal_id
-                - event_id
+              - gcal_id
+              - event_id
         required: true
       responses:
-        "201":
+        '201':
           description: Event Details
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/calendar_list:
     get:
       parameters:
-        - name: min_modified
-          in: query
-          required: false
-          schema:
-            format: date-time
-            nullable: true
-            type: string
+      - name: min_modified
+        in: query
+        required: false
+        schema:
+          description: Min Modified Date
+          format: date-time
+          nullable: true
+          type: string
       responses:
-        "200":
+        '200':
           description: Calendar List
           content:
             application/json:
@@ -251,20 +251,20 @@ paths:
                       type: boolean
                   type: object
                   required:
-                    - calendar_name
-                    - gcal_id
-                    - sync
-                    - last_modified
-                    - edit
-                    - display
+                  - calendar_name
+                  - gcal_id
+                  - sync
+                  - last_modified
+                  - edit
+                  - display
                 type: array
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
     post:
       requestBody:
@@ -313,19 +313,19 @@ paths:
                         type: boolean
                     type: object
                     required:
-                      - calendar_name
-                      - gcal_id
-                      - sync
-                      - last_modified
-                      - edit
-                      - display
+                    - calendar_name
+                    - gcal_id
+                    - sync
+                    - last_modified
+                    - edit
+                    - display
                   type: array
               type: object
               required:
-                - updates
+              - updates
         required: true
       responses:
-        "201":
+        '201':
           description: Calendar List Update
           content:
             application/json:
@@ -369,33 +369,34 @@ paths:
                       type: boolean
                   type: object
                   required:
-                    - calendar_name
-                    - gcal_id
-                    - sync
-                    - last_modified
-                    - edit
-                    - display
+                  - calendar_name
+                  - gcal_id
+                  - sync
+                  - last_modified
+                  - edit
+                  - display
                 type: array
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/calendar_cache:
     get:
       parameters:
-        - name: min_modified
-          in: query
-          required: false
-          schema:
-            format: date-time
-            nullable: true
-            type: string
+      - name: min_modified
+        in: query
+        required: false
+        schema:
+          description: Min Modified Date
+          format: date-time
+          nullable: true
+          type: string
       responses:
-        "200":
+        '200':
           description: Calendar Cache
           content:
             application/json:
@@ -445,20 +446,20 @@ paths:
                       type: string
                   type: object
                   required:
-                    - gcal_id
-                    - event_id
-                    - event_start_time
-                    - event_end_time
-                    - event_name
-                    - last_modified
+                  - gcal_id
+                  - event_id
+                  - event_start_time
+                  - event_end_time
+                  - event_name
+                  - last_modified
                 type: array
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
     post:
       requestBody:
@@ -513,19 +514,19 @@ paths:
                         type: string
                     type: object
                     required:
-                      - gcal_id
-                      - event_id
-                      - event_start_time
-                      - event_end_time
-                      - event_name
-                      - last_modified
+                    - gcal_id
+                    - event_id
+                    - event_start_time
+                    - event_end_time
+                    - event_name
+                    - last_modified
                   type: array
               type: object
               required:
-                - updates
+              - updates
         required: true
       responses:
-        "200":
+        '200':
           description: Calendar Cache Update
           content:
             application/json:
@@ -575,25 +576,25 @@ paths:
                       type: string
                   type: object
                   required:
-                    - gcal_id
-                    - event_id
-                    - event_start_time
-                    - event_end_time
-                    - event_name
-                    - last_modified
+                  - gcal_id
+                  - event_id
+                  - event_start_time
+                  - event_end_time
+                  - event_name
+                  - last_modified
                 type: array
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/user:
     get:
       responses:
-        "200":
+        '200':
           description: Logged in User
           content:
             application/json:
@@ -606,71 +607,75 @@ paths:
                     description: Session Id
                     format: uuid
                     type: string
+                  secret_key:
+                    description: Secret Key
+                    type: string
                 type: object
                 required:
-                  - email
-                  - session
-        "400":
+                - email
+                - session
+                - secret_key
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
-  "/calendar/link/{link}":
+  /calendar/link/{link}:
     get:
       parameters:
-        - name: link
-          in: path
-          required: true
-          schema:
-            type: string
+      - name: link
+        in: path
+        required: true
+        schema:
+          type: string
       responses:
-        "200":
+        '200':
           description: Shortened Link
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/create_calendar_event:
     get:
       parameters:
-        - name: gcal_id
-          in: query
-          required: true
-          schema:
-            description: GCal Calendar ID
-            type: string
-        - name: event_id
-          in: query
-          required: false
-          schema:
-            description: Event ID
-            nullable: true
-            type: string
+      - name: gcal_id
+        in: query
+        required: true
+        schema:
+          description: GCal Calendar ID
+          type: string
+      - name: event_id
+        in: query
+        required: false
+        schema:
+          description: Event ID
+          nullable: true
+          type: string
       responses:
-        "200":
+        '200':
           description: Build Calendar Event
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
     post:
       requestBody:
@@ -709,66 +714,66 @@ paths:
                   type: string
               type: object
               required:
-                - gcal_id
-                - event_id
-                - event_start_datetime
-                - event_end_datetime
-                - event_name
+              - gcal_id
+              - event_id
+              - event_start_datetime
+              - event_end_datetime
+              - event_name
         required: true
       responses:
-        "201":
+        '201':
           description: Create Calendar Event
           content:
             text/html:
               schema:
                 type: string
-        "400":
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
   /calendar/edit_calendar:
     get:
       parameters:
-        - name: gcal_id
-          in: query
-          required: true
-          schema:
-            description: GCal Calendar ID
-            type: string
-        - name: calendar_name
-          in: query
-          required: false
-          schema:
-            description: Calendar Name
-            nullable: true
-            type: string
-        - name: sync
-          in: query
-          required: false
-          schema:
-            description: Sync Flag
-            nullable: true
-            type: boolean
-        - name: edit
-          in: query
-          required: false
-          schema:
-            description: Edit Flag
-            nullable: true
-            type: boolean
-        - name: display
-          in: query
-          required: false
-          schema:
-            description: Display Flag
-            nullable: true
-            type: boolean
+      - name: gcal_id
+        in: query
+        required: true
+        schema:
+          description: GCal Calendar ID
+          type: string
+      - name: calendar_name
+        in: query
+        required: false
+        schema:
+          description: Calendar Name
+          nullable: true
+          type: string
+      - name: sync
+        in: query
+        required: false
+        schema:
+          description: Sync Flag
+          nullable: true
+          type: boolean
+      - name: edit
+        in: query
+        required: false
+        schema:
+          description: Edit Flag
+          nullable: true
+          type: boolean
+      - name: display
+        in: query
+        required: false
+        schema:
+          description: Display Flag
+          nullable: true
+          type: boolean
       responses:
-        "200":
+        '200':
           description: Edit Calendar Event
           content:
             application/json:
@@ -811,18 +816,18 @@ paths:
                     type: boolean
                 type: object
                 required:
-                  - calendar_name
-                  - gcal_id
-                  - sync
-                  - last_modified
-                  - edit
-                  - display
-        "400":
+                - calendar_name
+                - gcal_id
+                - sync
+                - last_modified
+                - edit
+                - display
+        '400':
           description: Bad Request
-        "404":
+        '404':
           description: Not Found
-        "405":
+        '405':
           description: Method not allowed
-        "500":
+        '500':
           description: Internal Server Error
 components: {}
