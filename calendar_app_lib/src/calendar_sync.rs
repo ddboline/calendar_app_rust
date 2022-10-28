@@ -1,7 +1,7 @@
 use anyhow::{format_err, Error};
-use futures::future::try_join_all;
-use itertools::Itertools;
+use futures::{future::try_join_all, Stream, TryStreamExt};
 use log::debug;
+use postgres_query::Error as PqError;
 use stack_string::{format_sstr, StackString};
 use std::{
     collections::{HashMap, HashSet},
@@ -177,8 +177,11 @@ impl CalendarSync {
             .get_gcal_events(gcal_id, None, None)
             .await?;
         let exported = if edit {
-            let database_events =
-                CalendarCache::get_by_gcal_id_datetime(gcal_id, None, None, &self.pool).await?;
+            let database_events: Vec<_> =
+                CalendarCache::get_by_gcal_id_datetime(gcal_id, None, None, &self.pool)
+                    .await?
+                    .try_collect()
+                    .await?;
             self.export_calendar_events(&calendar_events, &database_events, false)
                 .await?
         } else {
@@ -204,12 +207,14 @@ impl CalendarSync {
             .get_gcal_events(gcal_id, Some(OffsetDateTime::now_utc()), None)
             .await?;
         let exported = if edit {
-            let database_events = CalendarCache::get_by_gcal_id_datetime(
+            let database_events: Vec<_> = CalendarCache::get_by_gcal_id_datetime(
                 gcal_id,
                 Some(OffsetDateTime::now_utc()),
                 None,
                 &self.pool,
             )
+            .await?
+            .try_collect()
             .await?;
             self.export_calendar_events(&calendar_events, &database_events, true)
                 .await?
@@ -239,30 +244,37 @@ impl CalendarSync {
         output.push(format_sstr!("inserted {} calendars", inserted.len()));
 
         let gcal_set: HashSet<_> = inserted.iter().map(|cal| cal.gcal_id.clone()).collect();
+        let gcal_set = Arc::new(gcal_set);
 
-        let calendar_list = CalendarList::get_calendars(&self.pool)
+        let results: Result<Vec<_>, Error> = CalendarList::get_calendars(&self.pool)
             .await?
-            .into_iter()
-            .filter(|calendar| calendar.sync && gcal_set.contains(&calendar.gcal_id));
-
-        let futures = calendar_list.map(|calendar| async move {
-            let (exported, inserted) = if full {
-                self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
-                    .await?
-            } else {
-                debug!("gcal_id {}", calendar.gcal_id);
-                self.sync_future_events(&calendar.gcal_id, calendar.edit)
-                    .await?
-            };
-            let result = format_sstr!(
-                "future events {} {} {}",
-                calendar.calendar_name,
-                exported.len(),
-                inserted.len()
-            );
-            Ok(result)
-        });
-        let results: Result<Vec<_>, Error> = try_join_all(futures).await;
+            .map_err(Into::into)
+            .try_filter_map(|calendar| {
+                let gcal_set = gcal_set.clone();
+                async move {
+                    if calendar.sync && gcal_set.contains(&calendar.gcal_id) {
+                        let (exported, inserted) = if full {
+                            self.sync_full_calendar(&calendar.gcal_id, calendar.edit)
+                                .await?
+                        } else {
+                            debug!("gcal_id {}", calendar.gcal_id);
+                            self.sync_future_events(&calendar.gcal_id, calendar.edit)
+                                .await?
+                        };
+                        let result = format_sstr!(
+                            "future events {} {} {}",
+                            calendar.calendar_name,
+                            exported.len(),
+                            inserted.len()
+                        );
+                        Ok(Some(result))
+                    } else {
+                        Ok(None)
+                    }
+                }
+            })
+            .try_collect()
+            .await;
         output.extend_from_slice(&results?);
 
         Ok(output)
@@ -274,7 +286,7 @@ impl CalendarSync {
         &self,
         days_before: i64,
         days_after: i64,
-    ) -> Result<impl Iterator<Item = Event>, Error> {
+    ) -> Result<Vec<Event>, Error> {
         let min_time = OffsetDateTime::now_utc() - Duration::days(days_before);
         let max_time = OffsetDateTime::now_utc() + Duration::days(days_after);
 
@@ -284,31 +296,43 @@ impl CalendarSync {
         )?;
 
         let display_map: HashMap<_, _> = calendar_map
-            .filter_map(|cal| {
+            .try_filter_map(|cal| async move {
                 if cal.display {
-                    Some((cal.gcal_id, cal.display))
+                    Ok(Some((cal.gcal_id, cal.display)))
                 } else {
-                    None
+                    Ok(None)
                 }
             })
-            .collect();
+            .try_collect()
+            .await?;
+        let display_map = Arc::new(display_map);
 
-        let events = events
-            .into_iter()
-            .filter(|event| display_map.get(&event.gcal_id).map_or(false, |x| *x))
-            .sorted_by_key(|event| event.event_start_time)
-            .map(Into::into);
+        let events: Vec<Event> = events
+            .try_filter_map(|event| {
+                let display_map = display_map.clone();
+                async move {
+                    if display_map.get(&event.gcal_id).map_or(false, |x| *x) {
+                        let event: Event = event.into();
+                        Ok(Some(event))
+                    } else {
+                        Ok(None)
+                    }
+                }
+            })
+            .try_collect()
+            .await?;
+
         Ok(events)
     }
 
     /// # Errors
     /// Returns error if `get_calendars` fails
-    pub async fn list_calendars(&self) -> Result<impl Iterator<Item = Calendar>, Error> {
-        let calendars = CalendarList::get_calendars(&self.pool)
-            .await?
-            .into_iter()
-            .map(Into::into);
-        Ok(calendars)
+    pub async fn list_calendars(
+        &self,
+    ) -> Result<impl Stream<Item = Result<Calendar, PqError>>, Error> {
+        CalendarList::get_calendars(&self.pool)
+            .await
+            .map(|s| s.map_ok(Into::into))
     }
 
     /// # Errors
@@ -318,7 +342,7 @@ impl CalendarSync {
         gcal_id: &str,
         min_date: Option<Date>,
         max_date: Option<Date>,
-    ) -> Result<impl Iterator<Item = Event>, Error> {
+    ) -> Result<Vec<Event>, Error> {
         let min_date = min_date
             .and_then(|d| d.with_hms(0, 0, 0).ok().map(PrimitiveDateTime::assume_utc))
             .unwrap_or_else(|| (OffsetDateTime::now_utc() - Duration::weeks(1)));
@@ -333,16 +357,17 @@ impl CalendarSync {
                 || (OffsetDateTime::now_utc() + Duration::weeks(2)),
                 |d| d.unwrap().to_timezone(TimeZone::utc().into()),
             );
-        let events = CalendarCache::get_by_gcal_id_datetime(
+        let mut events: Vec<Event> = CalendarCache::get_by_gcal_id_datetime(
             gcal_id,
             Some(min_date),
             Some(max_date),
             &self.pool,
         )
         .await?
-        .into_iter()
-        .sorted_by_key(|event| event.event_start_time)
-        .map(Into::into);
+        .map_ok(Into::into)
+        .try_collect()
+        .await?;
+        events.sort_by_key(|event| event.start_time);
         Ok(events)
     }
 }

@@ -1,6 +1,6 @@
 use anyhow::{format_err, Error};
 use clap::Parser;
-use futures::future::try_join_all;
+use futures::{future::try_join_all, TryStreamExt};
 use refinery::embed_migrations;
 use stack_string::{format_sstr, StackString};
 use std::path::PathBuf;
@@ -45,10 +45,10 @@ pub enum CalendarActions {
         #[clap(short, long)]
         /// Google Calendar Id
         gcal_id: StackString,
-        #[clap(long)]
+        #[clap(long, value_parser=DateType::parse_from_str)]
         /// Earliest date to consider (defaults to 1 week in the past)
         min_date: Option<DateType>,
-        #[clap(long)]
+        #[clap(long, value_parser=DateType::parse_from_str)]
         /// Latest date to consider (default to 1 week from today)
         max_date: Option<DateType>,
     },
@@ -91,7 +91,7 @@ impl CalendarCliOpts {
     /// # Errors
     /// Returns error if api calls fail
     pub async fn parse_opts() -> Result<(), Error> {
-        let opts = Self::from_args();
+        let opts = Self::parse();
         let action = opts.action.unwrap_or(CalendarActions::PrintAgenda);
 
         let config = Config::init_config()?;
@@ -138,7 +138,8 @@ impl CalendarCliOpts {
                 };
             }
             CalendarActions::ListCalendars => {
-                for calendar in cal_sync.list_calendars().await? {
+                let mut stream = Box::pin(cal_sync.list_calendars().await?);
+                while let Some(calendar) = stream.try_next().await? {
                     cal_sync.stdout.send(format_sstr!("{calendar}"));
                 }
             }
@@ -213,14 +214,20 @@ impl CalendarCliOpts {
                 match table.as_str() {
                     "calendar_list" => {
                         let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
-                        let calendars =
-                            CalendarList::get_recent(max_modified, &cal_sync.pool).await?;
+                        let calendars: Vec<_> =
+                            CalendarList::get_recent(max_modified, &cal_sync.pool)
+                                .await?
+                                .try_collect()
+                                .await?;
                         file.write_all(&serde_json::to_vec(&calendars)?).await?;
                     }
                     "calendar_cache" => {
                         let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
-                        let events =
-                            CalendarCache::get_recent(max_modified, &cal_sync.pool).await?;
+                        let events: Vec<_> =
+                            CalendarCache::get_recent(max_modified, &cal_sync.pool)
+                                .await?
+                                .try_collect()
+                                .await?;
                         file.write_all(&serde_json::to_vec(&events)?).await?;
                     }
                     _ => {}

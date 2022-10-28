@@ -319,15 +319,13 @@ impl Event {
         let original_url = self.url.as_ref();
         let domain = domain.as_ref();
         if let Some(original_url) = original_url {
-            if let Ok(mut result) =
+            if let Ok(Some(result)) =
                 ShortenedLinks::get_by_original_url(original_url.as_str(), pool).await
             {
-                if let Some(result) = result.pop() {
-                    short_url.replace(format_sstr!(
-                        "https://{domain}/calendar/link/{url}",
-                        url = result.shortened_url
-                    ));
-                }
+                short_url.replace(format_sstr!(
+                    "https://{domain}/calendar/link/{url}",
+                    url = result.shortened_url
+                ));
             }
             if short_url.is_none() {
                 if let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await

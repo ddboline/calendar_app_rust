@@ -2,6 +2,7 @@ use anyhow::Error as AnyhowError;
 use http::StatusCode;
 use indexmap::IndexMap;
 use log::error;
+use postgres_query::Error as PqError;
 use rweb::{
     openapi::{
         ComponentDescriptor, ComponentOrInlineSchema, Entity, Response, ResponseEntity, Responses,
@@ -34,6 +35,8 @@ pub enum ServiceError {
     JoinError(#[from] JoinError),
     #[error("TzError {0}")]
     TzError(#[from] TzError),
+    #[error("PqError {0}")]
+    PqError(#[from] PqError),
 }
 
 impl Reject for ServiceError {}

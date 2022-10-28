@@ -1,5 +1,5 @@
 use anyhow::Error;
-use futures::future::try_join_all;
+use futures::{future::try_join_all, TryStreamExt};
 use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
@@ -100,12 +100,12 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
 pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
     let current_event_map: HashMap<_, _> = CalendarCache::get_by_gcal_id(CALID, pool)
         .await?
-        .into_iter()
-        .map(|event| {
+        .map_ok(|event| {
             let start_time = event.event_start_time.to_timezone(NEW_YORK);
             (start_time, event)
         })
-        .collect();
+        .try_collect()
+        .await?;
     let current_event_map = Arc::new(current_event_map);
     let body = reqwest::get(URL).await?.text().await?;
 

@@ -1,6 +1,9 @@
 use anyhow::Error;
 use derive_more::Into;
-use postgres_query::{client::GenericClient, query, query_dyn, FromSqlRow, Parameter};
+use futures::Stream;
+use postgres_query::{
+    client::GenericClient, query, query_dyn, Error as PqError, FromSqlRow, Parameter,
+};
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::{cmp, io};
@@ -43,10 +46,12 @@ impl CalendarList {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_calendars(pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_calendars(
+        pool: &PgPool,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!("SELECT * FROM calendar_list");
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -139,7 +144,10 @@ impl CalendarList {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_recent(modified: OffsetDateTime, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_recent(
+        modified: OffsetDateTime,
+        pool: &PgPool,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!(
             r#"
                 SELECT * FROM calendar_list
@@ -148,7 +156,7 @@ impl CalendarList {
             modified = modified
         );
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     async fn insert_conn<C>(&self, conn: &C) -> Result<(), Error>
@@ -215,21 +223,16 @@ pub struct CalendarCache {
 impl CalendarCache {
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_all_events(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
-        let query = query!("SELECT * FROM calendar_cache");
-        let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
-    }
-
-    /// # Errors
-    /// Returns error if db query fails
-    pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
+    pub async fn get_by_gcal_id(
+        gcal_id: &str,
+        pool: &PgPool,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!(
             "SELECT * FROM calendar_cache WHERE gcal_id=$gcal_id",
             gcal_id = gcal_id
         );
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -272,18 +275,19 @@ impl CalendarCache {
         min_time: OffsetDateTime,
         max_time: OffsetDateTime,
         pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!(
             r#"
                 SELECT * FROM calendar_cache
                 WHERE event_end_time >= $min_time
                   AND event_start_time <= $max_time
+                ORDER BY event_start_time
             "#,
             min_time = min_time,
             max_time = max_time,
         );
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -293,7 +297,7 @@ impl CalendarCache {
         min_time: Option<OffsetDateTime>,
         max_time: Option<OffsetDateTime>,
         pool: &PgPool,
-    ) -> Result<Vec<CalendarCache>, Error> {
+    ) -> Result<impl Stream<Item = Result<CalendarCache, PqError>>, Error> {
         let mut conditions = vec!["gcal_id = $gcal_id"];
         let mut bindings = Vec::new();
 
@@ -318,7 +322,7 @@ impl CalendarCache {
         query_bindings.push(("gcal_id", &gcal_id as Parameter));
         let query = query_dyn!(&query, ..query_bindings)?;
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -388,13 +392,16 @@ impl CalendarCache {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_recent(modified: OffsetDateTime, pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_recent(
+        modified: OffsetDateTime,
+        pool: &PgPool,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!(
             "SELECT * FROM calendar_cache WHERE last_modified >= $modified",
             modified = modified
         );
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -465,10 +472,12 @@ pub struct AuthorizedUsers {
 impl AuthorizedUsers {
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_authorized_users(pool: &PgPool) -> Result<Vec<Self>, Error> {
+    pub async fn get_authorized_users(
+        pool: &PgPool,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
         let query = query!("SELECT * FROM authorized_users");
         let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
+        query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -504,22 +513,26 @@ impl ShortenedLinks {
     pub async fn get_by_original_url(
         original_url: &str,
         pool: &PgPool,
-    ) -> Result<Vec<Self>, Error> {
+    ) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
-        Self::get_by_original_url_conn(original_url, &conn)
+        Self::get_latest_original_url_conn(original_url, &conn)
             .await
             .map_err(Into::into)
     }
 
-    async fn get_by_original_url_conn<C>(original_url: &str, conn: &C) -> Result<Vec<Self>, Error>
+    async fn get_latest_original_url_conn<C>(
+        original_url: &str,
+        conn: &C,
+    ) -> Result<Option<Self>, Error>
     where
         C: GenericClient + Sync,
     {
         let query = query!(
-            "SELECT * FROM shortened_links WHERE original_url=$original_url",
+            "SELECT * FROM shortened_links WHERE original_url=$original_url ORDER BY \
+             last_modified DESC LIMIT 1",
             original_url = original_url,
         );
-        query.fetch(conn).await.map_err(Into::into)
+        query.fetch_opt(conn).await.map_err(Into::into)
     }
 
     /// # Errors
@@ -550,24 +563,12 @@ impl ShortenedLinks {
 
     /// # Errors
     /// Returns error if db query fails
-    pub async fn get_shortened_links(pool: &PgPool) -> Result<Vec<Self>, Error> {
-        let query = query!("SELECT * FROM shortened_links");
-        let conn = pool.get().await?;
-        query.fetch(&conn).await.map_err(Into::into)
-    }
-
-    /// # Errors
-    /// Returns error if db query fails
     pub async fn get_or_create(original_url: &str, pool: &PgPool) -> Result<Self, Error> {
         let mut conn = pool.get().await?;
         let tran = conn.transaction().await?;
         let conn: &PgTransaction = &tran;
 
-        let existing = Self::get_by_original_url_conn(original_url, conn)
-            .await?
-            .pop();
-
-        if let Some(existing) = existing {
+        if let Some(existing) = Self::get_latest_original_url_conn(original_url, conn).await? {
             Ok(existing)
         } else {
             let base_hasher = blake3::Hasher::new();

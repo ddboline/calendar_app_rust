@@ -1,7 +1,7 @@
 use anyhow::Error;
 use arc_swap::ArcSwap;
 use deadqueue::unlimited::Queue;
-use futures::{try_join, StreamExt};
+use futures::{future, try_join, StreamExt, TryStreamExt};
 use im::HashMap;
 use lazy_static::lazy_static;
 use stack_string::{format_sstr, StackString};
@@ -130,7 +130,7 @@ impl TelegramBot {
 
     pub async fn notification_handler(&self) -> Result<(), Error> {
         let now = OffsetDateTime::now_utc();
-        let mut events: VecDeque<_> = self.cal_sync.list_agenda(0, 1).await?.collect();
+        let mut events: VecDeque<_> = self.cal_sync.list_agenda(0, 1).await?.into();
         let mut agenda_datetime = now.date().with_hms(12, 0, 0)?.assume_utc();
         loop {
             FAILURE_COUNT.check()?;
@@ -138,7 +138,7 @@ impl TelegramBot {
             for chat_id in TELEGRAM_USERIDS.load().values().flatten() {
                 if now > agenda_datetime {
                     agenda_datetime += Duration::days(1);
-                    events = self.cal_sync.list_agenda(0, 1).await?.collect();
+                    events = self.cal_sync.list_agenda(0, 1).await?.into();
                     for event in &events {
                         self.send_message(
                             *chat_id,
@@ -187,7 +187,8 @@ impl TelegramBot {
             let p = self.pool.clone();
             if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&p).await {
                 let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();
-                for user in authorized_users {
+                let mut stream = Box::pin(authorized_users);
+                while let Some(user) = stream.try_next().await? {
                     if let Some(userid) = user.telegram_userid {
                         let userid = UserId::new(userid);
                         if !telegram_userids.contains_key(&userid) {
@@ -206,10 +207,11 @@ impl TelegramBot {
 
     async fn update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
         if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&self.pool).await {
-            if let Some(mut user) = authorized_users
-                .into_iter()
-                .find(|user| user.telegram_userid == Some(userid.into()))
-            {
+            let mut stream = Box::pin(
+                authorized_users
+                    .try_filter(|user| future::ready(user.telegram_userid == Some(userid.into()))),
+            );
+            if let Some(mut user) = stream.try_next().await? {
                 user.telegram_chatid.replace(chatid.into());
                 user.update_authorized_users(&self.pool).await?;
                 let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();

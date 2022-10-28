@@ -38,7 +38,7 @@ pub fn get_default_or_local_time(dt: OffsetDateTime, config: &Config) -> StackSt
     }
 }
 
-#[derive(Into, From, Debug)]
+#[derive(Into, From, Debug, Clone, Copy)]
 pub struct DateType(Date);
 
 impl FromStr for DateType {
@@ -47,5 +47,13 @@ impl FromStr for DateType {
         Date::parse(s, format_description!("[year]-[month]-[day]"))
             .map(Self)
             .map_err(Into::into)
+    }
+}
+
+impl DateType {
+    /// # Errors
+    /// Returns error if parse fails
+    pub fn parse_from_str(s: &str) -> Result<Self, String> {
+        s.parse().map_err(|e| format!("{e}"))
     }
 }

@@ -1,5 +1,5 @@
 use anyhow::format_err;
-use futures::future::try_join_all;
+use futures::{future, stream::FuturesUnordered, TryStreamExt};
 use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
@@ -61,18 +61,18 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
-        .filter_map(|cal| {
+        .try_filter_map(|cal| async move {
             if cal.display {
-                Some((cal.gcal_id.clone(), cal))
+                Ok(Some((cal.gcal_id.clone(), cal)))
             } else {
-                None
+                Ok(None)
             }
         })
-        .collect();
-    let events = cal_sync
-        .list_agenda(1, 2)
-        .await?
-        .sorted_by_key(|event| event.start_time)
+        .try_collect()
+        .await?;
+    let mut events = cal_sync.list_agenda(1, 2).await?;
+    events.sort_by_key(|event| event.start_time);
+    let events = events.into_iter()
         .filter_map(|event| {
             let cal = match calendar_map.get(&event.gcal_id) {
                 Some(cal) => cal,
@@ -206,17 +206,19 @@ pub async fn list_calendars(
 }
 
 async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString> {
-    let calendars = cal_sync
+    let mut calendars: Vec<_> = cal_sync
         .list_calendars()
         .await?
-        .filter(|calendar| calendar.sync)
-        .sorted_by_key(|calendar| {
-            calendar
-                .gcal_name
-                .as_ref()
-                .map_or_else(|| calendar.name.clone(), Clone::clone)
-        });
-    let calendars = calendars
+        .try_filter(|calendar| future::ready(calendar.sync))
+        .try_collect()
+        .await?;
+    calendars.sort_by_key(|calendar| {
+        calendar
+            .gcal_name
+            .as_ref()
+            .map_or_else(|| calendar.name.clone(), Clone::clone)
+    });
+    let calendars = calendars.into_iter()
         .map(|calendar| {
             let create_event = if calendar.edit {
                 format_sstr!(r#"
@@ -293,16 +295,20 @@ async fn list_events_body(
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
-        .map(|cal| (cal.name.clone(), cal))
-        .collect();
+        .map_ok(|cal| (cal.name.clone(), cal))
+        .try_collect()
+        .await?;
     let cal = match calendar_map.get(&query.calendar_name) {
         Some(cal) => cal,
         None => return Ok("".into()),
     };
     let min_time = query.min_time.map(Into::into);
     let max_time = query.max_time.map(Into::into);
-    let events = cal_sync.list_events(&cal.gcal_id, min_time, max_time).await?
-        .sorted_by_key(|event| event.start_time)
+    let mut events = cal_sync
+        .list_events(&cal.gcal_id, min_time, max_time)
+        .await?;
+    events.sort_by_key(|event| event.start_time);
+    let events = events.into_iter()
         .map(|event| {
             let delete = if cal.edit {
                 format_sstr!(
@@ -464,9 +470,9 @@ async fn calendar_list_object(
         .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
     let cal_list = CalendarList::get_recent(min_modified, &cal_sync.pool)
         .await?
-        .into_iter()
-        .map(Into::into)
-        .collect();
+        .map_ok(Into::into)
+        .try_collect()
+        .await?;
     Ok(cal_list)
 }
 
@@ -495,15 +501,19 @@ async fn calendar_list_update_object(
     payload: CalendarUpdateRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<Vec<CalendarListWrapper>> {
-    let futures = payload.updates.into_iter().map(|calendar| {
-        let pool = cal_sync.pool.clone();
-        let calendar: CalendarList = calendar.into();
-        async move {
-            calendar.upsert(&pool).await?;
-            Ok(calendar.into())
-        }
-    });
-    try_join_all(futures).await
+    let futures: FuturesUnordered<_> = payload
+        .updates
+        .into_iter()
+        .map(|calendar| {
+            let pool = cal_sync.pool.clone();
+            let calendar: CalendarList = calendar.into();
+            async move {
+                calendar.upsert(&pool).await?;
+                Ok(calendar.into())
+            }
+        })
+        .collect();
+    futures.try_collect().await
 }
 
 #[derive(RwebResponse)]
@@ -533,8 +543,10 @@ async fn calendar_cache_events(
         .min_modified
         .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
     CalendarCache::get_recent(min_modified, &cal_sync.pool)
+        .await?
+        .try_collect()
         .await
-        .map_err(Into::into)
+        .map_err(Into::<Error>::into)
 }
 
 #[derive(Serialize, Deserialize, Schema)]
@@ -562,15 +574,19 @@ async fn calendar_cache_update_events(
     payload: CalendarCacheUpdateRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<Vec<CalendarCacheWrapper>> {
-    let futures = payload.updates.into_iter().map(|event| {
-        let pool = cal_sync.pool.clone();
-        let event: CalendarCache = event.into();
-        async move {
-            event.upsert(&pool).await?;
-            Ok(event.into())
-        }
-    });
-    try_join_all(futures).await
+    let futures: FuturesUnordered<_> = payload
+        .updates
+        .into_iter()
+        .map(|event| {
+            let pool = cal_sync.pool.clone();
+            let event: CalendarCache = event.into();
+            async move {
+                event.upsert(&pool).await?;
+                Ok(event.into())
+            }
+        })
+        .collect();
+    futures.try_collect().await
 }
 
 #[derive(RwebResponse)]
