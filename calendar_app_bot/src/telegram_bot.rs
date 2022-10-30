@@ -206,23 +206,26 @@ impl TelegramBot {
     }
 
     async fn update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
-        if let Ok(authorized_users) = AuthorizedUsers::get_authorized_users(&self.pool).await {
-            let mut stream = Box::pin(
-                authorized_users
-                    .try_filter(|user| future::ready(user.telegram_userid == Some(userid.into()))),
-            );
-            if let Some(mut user) = stream.try_next().await? {
-                user.telegram_chatid.replace(chatid.into());
-                user.update_authorized_users(&self.pool).await?;
-                let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();
-                if let Some(telegram_chatid) = telegram_userids.get_mut(&userid) {
-                    telegram_chatid.replace(chatid);
-                }
-                TELEGRAM_USERIDS.store(Arc::new(telegram_userids));
+        match self._update_telegram_chat_id(userid, chatid).await {
+            Ok(_) => FAILURE_COUNT.reset()?,
+            Err(_) => FAILURE_COUNT.increment()?,
+        }
+        Ok(())
+    }
+
+    async fn _update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
+        let authorized_users: Vec<_> = AuthorizedUsers::get_authorized_users(&self.pool)
+            .await?
+            .try_filter(|user| future::ready(user.telegram_userid == Some(userid.into())))
+            .try_collect()
+            .await?;
+        for mut user in authorized_users {
+            user.telegram_chatid.replace(chatid.into());
+            user.update_authorized_users(&self.pool).await?;
+            let mut telegram_userids = (*TELEGRAM_USERIDS.load().clone()).clone();
+            if let Some(telegram_chatid) = telegram_userids.get_mut(&userid) {
+                telegram_chatid.replace(chatid);
             }
-            FAILURE_COUNT.reset()?;
-        } else {
-            FAILURE_COUNT.increment()?;
         }
         Ok(())
     }
