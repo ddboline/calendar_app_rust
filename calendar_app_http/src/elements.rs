@@ -245,7 +245,7 @@ fn list_calendars_element(
                                     "type": "button",
                                     name: "list_events",
                                     value: "{calendar_name}",
-                                    "onclick": "calendarDisplay('{gcal_id}', false)",
+                                    "onclick": "listEvents('{calendar_name}')",
                                 }
                             },
                             td {"{description}"},
