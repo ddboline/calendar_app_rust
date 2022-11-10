@@ -10,7 +10,7 @@ use stack_string::StackString;
 
 use crate::timezone::TimeZone;
 
-#[derive(Default, Debug, Deserialize, PartialEq)]
+#[derive(Default, Debug, Deserialize, PartialEq, Eq)]
 pub struct ConfigInner {
     #[serde(default = "default_database_url")]
     pub database_url: StackString,
@@ -34,7 +34,7 @@ pub struct ConfigInner {
     pub jwt_secret_path: PathBuf,
 }
 
-#[derive(Default, Debug, Clone, PartialEq)]
+#[derive(Default, Debug, Clone, PartialEq, Eq)]
 pub struct Config(Arc<ConfigInner>);
 
 fn default_database_url() -> StackString {

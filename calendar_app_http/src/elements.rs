@@ -129,7 +129,7 @@ fn agenda_element(
                     } else {
                         None
                     };
-                    let start_time = get_default_or_local_time(event.start_time.into(), &config);
+                    let start_time = get_default_or_local_time(event.start_time.into(), config);
                     let calendar_name = calendar_name;
                     let cal_name = &cal.name;
                     let gcal_id = &event.gcal_id;
@@ -320,8 +320,8 @@ fn list_events_element(
                     } else {
                         None
                     };
-                    let start_time = get_default_or_local_time(event.start_time.into(), &config);
-                    let end_time = get_default_or_local_time(event.end_time.into(), &config);
+                    let start_time = get_default_or_local_time(event.start_time.into(), config);
+                    let end_time = get_default_or_local_time(event.end_time.into(), config);
                     let name = &event.name;
                     let gcal_id = &event.gcal_id;
                     let event_id = &event.event_id;
@@ -400,8 +400,8 @@ fn event_detail_element(
         .join("");
         rsx! {"{description}"}
     });
-    let start_time = get_default_or_local_time(event.start_time.into(), &config);
-    let end_time = get_default_or_local_time(event.end_time.into(), &config);
+    let start_time = get_default_or_local_time(event.start_time.into(), config);
+    let end_time = get_default_or_local_time(event.end_time.into(), config);
     cx.render(rsx! {
         table {
             "border": "1",

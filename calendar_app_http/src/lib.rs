@@ -4,6 +4,7 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::unused_async)]
+#![allow(clippy::implicit_hasher)]
 
 pub mod app;
 pub mod errors;
