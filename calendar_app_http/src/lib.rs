@@ -4,11 +4,13 @@
 #![allow(clippy::cast_possible_truncation)]
 #![allow(clippy::cast_possible_wrap)]
 #![allow(clippy::unused_async)]
+#![allow(clippy::implicit_hasher)]
 
 pub mod app;
 pub mod errors;
 pub mod logged_user;
 pub mod routes;
+pub mod elements;
 
 use derive_more::{From, Into};
 use rweb::Schema;

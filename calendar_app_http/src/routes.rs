@@ -1,6 +1,5 @@
 use anyhow::format_err;
 use futures::{future, stream::FuturesUnordered, TryStreamExt};
-use itertools::Itertools;
 use rweb::{delete, get, post, Json, Query, Rejection, Schema};
 use rweb_helper::{
     html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, DateType,
@@ -9,14 +8,12 @@ use rweb_helper::{
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::collections::HashMap;
-use time::{macros::format_description, Duration, OffsetDateTime};
+use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use url::Url;
 
 use calendar_app_lib::{
     calendar::Event,
     calendar_sync::CalendarSync,
-    get_default_or_local_time,
     models::{CalendarCache, CalendarList, ShortenedLinks},
     timezone::TimeZone,
 };
@@ -27,6 +24,10 @@ use crate::{
     logged_user::LoggedUser,
     CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper, CreateCalendarEventRequest,
     MinModifiedQuery,
+    elements::{
+        index_body, agenda_body, list_calendars_body, list_events_body, event_detail_body,
+        build_event_body,
+    },
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
@@ -40,7 +41,7 @@ struct IndexResponse(HtmlBase<String, Error>);
 pub async fn calendar_index(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
 ) -> WarpResult<IndexResponse> {
-    let body = include_str!("../../templates/index.html").replace("DISPLAY_TEXT", "");
+    let body = index_body();
     Ok(HtmlBase::new(body).into())
 }
 
@@ -53,11 +54,11 @@ pub async fn agenda(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<AgendaResponse> {
-    let body = agenda_body(data.cal_sync).await?;
+    let body = get_agenda(data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
+async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
@@ -72,47 +73,7 @@ async fn agenda_body(cal_sync: CalendarSync) -> HttpResult<StackString> {
         .await?;
     let mut events = cal_sync.list_agenda(1, 2).await?;
     events.sort_by_key(|event| event.start_time);
-    let events = events.into_iter()
-        .filter_map(|event| {
-            let cal = match calendar_map.get(&event.gcal_id) {
-                Some(cal) => cal,
-                None => return None,
-            };
-            let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
-            let delete = if cal.edit {
-                format_sstr!(
-                    r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventAgenda('{gcal_id}', '{event_id}')">"#,
-                    gcal_id=event.gcal_id,
-                    event_id=event.event_id,
-                )
-            } else {
-                "".into()
-            };
-            let start_time = get_default_or_local_time(event.start_time.into(), &cal_sync.config);
-            Some(format_sstr!(
-                r#"
-                    <tr text-style="center">
-                    <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{cal_name}')"></td>
-                    <td><input type="button" name="event_detail" value="{event_name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
-                    <td>{start_time}</td>
-                    <td>{delete}</td>
-                    </tr>
-                "#,
-                calendar_name=calendar_name,
-                cal_name=cal.name,
-                gcal_id=event.gcal_id,
-                event_id=event.event_id,
-                event_name=event.name,
-            ))
-        })
-        .join("");
-    let body = format_sstr!(
-        r#"
-        <table border="1" class="dataframe">
-        <thead><th>Calendar</th><th>Event</th><th>Start Time</th></thead>
-        <tbody>{events}</tbody>
-        </table>"#
-    );
+    let body = agenda_body(calendar_map, events, cal_sync.config.clone()).into();
     Ok(body)
 }
 
@@ -201,11 +162,11 @@ pub async fn list_calendars(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<ListCalendarsResponse> {
-    let body = list_calendars_body(&data.cal_sync).await?;
+    let body = get_calendars_list(&data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString> {
+async fn get_calendars_list(cal_sync: &CalendarSync) -> HttpResult<StackString> {
     let mut calendars: Vec<_> = cal_sync
         .list_calendars()
         .await?
@@ -218,48 +179,7 @@ async fn list_calendars_body(cal_sync: &CalendarSync) -> HttpResult<StackString>
             .as_ref()
             .map_or_else(|| calendar.name.clone(), Clone::clone)
     });
-    let calendars = calendars.into_iter()
-        .map(|calendar| {
-            let create_event = if calendar.edit {
-                format_sstr!(r#"
-                    <input type="button" name="create_event" value="Create Event" onclick="buildEvent('{}')">
-                "#, calendar.gcal_id)
-            } else {
-                "".into()
-            };
-            let make_visible = if calendar.display {
-                format_sstr!(r#"
-                    <input type="button" name="hide_calendar" value="Hide" onclick="calendarDisplay('{}', false)">
-                "#, calendar.gcal_id)
-            } else {
-                format_sstr!(r#"
-                <input type="button" name="show_calendar" value="Show" onclick="calendarDisplay('{}', true)">
-                "#, calendar.gcal_id)
-            };
-            format_sstr!(r#"
-                <tr text-style="center">
-                <td><input type="button" name="list_events" value="{calendar_name}" onclick="listEvents('{calendar_name}')"></td>
-                <td>{description}</td>
-                <td>{make_visible}</td>
-                <td>{create_event}</td>
-                </tr>"#,
-                calendar_name=calendar.name,
-                description=calendar.description.as_ref().map_or_else(|| "", StackString::as_str),
-            )
-        }).join("");
-
-    let body = format_sstr!(
-        r#"
-        <table border="1" class="dataframe">
-        <thead>
-        <th>Calendar</th>
-        <th>Description</th>
-        <th></th>
-        <th><input type="button" name="sync_all" value="Full Sync" onclick="syncCalendarsFull();"/></th>
-        </thead>
-        <tbody>{calendars}</tbody>
-        </table>"#,
-    );
+    let body = list_calendars_body(calendars).into();
     Ok(body)
 }
 
@@ -284,69 +204,26 @@ pub async fn list_events(
     #[data] data: AppState,
 ) -> WarpResult<ListEventsResponse> {
     let query = query.into_inner();
-    let body = list_events_body(query, &data.cal_sync).await?;
+    let body = get_events_list(query, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn list_events_body(
+async fn get_events_list(
     query: ListEventsRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<StackString> {
-    let calendar_map: HashMap<_, _> = cal_sync
-        .list_calendars()
-        .await?
-        .map_ok(|cal| (cal.name.clone(), cal))
-        .try_collect()
-        .await?;
-    let cal = match calendar_map.get(&query.calendar_name) {
-        Some(cal) => cal,
+    let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
+    let calendar = match calendars.into_iter().find(|cal| cal.name == query.calendar_name) {
+        Some(c) => c,
         None => return Ok("".into()),
     };
     let min_time = query.min_time.map(Into::into);
     let max_time = query.max_time.map(Into::into);
     let mut events = cal_sync
-        .list_events(&cal.gcal_id, min_time, max_time)
+        .list_events(&calendar.gcal_id, min_time, max_time)
         .await?;
     events.sort_by_key(|event| event.start_time);
-    let events = events.into_iter()
-        .map(|event| {
-            let delete = if cal.edit {
-                format_sstr!(
-                    r#"<input type="button" name="delete_event" value="Delete" onclick="deleteEventList('{gcal_id}', '{event_id}', '{calendar_name}')">"#,
-                    gcal_id=event.gcal_id,
-                    event_id=event.event_id,
-                    calendar_name=query.calendar_name,
-                )
-            } else {
-                "".into()
-            };
-            let start_time = get_default_or_local_time(event.start_time.into(), &cal_sync.config);
-            let end_time = get_default_or_local_time(event.end_time.into(), &cal_sync.config);
-
-            format_sstr!(r#"
-                    <tr text-style="center">
-                    <td><input type="button" name="{name}" value="{name}" onclick="eventDetail('{gcal_id}', '{event_id}')"></td>
-                    <td>{start_time}</td>
-                    <td>{end_time}</td>
-                    <td>{delete}</td>
-                    </tr>
-                "#,
-                name=event.name,
-                gcal_id=event.gcal_id,
-                event_id=event.event_id,
-            )
-        }).join("");
-    let body = format_sstr!(
-        r#"
-        <table border="1" class="dataframe">
-        <thead>
-        <th>Event</th><th>Start Time</th><th>End Time</th>
-        <th><input type="button" name="create_event" value="Create Event" onclick="buildEvent('{gcal_id}')"></th>
-        </thead>
-        <tbody>{events}</tbody>
-        </table>"#,
-        gcal_id = cal.gcal_id
-    );
+    let body = list_events_body(calendar, events, cal_sync.config.clone()).into();
     Ok(body)
 }
 
@@ -361,11 +238,11 @@ pub async fn event_detail(
     #[data] data: AppState,
 ) -> WarpResult<EventDetailResponse> {
     let payload = payload.into_inner();
-    let body = event_detail_body(payload, &data.cal_sync).await?;
+    let body = get_event_detail(payload, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn event_detail_body(
+async fn get_event_detail(
     payload: GcalEventID,
     cal_sync: &CalendarSync,
 ) -> HttpResult<StackString> {
@@ -374,72 +251,7 @@ async fn event_detail_body(
             .await?
     {
         let event: Event = event.into();
-        let mut output = vec![format_sstr!(
-            r#"<tr text-style="center"><td>Name</td><td>{}</td></tr>"#,
-            &event.name
-        )];
-        if let Some(description) = &event.description {
-            let description = description
-                .split('\n')
-                .map(|line| {
-                    let mut line_length = 0;
-                    let words = line
-                        .split_whitespace()
-                        .map(|word| {
-                            let mut output_word = StackString::new();
-                            if let Ok(url) = word.parse::<Url>() {
-                                if url.scheme() == "https" {
-                                    output_word = format_sstr!(r#"<a href="{url}">Link</a>"#);
-                                }
-                            } else {
-                                output_word = word.into();
-                            }
-                            line_length += output_word.len();
-                            if line_length > 60 {
-                                output_word = format_sstr!("<br>{output_word}");
-                                line_length = 0;
-                            }
-                            output_word
-                        })
-                        .join(" ");
-                    format_sstr!("\t\t{words}")
-                })
-                .join("");
-            output.push(format_sstr!(
-                r#"<tr text-style="center"><td>Description</td><td>{description}</td></tr>"#,
-            ));
-        }
-        if let Some(url) = &event.url {
-            output.push(format_sstr!(
-                r#"<tr text-style="center"><td>Url</td><td><a href={url}>Link</a></td></tr>"#
-            ));
-        }
-        if let Some(location) = &event.location {
-            output.push(format_sstr!(
-                r#"<tr text-style="center"><td>Location</td><td>{}</td></tr>"#,
-                location.name
-            ));
-            if let Some((lat, lon)) = &location.lat_lon {
-                output.push(format_sstr!(
-                    r#"<tr text-style="center"><td>Lat,Lon:</td><td>{lat},{lon}</td></tr>"#
-                ));
-            }
-        }
-        output.push(format_sstr!(
-            r#"<tr text-style="center"><td>Start Time</td><td>{}</td></tr>"#,
-            get_default_or_local_time(event.start_time.into(), &cal_sync.config)
-        ));
-        output.push(format_sstr!(
-            r#"<tr text-style="center"><td>End Time</td><td>{}</td></tr>"#,
-            get_default_or_local_time(event.end_time.into(), &cal_sync.config)
-        ));
-        format_sstr!(
-            r#"
-            <table border="1" class="dataframe">
-            <tbody>{}</tbody>
-            </table>"#,
-            output.join("")
-        )
+        event_detail_body(event, cal_sync.config.clone()).into()
     } else {
         "".into()
     };
@@ -688,40 +500,7 @@ async fn build_calendar_event_body(
         },
         Into::into,
     );
-    let body = format_sstr!(
-        r#"
-        <form action="javascript:createCalendarEvent();">
-            Calendar ID: <input type="text" name="gcal_id" id="gcal_id" value="{gcal_id}"/><br>
-            Event ID: <input type="text" name="event_id" id="event_id" value="{event_id}"/><br>
-            Start Date: <input type="date" name="start_date" id="start_date" value="{start_date}"/><br>
-            Start Time: <input type="time" name="start_time" id="start_time" value="{start_time}"/><br>
-            End Date: <input type="date" name="end_date" id="end_date" value="{end_date}"/><br>
-            End Time: <input type="time" name="end_time" id="end_time" value="{end_time}"/><br>
-            Event Name: <input type="text" name="event_name" id="event_name" value="{event_name}"/><br>
-            Event Url: <input type="url" name="event_url" id="event_url" value="https://localhost"/><br>
-            Event Location Name: <input type="text" name="event_location_name" id="event_location_name" value="{event_location_name}"/><br>
-            Event Description: <br><textarea cols=40 rows=20 name="event_description" id="event_description">{event_description}</textarea><br>
-            <input type="button" name="create_event" value="Create Event" onclick="createCalendarEvent();"/><br>
-        </form>
-    "#,
-        gcal_id = event.gcal_id,
-        event_id = event.event_id,
-        start_date = event.start_time.date(),
-        start_time = event
-            .start_time
-            .time()
-            .format(format_description!("[hour]:[minute]"))
-            .unwrap_or_else(|_| "00:00".into()),
-        end_date = event.end_time.date(),
-        end_time = event
-            .end_time
-            .time()
-            .format(format_description!("[hour]:[minute]"))
-            .unwrap_or_else(|_| "00:00".into()),
-        event_name = event.name,
-        event_location_name = event.location.as_ref().map_or("", |l| l.name.as_str()),
-        event_description = event.description.as_ref().map_or("", StackString::as_str),
-    );
+    let body = build_event_body(event).into();
     Ok(body)
 }
 
