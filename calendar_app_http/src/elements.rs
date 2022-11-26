@@ -1,26 +1,21 @@
 use dioxus::prelude::{
-    Scope, Element, rsx, dioxus_elements,
-    LazyNodes, NodeFactory, VNode,
-    format_args_f, inline_props,
-    Props, VirtualDom
+    dioxus_elements, format_args_f, inline_props, rsx, Element, LazyNodes, NodeFactory, Props,
+    Scope, VNode, VirtualDom,
 };
-use time::{macros::format_description};
-use std::collections::HashMap;
-use stack_string::{StackString, format_sstr};
-use url::Url;
 use itertools::Itertools;
+use stack_string::{format_sstr, StackString};
+use std::collections::HashMap;
+use time::macros::format_description;
+use url::Url;
 
 use calendar_app_lib::{
     calendar::{Calendar, Event},
-    get_default_or_local_time,
     config::Config,
+    get_default_or_local_time,
 };
 
 pub fn index_body() -> String {
-    let mut app = VirtualDom::new_with_props(
-        index_element,
-        index_elementProps {},
-    );
+    let mut app = VirtualDom::new_with_props(index_element, index_elementProps {});
     app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }
@@ -90,7 +85,6 @@ pub fn agenda_body(
     app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }
-
 
 #[inline_props]
 fn agenda_element(
@@ -165,24 +159,17 @@ fn agenda_element(
     })
 }
 
-pub fn list_calendars_body(
-    calendars: Vec<Calendar>,
-) -> String {
+pub fn list_calendars_body(calendars: Vec<Calendar>) -> String {
     let mut app = VirtualDom::new_with_props(
         list_calendars_element,
-        list_calendars_elementProps {
-            calendars,
-        },
+        list_calendars_elementProps { calendars },
     );
     app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }
 
 #[inline_props]
-fn list_calendars_element(
-    cx: Scope,
-    calendars: Vec<Calendar>,
-) -> Element {
+fn list_calendars_element(cx: Scope, calendars: Vec<Calendar>) -> Element {
     cx.render(rsx! {
         table {
             "border": "1",
@@ -231,7 +218,7 @@ fn list_calendars_element(
                                 name: "show_calendar",
                                 value: "Show",
                                 "onclick": "calendarDisplay('{gcal_id}', true)",
-                            }                            
+                            }
                         }
                     };
                     let calendar_name = &calendar.name;
@@ -259,11 +246,7 @@ fn list_calendars_element(
     })
 }
 
-pub fn list_events_body(
-    calendar: Calendar,
-    events: Vec<Event>,
-    config: Config,
-) -> String {
+pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) -> String {
     let mut app = VirtualDom::new_with_props(
         list_events_element,
         list_events_elementProps {
@@ -275,7 +258,6 @@ pub fn list_events_body(
     app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }
-
 
 #[inline_props]
 fn list_events_element(
@@ -325,7 +307,7 @@ fn list_events_element(
                     let name = &event.name;
                     let gcal_id = &event.gcal_id;
                     let event_id = &event.event_id;
-    
+
                     rsx! {
                         tr {
                             key: "event-key-{idx}",
@@ -349,55 +331,45 @@ fn list_events_element(
     })
 }
 
-pub fn event_detail_body(
-    event: Event,
-    config: Config,
-) -> String {
+pub fn event_detail_body(event: Event, config: Config) -> String {
     let mut app = VirtualDom::new_with_props(
         event_detail_element,
-        event_detail_elementProps {
-            event,
-            config,
-        },
+        event_detail_elementProps { event, config },
     );
     app.rebuild();
     dioxus::ssr::render_vdom(&app)
 }
 
 #[inline_props]
-fn event_detail_element(
-    cx: Scope,
-    event: Event,
-    config: Config,
-) -> Element {
+fn event_detail_element(cx: Scope, event: Event, config: Config) -> Element {
     let name = &event.name;
     let description = event.description.as_ref().map(|description| {
         let description = description
-        .split('\n')
-        .map(|line| {
-            let mut line_length = 0;
-            let words = line
-                .split_whitespace()
-                .map(|word| {
-                    let mut output_word = StackString::new();
-                    if let Ok(url) = word.parse::<Url>() {
-                        if url.scheme() == "https" {
-                            output_word = format_sstr!(r#"<a href="{url}">Link</a>"#);
+            .split('\n')
+            .map(|line| {
+                let mut line_length = 0;
+                let words = line
+                    .split_whitespace()
+                    .map(|word| {
+                        let mut output_word = StackString::new();
+                        if let Ok(url) = word.parse::<Url>() {
+                            if url.scheme() == "https" {
+                                output_word = format_sstr!(r#"<a href="{url}">Link</a>"#);
+                            }
+                        } else {
+                            output_word = word.into();
                         }
-                    } else {
-                        output_word = word.into();
-                    }
-                    line_length += output_word.len();
-                    if line_length > 60 {
-                        output_word = format_sstr!("<br>{output_word}");
-                        line_length = 0;
-                    }
-                    output_word
-                })
-                .join(" ");
-            format_sstr!("\t\t{words}")
-        })
-        .join("");
+                        line_length += output_word.len();
+                        if line_length > 60 {
+                            output_word = format_sstr!("<br>{output_word}");
+                            line_length = 0;
+                        }
+                        output_word
+                    })
+                    .join(" ");
+                format_sstr!("\t\t{words}")
+            })
+            .join("");
         rsx! {"{description}"}
     });
     let start_time = get_default_or_local_time(event.start_time.into(), config);
@@ -467,14 +439,10 @@ fn event_detail_element(
     })
 }
 
-pub fn build_event_body(
-    event: Event,
-) -> String {
+pub fn build_event_body(event: Event) -> String {
     let mut app = VirtualDom::new_with_props(
         build_calendar_event_element,
-        build_calendar_event_elementProps {
-            event,
-        },
+        build_calendar_event_elementProps { event },
     );
     app.rebuild();
     dioxus::ssr::render_vdom(&app)

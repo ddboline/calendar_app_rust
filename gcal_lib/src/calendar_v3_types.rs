@@ -2746,7 +2746,9 @@ impl std::fmt::Display for EventsListParams {
                 f,
                 "&timeMax={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;
@@ -2819,7 +2821,9 @@ impl std::fmt::Display for EventsListParams {
                 f,
                 "&timeMin={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;
@@ -3323,7 +3327,9 @@ impl std::fmt::Display for EventsWatchParams {
                 f,
                 "&timeMin={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;
@@ -3375,7 +3381,9 @@ impl std::fmt::Display for EventsWatchParams {
                 f,
                 "&timeMax={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;
@@ -3684,7 +3692,9 @@ impl std::fmt::Display for EventsInstancesParams {
                 f,
                 "&timeMax={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;
@@ -3708,7 +3718,9 @@ impl std::fmt::Display for EventsInstancesParams {
                 f,
                 "&timeMin={}",
                 percent_encode(
-                    v.format(&Rfc3339).unwrap_or_else(|_| String::new()).as_bytes(),
+                    v.format(&Rfc3339)
+                        .unwrap_or_else(|_| String::new())
+                        .as_bytes(),
                     NON_ALPHANUMERIC
                 )
             )?;

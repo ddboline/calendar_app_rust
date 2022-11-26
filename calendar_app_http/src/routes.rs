@@ -20,14 +20,14 @@ use calendar_app_lib::{
 
 use crate::{
     app::{AppState, UrlCache},
+    elements::{
+        agenda_body, build_event_body, event_detail_body, index_body, list_calendars_body,
+        list_events_body,
+    },
     errors::ServiceError as Error,
     logged_user::LoggedUser,
     CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper, CreateCalendarEventRequest,
     MinModifiedQuery,
-    elements::{
-        index_body, agenda_body, list_calendars_body, list_events_body, event_detail_body,
-        build_event_body,
-    },
 };
 
 pub type WarpResult<T> = Result<T, Rejection>;
@@ -213,7 +213,10 @@ async fn get_events_list(
     cal_sync: &CalendarSync,
 ) -> HttpResult<StackString> {
     let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
-    let calendar = match calendars.into_iter().find(|cal| cal.name == query.calendar_name) {
+    let calendar = match calendars
+        .into_iter()
+        .find(|cal| cal.name == query.calendar_name)
+    {
         Some(c) => c,
         None => return Ok("".into()),
     };

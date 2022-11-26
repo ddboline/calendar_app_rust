@@ -7,10 +7,10 @@
 #![allow(clippy::implicit_hasher)]
 
 pub mod app;
+pub mod elements;
 pub mod errors;
 pub mod logged_user;
 pub mod routes;
-pub mod elements;
 
 use derive_more::{From, Into};
 use rweb::Schema;
