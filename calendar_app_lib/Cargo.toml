@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_lib"
-version = "0.6.15"
+version = "0.7.0"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -38,5 +38,5 @@ tokio-postgres = {version = "0.7", features = ["with-time-0_3", "with-uuid-1", "
 postgres-types = "0.2"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.4", features=["deadpool"]}
 
-stack-string = { version="0.7", features=["postgres_types"] }
-stdout-channel = "0.5"
+stack-string = { version="0.8", features=["postgres_types"] }
+stdout-channel = "0.6"
