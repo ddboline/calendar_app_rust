@@ -620,7 +620,7 @@ impl ShortenedLinks {
             r#"
                 INSERT INTO shortened_links (
                     original_url, shortened_url, last_modified
-                ) VALUE (
+                ) VALUES (
                     $original_url, $shortened_url, now()
                 )
             "#,
