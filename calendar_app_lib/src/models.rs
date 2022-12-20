@@ -604,14 +604,6 @@ impl ShortenedLinks {
         }
     }
 
-    /// # Errors
-    /// Returns error if db query fails
-    pub async fn insert_shortened_link(&self, pool: &PgPool) -> Result<(), Error> {
-        let conn = pool.get().await?;
-        self.insert_shortened_link_conn(&conn).await?;
-        Ok(())
-    }
-
     async fn insert_shortened_link_conn<C>(&self, conn: &C) -> Result<(), Error>
     where
         C: GenericClient + Sync,

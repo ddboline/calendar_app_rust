@@ -330,12 +330,10 @@ impl Event {
             if short_url.is_none() {
                 if let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await
                 {
-                    if result.insert_shortened_link(pool).await.is_ok() {
-                        short_url.replace(format_sstr!(
-                            "https://{domain}/calendar/link/{url}",
-                            url = result.shortened_url
-                        ));
-                    }
+                    short_url.replace(format_sstr!(
+                        "https://{domain}/calendar/link/{url}",
+                        url = result.shortened_url
+                    ));
                 }
             }
         }
