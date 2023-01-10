@@ -1,6 +1,5 @@
 use dioxus::prelude::{
-    dioxus_elements, format_args_f, inline_props, rsx, Element, LazyNodes, NodeFactory, Props,
-    Scope, VNode, VirtualDom,
+    dioxus_elements, inline_props, rsx, Element, GlobalAttributes, Props, Scope, VirtualDom,
 };
 use itertools::Itertools;
 use stack_string::{format_sstr, StackString};
@@ -16,15 +15,15 @@ use calendar_app_lib::{
 
 pub fn index_body() -> String {
     let mut app = VirtualDom::new_with_props(index_element, index_elementProps {});
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]
 fn index_element(cx: Scope) -> Element {
     cx.render(rsx! {
         head {
-            style {[include_str!("../../templates/style.css")]},
+            style {include_str!("../../templates/style.css")},
         },
         body {
             br {
@@ -63,7 +62,7 @@ fn index_element(cx: Scope) -> Element {
             script {
                 "language": "JavaScript",
                 "type": "text/javascript",
-                [include_str!("../../templates/scripts.js")],
+                include_str!("../../templates/scripts.js"),
             }
         }
     })
@@ -82,8 +81,8 @@ pub fn agenda_body(
             config,
         },
     );
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]
@@ -164,8 +163,8 @@ pub fn list_calendars_body(calendars: Vec<Calendar>) -> String {
         list_calendars_element,
         list_calendars_elementProps { calendars },
     );
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]
@@ -255,8 +254,8 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
             config,
         },
     );
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]
@@ -336,8 +335,8 @@ pub fn event_detail_body(event: Event, config: Config) -> String {
         event_detail_element,
         event_detail_elementProps { event, config },
     );
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]
@@ -444,8 +443,8 @@ pub fn build_event_body(event: Event) -> String {
         build_calendar_event_element,
         build_calendar_event_elementProps { event },
     );
-    app.rebuild();
-    dioxus::ssr::render_vdom(&app)
+    drop(app.rebuild());
+    dioxus_ssr::render(&app)
 }
 
 #[inline_props]

@@ -263,7 +263,7 @@ mod tests {
         )
         .await?;
         let cal_list = gcal.list_gcal_calendars().await?;
-        assert_eq!(cal_list.len(), 19);
+        assert_eq!(cal_list.len(), 20);
         Ok(())
     }
 
