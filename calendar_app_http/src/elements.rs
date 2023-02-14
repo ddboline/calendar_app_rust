@@ -103,9 +103,8 @@ fn agenda_element(
             },
             tbody {
                 events.iter().enumerate().filter_map(|(idx, event)| {
-                    let cal = match calendar_map.get(&event.gcal_id) {
-                        Some(cal) => cal,
-                        None => return None,
+                    let Some(cal) = calendar_map.get(&event.gcal_id) else {
+                        return None
                     };
                     let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
                     let delete = if cal.edit {

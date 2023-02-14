@@ -192,7 +192,7 @@ impl GCalendarInstance {
             ..EventsInsertParams::default()
         };
         self.rate_limit.acquire().await;
-        println!("cal_events {:?}", gcal_event);
+        println!("cal_events {gcal_event:?}");
         self.cal_events.insert(&params, &gcal_event).await
     }
 
@@ -263,7 +263,7 @@ mod tests {
         )
         .await?;
         let cal_list = gcal.list_gcal_calendars().await?;
-        assert_eq!(cal_list.len(), 20);
+        assert_eq!(cal_list.len(), 21);
         Ok(())
     }
 

@@ -1953,7 +1953,7 @@ impl std::fmt::Display for AclPatchParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -1987,7 +1987,7 @@ impl std::fmt::Display for AclUpdateParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2037,28 +2037,28 @@ impl std::fmt::Display for AclListParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2110,7 +2110,7 @@ impl std::fmt::Display for AclInsertParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2160,28 +2160,28 @@ impl std::fmt::Display for AclWatchParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2235,42 +2235,42 @@ impl std::fmt::Display for CalendarListListParams {
             write!(
                 f,
                 "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden {
             write!(
                 f,
                 "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2297,7 +2297,7 @@ impl std::fmt::Display for CalendarListInsertParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2351,42 +2351,42 @@ impl std::fmt::Display for CalendarListWatchParams {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.min_access_role {
             write!(
                 f,
                 "&minAccessRole={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden {
             write!(
                 f,
                 "&showHidden={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2418,7 +2418,7 @@ impl std::fmt::Display for CalendarListUpdateParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2450,7 +2450,7 @@ impl std::fmt::Display for CalendarListPatchParams {
             write!(
                 f,
                 "&colorRgbFormat={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2543,21 +2543,21 @@ impl std::fmt::Display for SettingsWatchParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2595,21 +2595,21 @@ impl std::fmt::Display for SettingsListParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2757,63 +2757,63 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.shared_extended_property {
             write!(
                 f,
                 "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {
             write!(
                 f,
                 "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.private_extended_property {
             write!(
                 f,
                 "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_hidden_invitations {
             write!(
                 f,
                 "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
@@ -2832,42 +2832,42 @@ impl std::fmt::Display for EventsListParams {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.single_events {
             write!(
                 f,
                 "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.q {
             write!(
                 f,
                 "&q={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.order_by {
             write!(
                 f,
                 "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.updated_min {
             write!(
                 f,
                 "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -2929,42 +2929,42 @@ impl std::fmt::Display for EventsPatchParams {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3016,35 +3016,35 @@ impl std::fmt::Display for EventsInsertParams {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.supports_attachments {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3106,42 +3106,42 @@ impl std::fmt::Display for EventsUpdateParams {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.conference_data_version {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3277,49 +3277,49 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&showHiddenInvitations={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_results {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.shared_extended_property {
             write!(
                 f,
                 "&sharedExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.single_events {
             write!(
                 f,
                 "&singleEvents={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.i_cal_u_i_d {
             write!(
                 f,
                 "&iCalUID={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.page_token {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
@@ -3338,42 +3338,42 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&q={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.private_extended_property {
             write!(
                 f,
                 "&privateExtendedProperty={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.updated_min {
             write!(
                 f,
                 "&updatedMin={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.order_by {
             write!(
                 f,
                 "&orderBy={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.show_deleted {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.sync_token {
             write!(
                 f,
                 "&syncToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_max {
@@ -3392,14 +3392,14 @@ impl std::fmt::Display for EventsWatchParams {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3446,14 +3446,14 @@ impl std::fmt::Display for EventsMoveParams {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3490,14 +3490,14 @@ impl std::fmt::Display for EventsImportParams {
             write!(
                 f,
                 "&conferenceDataVersion={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.supports_attachments {
             write!(
                 f,
                 "&supportsAttachments={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3541,21 +3541,21 @@ impl std::fmt::Display for EventsGetParams {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3593,14 +3593,14 @@ impl std::fmt::Display for EventsDeleteParams {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_notifications {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3670,21 +3670,21 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&maxResults={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.always_include_email {
             write!(
                 f,
                 "&alwaysIncludeEmail={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_zone {
             write!(
                 f,
                 "&timeZone={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_max {
@@ -3703,14 +3703,14 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&pageToken={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.max_attendees {
             write!(
                 f,
                 "&maxAttendees={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.time_min {
@@ -3729,14 +3729,14 @@ impl std::fmt::Display for EventsInstancesParams {
             write!(
                 f,
                 "&showDeleted={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.original_start {
             write!(
                 f,
                 "&originalStart={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3780,14 +3780,14 @@ impl std::fmt::Display for EventsQuickAddParams {
             write!(
                 f,
                 "&sendNotifications={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.send_updates {
             write!(
                 f,
                 "&sendUpdates={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3850,49 +3850,49 @@ impl std::fmt::Display for CalendarParams {
             write!(
                 f,
                 "&prettyPrint={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.alt {
             write!(
                 f,
                 "&alt={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.oauth_token {
             write!(
                 f,
                 "&oauth_token={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.quota_user {
             write!(
                 f,
                 "&quotaUser={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.key {
             write!(
                 f,
                 "&key={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.fields {
             write!(
                 f,
                 "&fields={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         if let Some(ref v) = self.user_ip {
             write!(
                 f,
                 "&userIp={}",
-                percent_encode(format!("{}", v).as_bytes(), NON_ALPHANUMERIC)
+                percent_encode(format!("{v}").as_bytes(), NON_ALPHANUMERIC)
             )?;
         }
         Ok(())
@@ -3989,12 +3989,12 @@ impl ColorsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -4093,12 +4093,12 @@ impl ChannelsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4196,12 +4196,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4232,12 +4232,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4268,12 +4268,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -4304,12 +4304,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
@@ -4339,12 +4339,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4376,12 +4376,12 @@ impl CalendarsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
@@ -4485,12 +4485,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
@@ -4521,12 +4521,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4558,12 +4558,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4594,12 +4594,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -4630,12 +4630,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -4665,12 +4665,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4701,12 +4701,12 @@ impl AclService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4804,12 +4804,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -4837,12 +4837,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4867,12 +4867,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4907,12 +4907,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4948,12 +4948,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -4984,12 +4984,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
@@ -5019,12 +5019,12 @@ impl CalendarListService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5126,12 +5126,12 @@ impl SettingsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5157,12 +5157,12 @@ impl SettingsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5189,12 +5189,12 @@ impl SettingsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5297,12 +5297,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5333,12 +5333,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5369,12 +5369,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5406,12 +5406,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5442,12 +5442,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5479,12 +5479,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
@@ -5515,12 +5515,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);
@@ -5552,12 +5552,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5588,12 +5588,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "DELETE", opt_request).await
@@ -5624,12 +5624,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "GET", opt_request).await
@@ -5659,12 +5659,12 @@ impl EventsService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         do_request(&self.client, &full_uri, &headers, "POST", opt_request).await
@@ -5765,12 +5765,12 @@ impl FreebusyService {
             format!("Bearer {token}", token = tok.as_str()),
         ));
 
-        let mut url_params = format!("?{params}", params = params);
+        let mut url_params = format!("?{params}");
         if let Some(ref api_params) = &params.calendar_params {
-            write!(url_params, "{}", api_params)?;
+            write!(url_params, "{api_params}")?;
         }
 
-        let full_uri = format!("{}{}", path, url_params);
+        let full_uri = format!("{path}{url_params}");
 
         let opt_request: Option<&EmptyRequest> = None;
         let opt_request = Some(req);

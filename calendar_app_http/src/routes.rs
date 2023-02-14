@@ -213,12 +213,11 @@ async fn get_events_list(
     cal_sync: &CalendarSync,
 ) -> HttpResult<StackString> {
     let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
-    let calendar = match calendars
+    let Some(calendar) = calendars
         .into_iter()
-        .find(|cal| cal.name == query.calendar_name)
+        .find(|cal| cal.name == query.calendar_name) else
     {
-        Some(c) => c,
-        None => return Ok("".into()),
+        return Ok("".into())
     };
     let min_time = query.min_time.map(Into::into);
     let max_time = query.max_time.map(Into::into);
@@ -549,15 +548,14 @@ async fn create_calendar_event_body(
     };
 
     event.upsert(&cal_sync.pool).await?;
-    let event = match CalendarCache::get_by_gcal_id_event_id(
+    let Some(event) = CalendarCache::get_by_gcal_id_event_id(
         &event.gcal_id,
         &event.event_id,
         &cal_sync.pool,
     )
-    .await?
+    .await? else
     {
-        Some(event) => event,
-        None => return Err(Error::BadRequest("Failed to store event in db".into())),
+        return Err(Error::BadRequest("Failed to store event in db".into()))
     };
     let event: Event = event.into();
     let (gcal_id, event) = event.to_gcal_event();
@@ -604,11 +602,8 @@ async fn edit_calendar_list(
     query: EditCalendarRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<CalendarListWrapper> {
-    let mut calendar = if let Some(calendar) =
-        CalendarList::get_by_gcal_id(&query.gcal_id, &cal_sync.pool).await?
-    {
-        calendar
-    } else {
+    let Some(mut calendar) =
+        CalendarList::get_by_gcal_id(&query.gcal_id, &cal_sync.pool).await? else {
         return Err(format_err!("No such calendar {}", query.gcal_id).into());
     };
     if let Some(calendar_name) = query.calendar_name.as_ref() {
