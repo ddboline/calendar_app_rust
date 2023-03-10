@@ -18,7 +18,7 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 lazy_static = "1.4"
-tokio = {version="1.21", features=["time"]}
+tokio = {version="1.26", features=["time"]}
 log = "0.4"
 parking_lot = "0.12"
 rayon = "1.5"
@@ -36,12 +36,12 @@ maplit = "1.0"
 rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.4.13" }
 reqwest = {version="0.11", default_features = false, features=["cookies", "json", "rustls-tls", "stream"]}
 stack-string = { version="0.8", features=["postgres_types", "rweb-openapi"] }
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.4"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.5"}
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.4", features=["deadpool"]}
 dioxus = "0.3"
 dioxus-ssr = "0.3"
 
 [dev-dependencies]
 maplit = "1.0"
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.4"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.4"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.5"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.10.5"}
