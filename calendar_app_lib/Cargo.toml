@@ -14,7 +14,7 @@ time-tz = {version="1.0", features=["system"]}
 rayon = "1.5"
 tokio = {version="1.26", features=["full"]}
 url = "2.3"
-dirs = "4.0"
+dirs = "5.0"
 dotenv = "0.15"
 derive_more = "0.99"
 serde = {version="1.0", features=["derive"]}
