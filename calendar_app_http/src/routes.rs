@@ -115,7 +115,7 @@ pub struct GcalEventID {
 #[response(
     description = "Delete Event Output",
     content = "html",
-    status = "CREATED"
+    status = "NO_CONTENT"
 )]
 struct DeleteEventResponse(HtmlBase<StackString, Error>);
 
@@ -370,7 +370,7 @@ pub struct CalendarCacheUpdateRequest {
 }
 
 #[derive(RwebResponse)]
-#[response(description = "Calendar Cache Update")]
+#[response(description = "Calendar Cache Update", status = "CREATED")]
 struct CalendarCacheUpdateResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 
 #[post("/calendar/calendar_cache")]
