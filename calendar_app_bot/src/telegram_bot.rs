@@ -57,7 +57,12 @@ impl TelegramBot {
     pub async fn telegram_worker(&self) -> Result<(), Error> {
         loop {
             FAILURE_COUNT.check()?;
-            match Box::pin(timeout(std::time::Duration::from_secs(3600), self.bot_handler())).await {
+            match Box::pin(timeout(
+                std::time::Duration::from_secs(3600),
+                self.bot_handler(),
+            ))
+            .await
+            {
                 Ok(Ok(_)) | Err(_) => FAILURE_COUNT.reset()?,
                 Ok(Err(_)) => FAILURE_COUNT.increment()?,
             }
