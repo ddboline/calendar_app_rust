@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: Web App to Display Calendar, Sync with GCal
-  version: 0.6.11
+  version: 0.7.6
 paths:
   /calendar/index.html:
     get:
@@ -91,7 +91,7 @@ paths:
               - event_id
         required: true
       responses:
-        '201':
+        '204':
           description: Delete Event Output
           content:
             text/html:
@@ -526,7 +526,7 @@ paths:
               - updates
         required: true
       responses:
-        '200':
+        '201':
           description: Calendar Cache Update
           content:
             application/json:
