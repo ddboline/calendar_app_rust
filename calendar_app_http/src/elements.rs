@@ -23,7 +23,7 @@ pub fn index_body() -> String {
 fn index_element(cx: Scope) -> Element {
     cx.render(rsx! {
         head {
-            style {include_str!("../../templates/style.css")},
+            style {dangerous_inner_html: include_str!("../../templates/style.css")},
         },
         body {
             br {
@@ -62,7 +62,7 @@ fn index_element(cx: Scope) -> Element {
             script {
                 "language": "JavaScript",
                 "type": "text/javascript",
-                include_str!("../../templates/scripts.js"),
+                dangerous_inner_html: include_str!("../../templates/scripts.js"),
             }
         }
     })
@@ -368,7 +368,7 @@ fn event_detail_element(cx: Scope, event: Event, config: Config) -> Element {
                 format_sstr!("\t\t{words}")
             })
             .join("");
-        rsx! {"{description}"}
+        rsx! {div {dangerous_inner_html: "{description}"}}
     });
     let start_time = get_default_or_local_time(event.start_time.into(), config);
     let end_time = get_default_or_local_time(event.end_time.into(), config);
