@@ -49,7 +49,7 @@ jobs:
         ./target/debug/calendar-app-rust run-migrations && \
         cargo test --all --verbose && \
         cargo install cargo-tarpaulin && \
-        cargo tarpaulin --verbose --all-features --workspace --out Xml
+        cargo tarpaulin --verbose --all-features --workspace --out xml
       env:
         DATABASE_URL: postgresql://postgres:2UtcMAAvNuBHPqK9@localhost:5432/calendar_app_cache
         GCAL_SECRET_FILE: /tmp/.config/calendar_app_rust/client_secrets.json
