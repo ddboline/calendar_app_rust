@@ -101,7 +101,7 @@ impl Calendar {
         } else {
             Some(Self {
                 name: item.summary.clone().map_or_else(|| "".into(), Into::into),
-                gcal_id: item.id.clone().expect("No gcal_id").into(),
+                gcal_id: item.id.clone()?.into(),
                 gcal_name: item.summary.clone().map(Into::into),
                 description: item.description.clone().map(Into::into),
                 location: item.location.as_ref().map(|l| Location {

@@ -1,4 +1,4 @@
-use anyhow::Error;
+use anyhow::{format_err, Error};
 use derive_more::Into;
 use futures::Stream;
 use postgres_query::{
@@ -598,7 +598,7 @@ impl ShortenedLinks {
 
             let output = ShortenedLinks::get_by_shortened_url_conn(shortened_url, conn)
                 .await?
-                .expect("Something went wrong");
+                .ok_or_else(|| format_err!("Something went wrong"))?;
             tran.commit().await?;
             Ok(output)
         }
