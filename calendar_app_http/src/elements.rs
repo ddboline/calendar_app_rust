@@ -103,9 +103,7 @@ fn agenda_element(
             },
             tbody {
                 events.iter().enumerate().filter_map(|(idx, event)| {
-                    let Some(cal) = calendar_map.get(&event.gcal_id) else {
-                        return None
-                    };
+                    let cal = calendar_map.get(&event.gcal_id)?;
                     let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
                     let delete = if cal.edit {
                         let event_id = &event.event_id;
@@ -122,7 +120,6 @@ fn agenda_element(
                         None
                     };
                     let start_time = get_default_or_local_time(event.start_time.into(), config);
-                    let calendar_name = calendar_name;
                     let cal_name = &cal.name;
                     let gcal_id = &event.gcal_id;
                     let event_id = &event.event_id;

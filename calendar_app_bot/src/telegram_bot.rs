@@ -63,7 +63,7 @@ impl TelegramBot {
             ))
             .await
             {
-                Ok(Ok(_)) | Err(_) => FAILURE_COUNT.reset()?,
+                Ok(Ok(())) | Err(_) => FAILURE_COUNT.reset()?,
                 Ok(Err(_)) => FAILURE_COUNT.increment()?,
             }
         }
@@ -212,7 +212,7 @@ impl TelegramBot {
 
     async fn update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
         match self._update_telegram_chat_id(userid, chatid).await {
-            Ok(_) => FAILURE_COUNT.reset()?,
+            Ok(()) => FAILURE_COUNT.reset()?,
             Err(_) => FAILURE_COUNT.increment()?,
         }
         Ok(())

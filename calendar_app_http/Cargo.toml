@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.7.9"
+version = "0.7.10"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -10,7 +10,6 @@ edition = "2018"
 gcal_lib = {path="../gcal_lib"}
 calendar_app_lib = {path = "../calendar_app_lib"}
 rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi", "chrono"], default-features=false, tag="0.15.1-1"}
-http = "0.2"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
 futures = "0.3"
@@ -26,7 +25,7 @@ anyhow = "1.0"
 thiserror = "1.0"
 async-trait = "0.1"
 dirs = "5.0"
-itertools = "0.11"
+itertools = "0.12"
 url = "2.3"
 derive_more = "0.99"
 serde_yaml = "0.9"
@@ -35,12 +34,12 @@ maplit = "1.0"
 rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.5.0-1" }
 reqwest = {version="0.11", default_features = false, features=["cookies", "json", "rustls-tls", "stream"]}
 stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", features=["postgres_types", "rweb-openapi"], tag="0.9.2" }
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.0"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.3"}
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.5", features=["deadpool"]}
 dioxus = "0.4"
 dioxus-ssr = "0.4"
 
 [dev-dependencies]
 maplit = "1.0"
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.0"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.0"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.3"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.3"}
