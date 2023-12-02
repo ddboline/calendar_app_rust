@@ -299,28 +299,21 @@ impl CalendarCache {
         pool: &PgPool,
     ) -> Result<impl Stream<Item = Result<CalendarCache, PqError>>, Error> {
         let mut conditions = vec!["gcal_id = $gcal_id"];
-        let mut bindings = Vec::new();
+        let mut bindings = vec![("gcal_id", &gcal_id as Parameter)];
 
-        if let Some(max_time) = max_time {
+        if let Some(max_time) = &max_time {
             conditions.push("event_start_time <= $max_time");
-            bindings.push(("max_time", max_time));
+            bindings.push(("max_time", max_time as Parameter));
         }
-        if let Some(min_time) = min_time {
+        if let Some(min_time) = &min_time {
             conditions.push("event_end_time >= $min_time");
-            bindings.push(("min_time", min_time));
+            bindings.push(("min_time", min_time as Parameter));
         }
         let query = format_sstr!(
-            "SELECT * FROM calendar_cache WHERE gcal_id = $gcal_id {}",
-            if conditions.is_empty() {
-                "".into()
-            } else {
-                format_sstr!(" AND {}", conditions.join(" AND "))
-            }
+            "SELECT * FROM calendar_cache WHERE {}",
+            conditions.join(" AND "),
         );
-        let mut query_bindings: Vec<_> =
-            bindings.iter().map(|(k, v)| (*k, v as Parameter)).collect();
-        query_bindings.push(("gcal_id", &gcal_id as Parameter));
-        let query = query_dyn!(&query, ..query_bindings)?;
+        let query = query_dyn!(&query, ..bindings)?;
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
     }
