@@ -1,5 +1,6 @@
 use dioxus::prelude::{
-    dioxus_elements, inline_props, rsx, Element, GlobalAttributes, Props, Scope, VirtualDom,
+    component, dioxus_elements, rsx, Element, GlobalAttributes, IntoDynNode, Props, Scope,
+    VirtualDom,
 };
 use itertools::Itertools;
 use stack_string::{format_sstr, StackString};
@@ -14,12 +15,12 @@ use calendar_app_lib::{
 };
 
 pub fn index_body() -> String {
-    let mut app = VirtualDom::new_with_props(index_element, index_elementProps {});
+    let mut app = VirtualDom::new(index_element);
     drop(app.rebuild());
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn index_element(cx: Scope) -> Element {
     cx.render(rsx! {
         head {
@@ -85,7 +86,7 @@ pub fn agenda_body(
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn agenda_element(
     cx: Scope,
     calendar_map: HashMap<StackString, Calendar>,
@@ -163,7 +164,7 @@ pub fn list_calendars_body(calendars: Vec<Calendar>) -> String {
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn list_calendars_element(cx: Scope, calendars: Vec<Calendar>) -> Element {
     cx.render(rsx! {
         table {
@@ -254,7 +255,7 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn list_events_element(
     cx: Scope,
     calendar: Calendar,
@@ -335,7 +336,7 @@ pub fn event_detail_body(event: Event, config: Config) -> String {
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn event_detail_element(cx: Scope, event: Event, config: Config) -> Element {
     let name = &event.name;
     let description = event.description.as_ref().map(|description| {
@@ -443,7 +444,7 @@ pub fn build_event_body(event: Event) -> String {
     dioxus_ssr::render(&app)
 }
 
-#[inline_props]
+#[component(no_case_check)]
 fn build_calendar_event_element(cx: Scope, event: Event) -> Element {
     let gcal_id = &event.gcal_id;
     let event_id = &event.event_id;
