@@ -1,11 +1,11 @@
-use anyhow::Error;
+use anyhow::{Error, format_err};
 use futures::{future::try_join_all, TryStreamExt};
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
 use stack_string::{format_sstr, StackString};
 use std::{collections::HashMap, sync::Arc};
 use time::{macros::format_description, Duration, PrimitiveDateTime};
-use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt};
+use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt, PrimitiveDateTimeExt};
 
 use crate::{
     calendar::{Event, Location},
@@ -49,10 +49,10 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                         let fmt = format_description!(
                             "[weekday repr:long case_sensitive:false]  [month repr:long \
                              case_sensitive:false] [day padding:none]  [hour \
-                             padding:none]:[minute padding:zero] [period case:lower] [year]"
+                             padding:none repr:12]:[minute padding:zero] [period case:lower] [year]"
                         );
                         let dt = PrimitiveDateTime::parse(&date, fmt)?;
-                        let dt = dt.assume_utc();
+                        let dt = dt.assume_timezone(NEW_YORK).take().ok_or_else(|| format_err!("Ambiguous time"))?;
                         start_time.replace(dt);
                     }
                 } else {
@@ -141,6 +141,7 @@ pub async fn parse_hashnyc(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
+    use time::Month;
 
     use crate::parse_hashnyc::parse_hashnyc_text;
 
@@ -149,6 +150,11 @@ mod tests {
         let text = include_str!("../../tests/data/hashnyc.html");
         let result = parse_hashnyc_text(&text)?;
         assert_eq!(result.len(), 12);
+        assert_eq!(result[0].start_time.year(), 2020);
+        assert_eq!(result[0].start_time.month(), Month::March);
+        assert_eq!(result[0].start_time.day(), 18);
+        assert_eq!(result[0].start_time.hour(), 19);
+        assert_eq!(result[0].start_time.offset().as_hms(), (-4, 0, 0));
         Ok(())
     }
 }
