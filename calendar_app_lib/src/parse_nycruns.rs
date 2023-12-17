@@ -139,6 +139,7 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
 #[cfg(test)]
 mod tests {
     use anyhow::Error;
+    use time::Month;
 
     use crate::parse_nycruns::parse_nycruns_text;
 
@@ -147,6 +148,11 @@ mod tests {
         let text = include_str!("../../tests/data/nycruns.html");
         let result = parse_nycruns_text(&text)?;
         assert_eq!(result.len(), 20);
+        assert_eq!(result[0].start_time.year(), 2020);
+        assert_eq!(result[0].start_time.month(), Month::April);
+        assert_eq!(result[0].start_time.day(), 4);
+        assert_eq!(result[0].start_time.hour(), 9);
+        assert_eq!(result[0].start_time.offset().as_hms(), (-4, 0, 0));
         Ok(())
     }
 }

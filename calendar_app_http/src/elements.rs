@@ -15,13 +15,13 @@ use calendar_app_lib::{
 };
 
 pub fn index_body() -> String {
-    let mut app = VirtualDom::new(index_element);
+    let mut app = VirtualDom::new(IndexElement);
     drop(app.rebuild());
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn index_element(cx: Scope) -> Element {
+#[component]
+fn IndexElement(cx: Scope) -> Element {
     cx.render(rsx! {
         head {
             style {dangerous_inner_html: include_str!("../../templates/style.css")},
@@ -75,8 +75,8 @@ pub fn agenda_body(
     config: Config,
 ) -> String {
     let mut app = VirtualDom::new_with_props(
-        agenda_element,
-        agenda_elementProps {
+        AgendaElement,
+        AgendaElementProps {
             calendar_map,
             events,
             config,
@@ -86,8 +86,8 @@ pub fn agenda_body(
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn agenda_element(
+#[component]
+fn AgendaElement(
     cx: Scope,
     calendar_map: HashMap<StackString, Calendar>,
     events: Vec<Event>,
@@ -157,15 +157,15 @@ fn agenda_element(
 
 pub fn list_calendars_body(calendars: Vec<Calendar>) -> String {
     let mut app = VirtualDom::new_with_props(
-        list_calendars_element,
-        list_calendars_elementProps { calendars },
+        ListCalendarsElement,
+        ListCalendarsElementProps { calendars },
     );
     drop(app.rebuild());
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn list_calendars_element(cx: Scope, calendars: Vec<Calendar>) -> Element {
+#[component]
+fn ListCalendarsElement(cx: Scope, calendars: Vec<Calendar>) -> Element {
     cx.render(rsx! {
         table {
             "border": "1",
@@ -244,8 +244,8 @@ fn list_calendars_element(cx: Scope, calendars: Vec<Calendar>) -> Element {
 
 pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) -> String {
     let mut app = VirtualDom::new_with_props(
-        list_events_element,
-        list_events_elementProps {
+        ListEventsElement,
+        ListEventsElementProps {
             calendar,
             events,
             config,
@@ -255,8 +255,8 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn list_events_element(
+#[component]
+fn ListEventsElement(
     cx: Scope,
     calendar: Calendar,
     events: Vec<Event>,
@@ -329,15 +329,15 @@ fn list_events_element(
 
 pub fn event_detail_body(event: Event, config: Config) -> String {
     let mut app = VirtualDom::new_with_props(
-        event_detail_element,
-        event_detail_elementProps { event, config },
+        EventDetailElement,
+        EventDetailElementProps { event, config },
     );
     drop(app.rebuild());
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn event_detail_element(cx: Scope, event: Event, config: Config) -> Element {
+#[component]
+fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
     let name = &event.name;
     let description = event.description.as_ref().map(|description| {
         let description = description
@@ -437,15 +437,15 @@ fn event_detail_element(cx: Scope, event: Event, config: Config) -> Element {
 
 pub fn build_event_body(event: Event) -> String {
     let mut app = VirtualDom::new_with_props(
-        build_calendar_event_element,
-        build_calendar_event_elementProps { event },
+        BuildCalendarEventElement,
+        BuildCalendarEventElementProps { event },
     );
     drop(app.rebuild());
     dioxus_ssr::render(&app)
 }
 
-#[component(no_case_check)]
-fn build_calendar_event_element(cx: Scope, event: Event) -> Element {
+#[component]
+fn BuildCalendarEventElement(cx: Scope, event: Event) -> Element {
     let gcal_id = &event.gcal_id;
     let event_id = &event.event_id;
     let start_date = event.start_time.date();
