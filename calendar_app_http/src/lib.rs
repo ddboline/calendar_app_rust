@@ -31,6 +31,7 @@ derive_rweb_schema!(CalendarListWrapper, _CalendarListWrapper);
 
 #[allow(dead_code)]
 #[derive(Schema)]
+#[schema(component="CalendarList")]
 struct _CalendarListWrapper {
     #[schema(description = "Calendar Name")]
     calendar_name: StackString,
@@ -61,6 +62,7 @@ derive_rweb_schema!(CalendarCacheWrapper, _CalendarCacheWrapper);
 
 #[allow(dead_code)]
 #[derive(Schema)]
+#[schema(component="CalendarCache")]
 struct _CalendarCacheWrapper {
     #[schema(description = "Gcal Calendar ID")]
     gcal_id: StackString,
@@ -140,6 +142,7 @@ derive_rweb_schema!(CalendarCacheRequest, _CalendarCacheRequest);
 
 #[allow(dead_code)]
 #[derive(Schema)]
+#[schema(component="CalendarCacheRequest")]
 struct _CalendarCacheRequest {
     #[schema(description = "GCal Calendar ID")]
     gcal_id: StackString,
@@ -181,6 +184,7 @@ derive_rweb_schema!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
 
 #[allow(dead_code)]
 #[derive(Schema)]
+#[schema(component="CreateCalendarEventRequest")]
 struct _CreateCalendarEventRequest {
     #[schema(description = "GCal Calendar ID")]
     gcal_id: StackString,

@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: Web App to Display Calendar, Sync with GCal
-  version: 0.7.6
+  version: 0.7.14
 paths:
   /calendar/index.html:
     get:
@@ -78,17 +78,7 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                gcal_id:
-                  description: GCal ID
-                  type: string
-                event_id:
-                  description: GCal Event ID
-                  type: string
-              type: object
-              required:
-              - gcal_id
-              - event_id
+              $ref: '#/components/schemas/GcalEventID'
         required: true
       responses:
         '204':
@@ -138,6 +128,7 @@ paths:
           description: Earliest Date
           format: date
           nullable: true
+          example: 2023-01-01
           type: string
       - name: max_time
         in: query
@@ -146,6 +137,7 @@ paths:
           description: Latest Date
           format: date
           nullable: true
+          example: 2023-01-01
           type: string
       responses:
         '200':
@@ -168,17 +160,7 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                gcal_id:
-                  description: GCal ID
-                  type: string
-                event_id:
-                  description: GCal Event ID
-                  type: string
-              type: object
-              required:
-              - gcal_id
-              - event_id
+              $ref: '#/components/schemas/GcalEventID'
         required: true
       responses:
         '201':
@@ -213,50 +195,7 @@ paths:
             application/json:
               schema:
                 items:
-                  properties:
-                    calendar_name:
-                      description: Calendar Name
-                      type: string
-                    gcal_id:
-                      description: GCal Calendar ID
-                      type: string
-                    gcal_name:
-                      description: GCal Calendar Name
-                      nullable: true
-                      type: string
-                    gcal_description:
-                      description: GCal Calendar Description
-                      nullable: true
-                      type: string
-                    gcal_location:
-                      description: GCal Calendar Location
-                      nullable: true
-                      type: string
-                    gcal_timezone:
-                      description: GCal Calendar Timezone
-                      nullable: true
-                      type: string
-                    sync:
-                      description: Sync Flag
-                      type: boolean
-                    last_modified:
-                      description: Last Modified
-                      format: date-time
-                      type: string
-                    edit:
-                      description: Edit Flag
-                      type: boolean
-                    display:
-                      description: Display Flag
-                      type: boolean
-                  type: object
-                  required:
-                  - calendar_name
-                  - gcal_id
-                  - sync
-                  - last_modified
-                  - edit
-                  - display
+                  $ref: '#/components/schemas/CalendarList'
                 type: array
         '400':
           description: Bad Request
@@ -271,58 +210,7 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                updates:
-                  description: Calendar List Updates
-                  items:
-                    properties:
-                      calendar_name:
-                        description: Calendar Name
-                        type: string
-                      gcal_id:
-                        description: GCal Calendar ID
-                        type: string
-                      gcal_name:
-                        description: GCal Calendar Name
-                        nullable: true
-                        type: string
-                      gcal_description:
-                        description: GCal Calendar Description
-                        nullable: true
-                        type: string
-                      gcal_location:
-                        description: GCal Calendar Location
-                        nullable: true
-                        type: string
-                      gcal_timezone:
-                        description: GCal Calendar Timezone
-                        nullable: true
-                        type: string
-                      sync:
-                        description: Sync Flag
-                        type: boolean
-                      last_modified:
-                        description: Last Modified
-                        format: date-time
-                        type: string
-                      edit:
-                        description: Edit Flag
-                        type: boolean
-                      display:
-                        description: Display Flag
-                        type: boolean
-                    type: object
-                    required:
-                    - calendar_name
-                    - gcal_id
-                    - sync
-                    - last_modified
-                    - edit
-                    - display
-                  type: array
-              type: object
-              required:
-              - updates
+              $ref: '#/components/schemas/CalendarUpdateRequest'
         required: true
       responses:
         '201':
@@ -331,50 +219,7 @@ paths:
             application/json:
               schema:
                 items:
-                  properties:
-                    calendar_name:
-                      description: Calendar Name
-                      type: string
-                    gcal_id:
-                      description: GCal Calendar ID
-                      type: string
-                    gcal_name:
-                      description: GCal Calendar Name
-                      nullable: true
-                      type: string
-                    gcal_description:
-                      description: GCal Calendar Description
-                      nullable: true
-                      type: string
-                    gcal_location:
-                      description: GCal Calendar Location
-                      nullable: true
-                      type: string
-                    gcal_timezone:
-                      description: GCal Calendar Timezone
-                      nullable: true
-                      type: string
-                    sync:
-                      description: Sync Flag
-                      type: boolean
-                    last_modified:
-                      description: Last Modified
-                      format: date-time
-                      type: string
-                    edit:
-                      description: Edit Flag
-                      type: boolean
-                    display:
-                      description: Display Flag
-                      type: boolean
-                  type: object
-                  required:
-                  - calendar_name
-                  - gcal_id
-                  - sync
-                  - last_modified
-                  - edit
-                  - display
+                  $ref: '#/components/schemas/CalendarList'
                 type: array
         '400':
           description: Bad Request
@@ -402,56 +247,7 @@ paths:
             application/json:
               schema:
                 items:
-                  properties:
-                    gcal_id:
-                      description: Gcal Calendar ID
-                      type: string
-                    event_id:
-                      description: Calendar Event ID
-                      type: string
-                    event_start_time:
-                      description: Event Start Time
-                      format: date-time
-                      type: string
-                    event_end_time:
-                      description: Event End Time
-                      format: date-time
-                      type: string
-                    event_url:
-                      description: Event URL
-                      nullable: true
-                      type: string
-                    event_name:
-                      description: Event Name
-                      type: string
-                    event_description:
-                      description: Event Description
-                      nullable: true
-                      type: string
-                    event_location_name:
-                      description: Event Location Name
-                      nullable: true
-                      type: string
-                    event_location_lat:
-                      description: Event Location Latitude
-                      nullable: true
-                      type: number
-                    event_location_lon:
-                      description: Event Location Longitude
-                      nullable: true
-                      type: number
-                    last_modified:
-                      description: Last Modified
-                      format: date-time
-                      type: string
-                  type: object
-                  required:
-                  - gcal_id
-                  - event_id
-                  - event_start_time
-                  - event_end_time
-                  - event_name
-                  - last_modified
+                  $ref: '#/components/schemas/CalendarCache'
                 type: array
         '400':
           description: Bad Request
@@ -466,64 +262,7 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                updates:
-                  description: Calendar Events Update
-                  items:
-                    properties:
-                      gcal_id:
-                        description: GCal Calendar ID
-                        type: string
-                      event_id:
-                        description: Calendar Event ID
-                        type: string
-                      event_start_time:
-                        description: Event Start Time
-                        format: date-time
-                        type: string
-                      event_end_time:
-                        description: Event End Time
-                        format: date-time
-                        type: string
-                      event_url:
-                        description: Event URL
-                        nullable: true
-                        type: string
-                      event_name:
-                        description: Event Name
-                        type: string
-                      event_description:
-                        description: Event Description
-                        nullable: true
-                        type: string
-                      event_location_name:
-                        description: Event Location Name
-                        nullable: true
-                        type: string
-                      event_location_lat:
-                        description: Event Location Latitude
-                        nullable: true
-                        type: number
-                      event_location_lon:
-                        description: Event Location Longitude
-                        nullable: true
-                        type: number
-                      last_modified:
-                        description: Last Modified
-                        format: date-time
-                        type: string
-                    type: object
-                    required:
-                    - gcal_id
-                    - event_id
-                    - event_start_time
-                    - event_end_time
-                    - event_name
-                    - last_modified
-                  type: array
-              type: object
-              required:
-              - updates
+              $ref: '#/components/schemas/CalendarCacheUpdateRequest'
         required: true
       responses:
         '201':
@@ -532,56 +271,7 @@ paths:
             application/json:
               schema:
                 items:
-                  properties:
-                    gcal_id:
-                      description: Gcal Calendar ID
-                      type: string
-                    event_id:
-                      description: Calendar Event ID
-                      type: string
-                    event_start_time:
-                      description: Event Start Time
-                      format: date-time
-                      type: string
-                    event_end_time:
-                      description: Event End Time
-                      format: date-time
-                      type: string
-                    event_url:
-                      description: Event URL
-                      nullable: true
-                      type: string
-                    event_name:
-                      description: Event Name
-                      type: string
-                    event_description:
-                      description: Event Description
-                      nullable: true
-                      type: string
-                    event_location_name:
-                      description: Event Location Name
-                      nullable: true
-                      type: string
-                    event_location_lat:
-                      description: Event Location Latitude
-                      nullable: true
-                      type: number
-                    event_location_lon:
-                      description: Event Location Longitude
-                      nullable: true
-                      type: number
-                    last_modified:
-                      description: Last Modified
-                      format: date-time
-                      type: string
-                  type: object
-                  required:
-                  - gcal_id
-                  - event_id
-                  - event_start_time
-                  - event_end_time
-                  - event_name
-                  - last_modified
+                  $ref: '#/components/schemas/CalendarCache'
                 type: array
         '400':
           description: Bad Request
@@ -599,22 +289,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  email:
-                    description: Email Address
-                    type: string
-                  session:
-                    description: Session Id
-                    format: uuid
-                    type: string
-                  secret_key:
-                    description: Secret Key
-                    type: string
-                type: object
-                required:
-                - email
-                - session
-                - secret_key
+                $ref: '#/components/schemas/LoggedUser'
         '400':
           description: Bad Request
         '404':
@@ -682,43 +357,7 @@ paths:
         content:
           application/json:
             schema:
-              properties:
-                gcal_id:
-                  description: GCal Calendar ID
-                  type: string
-                event_id:
-                  description: Event ID
-                  type: string
-                event_start_datetime:
-                  description: Event Start Time
-                  format: date-time
-                  type: string
-                event_end_datetime:
-                  description: Event End Time
-                  format: date-time
-                  type: string
-                event_url:
-                  description: Event URL
-                  nullable: true
-                  type: string
-                event_name:
-                  description: Event Name
-                  type: string
-                event_description:
-                  description: Event Description
-                  nullable: true
-                  type: string
-                event_location_name:
-                  description: Event Location Name
-                  nullable: true
-                  type: string
-              type: object
-              required:
-              - gcal_id
-              - event_id
-              - event_start_datetime
-              - event_end_datetime
-              - event_name
+              $ref: '#/components/schemas/CreateCalendarEventRequest'
         required: true
       responses:
         '201':
@@ -778,50 +417,7 @@ paths:
           content:
             application/json:
               schema:
-                properties:
-                  calendar_name:
-                    description: Calendar Name
-                    type: string
-                  gcal_id:
-                    description: GCal Calendar ID
-                    type: string
-                  gcal_name:
-                    description: GCal Calendar Name
-                    nullable: true
-                    type: string
-                  gcal_description:
-                    description: GCal Calendar Description
-                    nullable: true
-                    type: string
-                  gcal_location:
-                    description: GCal Calendar Location
-                    nullable: true
-                    type: string
-                  gcal_timezone:
-                    description: GCal Calendar Timezone
-                    nullable: true
-                    type: string
-                  sync:
-                    description: Sync Flag
-                    type: boolean
-                  last_modified:
-                    description: Last Modified
-                    format: date-time
-                    type: string
-                  edit:
-                    description: Edit Flag
-                    type: boolean
-                  display:
-                    description: Display Flag
-                    type: boolean
-                type: object
-                required:
-                - calendar_name
-                - gcal_id
-                - sync
-                - last_modified
-                - edit
-                - display
+                $ref: '#/components/schemas/CalendarList'
         '400':
           description: Bad Request
         '404':
@@ -830,4 +426,240 @@ paths:
           description: Method not allowed
         '500':
           description: Internal Server Error
-components: {}
+components:
+  schemas:
+    GcalEventID:
+      properties:
+        gcal_id:
+          description: GCal ID
+          type: string
+        event_id:
+          description: GCal Event ID
+          type: string
+      type: object
+      required:
+      - gcal_id
+      - event_id
+    CalendarList:
+      properties:
+        calendar_name:
+          description: Calendar Name
+          type: string
+        gcal_id:
+          description: GCal Calendar ID
+          type: string
+        gcal_name:
+          description: GCal Calendar Name
+          nullable: true
+          type: string
+        gcal_description:
+          description: GCal Calendar Description
+          nullable: true
+          type: string
+        gcal_location:
+          description: GCal Calendar Location
+          nullable: true
+          type: string
+        gcal_timezone:
+          description: GCal Calendar Timezone
+          nullable: true
+          type: string
+        sync:
+          description: Sync Flag
+          type: boolean
+        last_modified:
+          description: Last Modified
+          format: date-time
+          type: string
+        edit:
+          description: Edit Flag
+          type: boolean
+        display:
+          description: Display Flag
+          type: boolean
+      type: object
+      required:
+      - calendar_name
+      - gcal_id
+      - sync
+      - last_modified
+      - edit
+      - display
+    CalendarUpdateRequest:
+      properties:
+        updates:
+          description: Calendar List Updates
+          items:
+            $ref: '#/components/schemas/CalendarList'
+          type: array
+      type: object
+      required:
+      - updates
+    CalendarCache:
+      properties:
+        gcal_id:
+          description: Gcal Calendar ID
+          type: string
+        event_id:
+          description: Calendar Event ID
+          type: string
+        event_start_time:
+          description: Event Start Time
+          format: date-time
+          type: string
+        event_end_time:
+          description: Event End Time
+          format: date-time
+          type: string
+        event_url:
+          description: Event URL
+          nullable: true
+          type: string
+        event_name:
+          description: Event Name
+          type: string
+        event_description:
+          description: Event Description
+          nullable: true
+          type: string
+        event_location_name:
+          description: Event Location Name
+          nullable: true
+          type: string
+        event_location_lat:
+          description: Event Location Latitude
+          nullable: true
+          type: number
+        event_location_lon:
+          description: Event Location Longitude
+          nullable: true
+          type: number
+        last_modified:
+          description: Last Modified
+          format: date-time
+          type: string
+      type: object
+      required:
+      - gcal_id
+      - event_id
+      - event_start_time
+      - event_end_time
+      - event_name
+      - last_modified
+    CalendarCacheUpdateRequest:
+      properties:
+        updates:
+          description: Calendar Events Update
+          items:
+            $ref: '#/components/schemas/CalendarCacheRequest'
+          type: array
+      type: object
+      required:
+      - updates
+    CalendarCacheRequest:
+      properties:
+        gcal_id:
+          description: GCal Calendar ID
+          type: string
+        event_id:
+          description: Calendar Event ID
+          type: string
+        event_start_time:
+          description: Event Start Time
+          format: date-time
+          type: string
+        event_end_time:
+          description: Event End Time
+          format: date-time
+          type: string
+        event_url:
+          description: Event URL
+          nullable: true
+          type: string
+        event_name:
+          description: Event Name
+          type: string
+        event_description:
+          description: Event Description
+          nullable: true
+          type: string
+        event_location_name:
+          description: Event Location Name
+          nullable: true
+          type: string
+        event_location_lat:
+          description: Event Location Latitude
+          nullable: true
+          type: number
+        event_location_lon:
+          description: Event Location Longitude
+          nullable: true
+          type: number
+        last_modified:
+          description: Last Modified
+          format: date-time
+          type: string
+      type: object
+      required:
+      - gcal_id
+      - event_id
+      - event_start_time
+      - event_end_time
+      - event_name
+      - last_modified
+    LoggedUser:
+      properties:
+        email:
+          description: Email Address
+          type: string
+        session:
+          description: Session Id
+          format: uuid
+          example: 334518f4-1bfd-4f20-9978-bfad0dc033e1
+          type: string
+        secret_key:
+          description: Secret Key
+          type: string
+      type: object
+      required:
+      - email
+      - session
+      - secret_key
+    CreateCalendarEventRequest:
+      properties:
+        gcal_id:
+          description: GCal Calendar ID
+          type: string
+        event_id:
+          description: Event ID
+          type: string
+        event_start_datetime:
+          description: Event Start Time
+          format: date-time
+          type: string
+        event_end_datetime:
+          description: Event End Time
+          format: date-time
+          type: string
+        event_url:
+          description: Event URL
+          nullable: true
+          type: string
+        event_name:
+          description: Event Name
+          type: string
+        event_description:
+          description: Event Description
+          nullable: true
+          type: string
+        event_location_name:
+          description: Event Location Name
+          nullable: true
+          type: string
+      type: object
+      required:
+      - gcal_id
+      - event_id
+      - event_start_datetime
+      - event_end_datetime
+      - event_name
