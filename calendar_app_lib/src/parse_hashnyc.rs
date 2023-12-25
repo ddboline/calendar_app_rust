@@ -1,4 +1,4 @@
-use anyhow::{Error, format_err};
+use anyhow::{format_err, Error};
 use futures::{future::try_join_all, TryStreamExt};
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
@@ -48,11 +48,14 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                         let date = format_sstr!("{date} {year}");
                         let fmt = format_description!(
                             "[weekday repr:long case_sensitive:false]  [month repr:long \
-                             case_sensitive:false] [day padding:none]  [hour \
-                             padding:none repr:12]:[minute padding:zero] [period case:lower] [year]"
+                             case_sensitive:false] [day padding:none]  [hour padding:none \
+                             repr:12]:[minute padding:zero] [period case:lower] [year]"
                         );
                         let dt = PrimitiveDateTime::parse(&date, fmt)?;
-                        let dt = dt.assume_timezone(NEW_YORK).take().ok_or_else(|| format_err!("Ambiguous time"))?;
+                        let dt = dt
+                            .assume_timezone(NEW_YORK)
+                            .take()
+                            .ok_or_else(|| format_err!("Ambiguous time"))?;
                         start_time.replace(dt);
                     }
                 } else {

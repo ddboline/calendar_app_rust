@@ -256,12 +256,7 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
 }
 
 #[component]
-fn ListEventsElement(
-    cx: Scope,
-    calendar: Calendar,
-    events: Vec<Event>,
-    config: Config,
-) -> Element {
+fn ListEventsElement(cx: Scope, calendar: Calendar, events: Vec<Event>, config: Config) -> Element {
     let gcal_id = &calendar.gcal_id;
     cx.render(rsx! {
         table {

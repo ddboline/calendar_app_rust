@@ -104,7 +104,7 @@ pub async fn sync_calendars_full(
 }
 
 #[derive(Serialize, Deserialize, Debug, Schema)]
-#[schema(component="GcalEventID")]
+#[schema(component = "GcalEventID")]
 pub struct GcalEventID {
     #[schema(description = "GCal ID")]
     pub gcal_id: StackString,
@@ -292,7 +292,7 @@ async fn calendar_list_object(
 }
 
 #[derive(Serialize, Deserialize, Schema)]
-#[schema(component="CalendarUpdateRequest")]
+#[schema(component = "CalendarUpdateRequest")]
 pub struct CalendarUpdateRequest {
     #[schema(description = "Calendar List Updates")]
     pub updates: Vec<CalendarListWrapper>,
@@ -366,7 +366,7 @@ async fn calendar_cache_events(
 }
 
 #[derive(Serialize, Deserialize, Schema)]
-#[schema(component="CalendarCacheUpdateRequest")]
+#[schema(component = "CalendarCacheUpdateRequest")]
 pub struct CalendarCacheUpdateRequest {
     #[schema(description = "Calendar Events Update")]
     pub updates: Vec<CalendarCacheRequest>,

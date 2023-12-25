@@ -3,7 +3,7 @@ use arc_swap::ArcSwap;
 use deadqueue::unlimited::Queue;
 use futures::{future, try_join, StreamExt, TryStreamExt};
 use im::HashMap;
-use lazy_static::lazy_static;
+use once_cell::sync::Lazy;
 use stack_string::{format_sstr, StackString};
 use std::{collections::VecDeque, sync::Arc};
 use telegram_bot::{
@@ -24,10 +24,8 @@ use crate::failure_count::FailureCount;
 
 type UserIds = ArcSwap<HashMap<UserId, Option<ChatId>>>;
 
-lazy_static! {
-    static ref TELEGRAM_USERIDS: UserIds = ArcSwap::new(Arc::new(HashMap::new()));
-    static ref FAILURE_COUNT: FailureCount = FailureCount::new(5);
-}
+static TELEGRAM_USERIDS: Lazy<UserIds> = Lazy::new(|| ArcSwap::new(Arc::new(HashMap::new())));
+static FAILURE_COUNT: Lazy<FailureCount> = Lazy::new(|| FailureCount::new(5));
 
 #[derive(Clone)]
 pub struct TelegramBot {
