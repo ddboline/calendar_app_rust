@@ -20,7 +20,7 @@ function syncCalendars() {
         document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
         document.getElementById("garminconnectoutput").innerHTML = "done";
     }
-    xmlhttp.open("GET", url, true);
+    xmlhttp.open("POST", url, true);
     xmlhttp.send(null);
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
@@ -31,7 +31,7 @@ function syncCalendarsFull() {
         document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
         document.getElementById("garminconnectoutput").innerHTML = "done";
     }
-    xmlhttp.open("GET", url, true);
+    xmlhttp.open("POST", url, true);
     xmlhttp.send(null);
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
@@ -83,7 +83,7 @@ function listCalendars() {
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
 function listEvents(calendar_name) {
-    let url = "/calendar/list_events?calendar_name=" + calendar_name;
+    let url = `/calendar/list_events?calendar_name=${calendar_name}`;
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onload = function f() {
         document.getElementById("main_article").innerHTML = xmlhttp.responseText;
@@ -95,9 +95,9 @@ function listEvents(calendar_name) {
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
 function buildEvent(gcal_id, event_id=null) {
-    let url = "/calendar/create_calendar_event?gcal_id=" + gcal_id;
+    let url = `/calendar/create_calendar_event?gcal_id=${gcal_id}`;
     if (event_id) {
-        url = url + "&event_id=" + event_id;
+        url = `${url}&event_id=${event_id}`;
     }
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onload = function f() {
@@ -125,8 +125,8 @@ function createCalendarEvent() {
     let data = JSON.stringify({
         "gcal_id": gcal_id,
         "event_id": event_id,
-        "event_start_datetime": event_start_date + "T" + event_start_time + ":00",
-        "event_end_datetime": event_start_date + "T" + event_end_time + ":00",
+        "event_start_datetime": `${event_start_date}T${event_start_time}:00`,
+        "event_end_datetime": `${event_start_date}T${event_end_time}:00`,
         "event_url": event_url,
         "event_name": event_name,
         "event_description": event_description,
@@ -144,12 +144,13 @@ function createCalendarEvent() {
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
 function calendarDisplay(gcal_id, display) {
-    let url = "/calendar/edit_calendar?gcal_id=" + gcal_id + "&display=" + display;
+    let url = `/calendar/edit_calendar/${gcal_id}`
+    let data = jSON.stringify({"display": display});
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onload = function see_result() {
         listCalendars();
     }
-    xmlhttp.open("GET", url, true);
-    xmlhttp.send(null);
+    xmlhttp.open("POST", url, true);
+    xmlhttp.send(data);
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }

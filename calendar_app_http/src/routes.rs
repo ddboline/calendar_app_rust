@@ -81,7 +81,7 @@ async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
 #[response(description = "Sync Output", content = "html")]
 struct SyncResponse(HtmlBase<String, Error>);
 
-#[get("/calendar/sync_calendars")]
+#[post("/calendar/sync_calendars")]
 pub async fn sync_calendars(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -94,7 +94,7 @@ async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResu
     Ok(cal_sync.run_syncing(do_full).await?.join("<br>"))
 }
 
-#[get("/calendar/sync_calendars_full")]
+#[post("/calendar/sync_calendars_full")]
 pub async fn sync_calendars_full(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -571,8 +571,6 @@ async fn create_calendar_event_body(
 
 #[derive(Serialize, Deserialize, Schema)]
 pub struct EditCalendarRequest {
-    #[schema(description = "GCal Calendar ID")]
-    pub gcal_id: StackString,
     #[schema(description = "Calendar Name")]
     pub calendar_name: Option<StackString>,
     #[schema(description = "Sync Flag")]
@@ -587,24 +585,25 @@ pub struct EditCalendarRequest {
 #[response(description = "Edit Calendar Event")]
 struct EditCalendarResponse(JsonBase<CalendarListWrapper, Error>);
 
-#[get("/calendar/edit_calendar")]
+#[post("/calendar/edit_calendar/{gcal_id}")]
 pub async fn edit_calendar(
-    query: Query<EditCalendarRequest>,
+    gcal_id: StackString,
+    query: Json<EditCalendarRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
 ) -> WarpResult<EditCalendarResponse> {
     let query = query.into_inner();
-    let calendar_list = edit_calendar_list(query, &data.cal_sync).await?;
+    let calendar_list = edit_calendar_list(&gcal_id, query, &data.cal_sync).await?;
     Ok(JsonBase::new(calendar_list).into())
 }
 
 async fn edit_calendar_list(
+    gcal_id: &str,
     query: EditCalendarRequest,
     cal_sync: &CalendarSync,
 ) -> HttpResult<CalendarListWrapper> {
-    let Some(mut calendar) = CalendarList::get_by_gcal_id(&query.gcal_id, &cal_sync.pool).await?
-    else {
-        return Err(format_err!("No such calendar {}", query.gcal_id).into());
+    let Some(mut calendar) = CalendarList::get_by_gcal_id(gcal_id, &cal_sync.pool).await? else {
+        return Err(format_err!("No such calendar {gcal_id}").into());
     };
     if let Some(calendar_name) = query.calendar_name.as_ref() {
         calendar.calendar_name = calendar_name.clone();
