@@ -2,7 +2,7 @@ openapi: 3.0.1
 info:
   title: Calendar Web App
   description: Web App to Display Calendar, Sync with GCal
-  version: 0.7.14
+  version: 0.7.16
 paths:
   /calendar/index.html:
     get:
@@ -39,7 +39,7 @@ paths:
         '500':
           description: Internal Server Error
   /calendar/sync_calendars:
-    get:
+    post:
       responses:
         '200':
           description: Sync Output
@@ -56,7 +56,7 @@ paths:
         '500':
           description: Internal Server Error
   /calendar/sync_calendars_full:
-    get:
+    post:
       responses:
         '200':
           description: Sync Output
@@ -374,43 +374,37 @@ paths:
           description: Method not allowed
         '500':
           description: Internal Server Error
-  /calendar/edit_calendar:
-    get:
+  /calendar/edit_calendar/{gcal_id}:
+    post:
       parameters:
       - name: gcal_id
-        in: query
+        in: path
         required: true
         schema:
-          description: GCal Calendar ID
           type: string
-      - name: calendar_name
-        in: query
-        required: false
-        schema:
-          description: Calendar Name
-          nullable: true
-          type: string
-      - name: sync
-        in: query
-        required: false
-        schema:
-          description: Sync Flag
-          nullable: true
-          type: boolean
-      - name: edit
-        in: query
-        required: false
-        schema:
-          description: Edit Flag
-          nullable: true
-          type: boolean
-      - name: display
-        in: query
-        required: false
-        schema:
-          description: Display Flag
-          nullable: true
-          type: boolean
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                calendar_name:
+                  description: Calendar Name
+                  nullable: true
+                  type: string
+                sync:
+                  description: Sync Flag
+                  nullable: true
+                  type: boolean
+                edit:
+                  description: Edit Flag
+                  nullable: true
+                  type: boolean
+                display:
+                  description: Display Flag
+                  nullable: true
+                  type: boolean
+              type: object
+        required: true
       responses:
         '200':
           description: Edit Calendar Event
