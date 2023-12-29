@@ -38,7 +38,7 @@ pub type HttpResult<T> = Result<T, Error>;
 struct IndexResponse(HtmlBase<String, Error>);
 
 #[get("/calendar/index.html")]
-#[openapi(description="Calendar App Main Page")]
+#[openapi(description = "Calendar App Main Page")]
 pub async fn calendar_index(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
 ) -> WarpResult<IndexResponse> {
@@ -51,7 +51,7 @@ pub async fn calendar_index(
 struct AgendaResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/agenda")]
-#[openapi(description="Calendar Agenda Page")]
+#[openapi(description = "Calendar Agenda Page")]
 pub async fn agenda(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -84,7 +84,7 @@ async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
 struct SyncResponse(HtmlBase<String, Error>);
 
 #[post("/calendar/sync_calendars")]
-#[openapi(description="Sync Calendars")]
+#[openapi(description = "Sync Calendars")]
 pub async fn sync_calendars(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -98,7 +98,7 @@ async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResu
 }
 
 #[post("/calendar/sync_calendars_full")]
-#[openapi(description="Fully Sync All Calendars")]
+#[openapi(description = "Fully Sync All Calendars")]
 pub async fn sync_calendars_full(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -125,7 +125,7 @@ pub struct GcalEventID {
 struct DeleteEventResponse(HtmlBase<StackString, Error>);
 
 #[delete("/calendar/delete_event")]
-#[openapi(description="Delete Calendar Event")]
+#[openapi(description = "Delete Calendar Event")]
 pub async fn delete_event(
     payload: Json<GcalEventID>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -164,7 +164,7 @@ async fn delete_event_body(
 struct ListCalendarsResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/list_calendars")]
-#[openapi(description="List Calendars")]
+#[openapi(description = "List Calendars")]
 pub async fn list_calendars(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
     #[data] data: AppState,
@@ -205,7 +205,7 @@ pub struct ListEventsRequest {
 struct ListEventsResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/list_events")]
-#[openapi(description="List Events")]
+#[openapi(description = "List Events")]
 pub async fn list_events(
     query: Query<ListEventsRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -242,7 +242,7 @@ async fn get_events_list(
 struct EventDetailResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/event_detail")]
-#[openapi(description="Get Calendar Event Detail")]
+#[openapi(description = "Get Calendar Event Detail")]
 pub async fn event_detail(
     payload: Query<GcalEventID>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -274,7 +274,7 @@ async fn get_event_detail(
 struct CalendarListResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
 
 #[get("/calendar/calendar_list")]
-#[openapi(description="List Calendars")]
+#[openapi(description = "List Calendars")]
 pub async fn calendar_list(
     query: Query<MinModifiedQuery>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -312,7 +312,7 @@ pub struct CalendarUpdateRequest {
 struct CalendarListUpdateResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
 
 #[post("/calendar/calendar_list")]
-#[openapi(description="Update Calendars")]
+#[openapi(description = "Update Calendars")]
 pub async fn calendar_list_update(
     payload: Json<CalendarUpdateRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -347,7 +347,7 @@ async fn calendar_list_update_object(
 struct CalendarCacheResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 
 #[get("/calendar/calendar_cache")]
-#[openapi(description="List Recent Calendar Events")]
+#[openapi(description = "List Recent Calendar Events")]
 pub async fn calendar_cache(
     query: Query<MinModifiedQuery>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -388,7 +388,7 @@ pub struct CalendarCacheUpdateRequest {
 struct CalendarCacheUpdateResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
 
 #[post("/calendar/calendar_cache")]
-#[openapi(description="Update Calendar Events")]
+#[openapi(description = "Update Calendar Events")]
 pub async fn calendar_cache_update(
     payload: Json<CalendarCacheUpdateRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -432,7 +432,7 @@ pub async fn user(#[filter = "LoggedUser::filter"] user: LoggedUser) -> WarpResu
 struct ShortenedLinkResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/link/{link}")]
-#[openapi(description="Get Full URL from Shortened URL")]
+#[openapi(description = "Get Full URL from Shortened URL")]
 pub async fn link_shortener(
     link: StackString,
     #[data] data: AppState,
@@ -488,7 +488,7 @@ pub struct BuildEventRequest {
 struct BuildCalendarEventResponse(HtmlBase<StackString, Error>);
 
 #[get("/calendar/create_calendar_event")]
-#[openapi(description="Get Calendar Event Creation Form")]
+#[openapi(description = "Get Calendar Event Creation Form")]
 pub async fn build_calendar_event(
     query: Query<BuildEventRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -532,7 +532,7 @@ async fn build_calendar_event_body(
 struct CreateCalendarEventResponse(HtmlBase<String, Error>);
 
 #[post("/calendar/create_calendar_event")]
-#[openapi(description="Create Calendar Event")]
+#[openapi(description = "Create Calendar Event")]
 pub async fn create_calendar_event(
     payload: Json<CreateCalendarEventRequest>,
     #[filter = "LoggedUser::filter"] _: LoggedUser,
@@ -601,7 +601,7 @@ pub struct EditCalendarRequest {
 struct EditCalendarResponse(JsonBase<CalendarListWrapper, Error>);
 
 #[post("/calendar/edit_calendar/{gcal_id}")]
-#[openapi(description="Edit Google Calendar Event")]
+#[openapi(description = "Edit Google Calendar Event")]
 pub async fn edit_calendar(
     gcal_id: StackString,
     query: Json<EditCalendarRequest>,
