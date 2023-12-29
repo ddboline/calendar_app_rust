@@ -6,6 +6,7 @@ info:
 paths:
   /calendar/index.html:
     get:
+      description: Calendar App Main Page
       responses:
         '200':
           description: Main Page
@@ -23,6 +24,7 @@ paths:
           description: Internal Server Error
   /calendar/agenda:
     get:
+      description: Calendar Agenda Page
       responses:
         '200':
           description: Agenda
@@ -40,6 +42,7 @@ paths:
           description: Internal Server Error
   /calendar/sync_calendars:
     post:
+      description: Sync Calendars
       responses:
         '200':
           description: Sync Output
@@ -57,6 +60,7 @@ paths:
           description: Internal Server Error
   /calendar/sync_calendars_full:
     post:
+      description: Fully Sync All Calendars
       responses:
         '200':
           description: Sync Output
@@ -74,6 +78,7 @@ paths:
           description: Internal Server Error
   /calendar/delete_event:
     delete:
+      description: Delete Calendar Event
       requestBody:
         content:
           application/json:
@@ -97,6 +102,7 @@ paths:
           description: Internal Server Error
   /calendar/list_calendars:
     get:
+      description: List Calendars
       responses:
         '200':
           description: List Calendars
@@ -114,6 +120,7 @@ paths:
           description: Internal Server Error
   /calendar/list_events:
     get:
+      description: List Events
       parameters:
       - name: calendar_name
         in: query
@@ -155,13 +162,21 @@ paths:
         '500':
           description: Internal Server Error
   /calendar/event_detail:
-    post:
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/GcalEventID'
+    get:
+      description: Get Calendar Event Detail
+      parameters:
+      - name: gcal_id
+        in: query
         required: true
+        schema:
+          description: GCal ID
+          type: string
+      - name: event_id
+        in: query
+        required: true
+        schema:
+          description: GCal Event ID
+          type: string
       responses:
         '201':
           description: Event Details
@@ -179,6 +194,7 @@ paths:
           description: Internal Server Error
   /calendar/calendar_list:
     get:
+      description: List Calendars
       parameters:
       - name: min_modified
         in: query
@@ -206,6 +222,7 @@ paths:
         '500':
           description: Internal Server Error
     post:
+      description: Update Calendars
       requestBody:
         content:
           application/json:
@@ -231,6 +248,7 @@ paths:
           description: Internal Server Error
   /calendar/calendar_cache:
     get:
+      description: List Recent Calendar Events
       parameters:
       - name: min_modified
         in: query
@@ -258,6 +276,7 @@ paths:
         '500':
           description: Internal Server Error
     post:
+      description: Update Calendar Events
       requestBody:
         content:
           application/json:
@@ -300,6 +319,7 @@ paths:
           description: Internal Server Error
   /calendar/link/{link}:
     get:
+      description: Get Full URL from Shortened URL
       parameters:
       - name: link
         in: path
@@ -323,6 +343,7 @@ paths:
           description: Internal Server Error
   /calendar/create_calendar_event:
     get:
+      description: Get Calendar Event Creation Form
       parameters:
       - name: gcal_id
         in: query
@@ -353,6 +374,7 @@ paths:
         '500':
           description: Internal Server Error
     post:
+      description: Create Calendar Event
       requestBody:
         content:
           application/json:
@@ -376,6 +398,7 @@ paths:
           description: Internal Server Error
   /calendar/edit_calendar/{gcal_id}:
     post:
+      description: Edit Google Calendar Event
       parameters:
       - name: gcal_id
         in: path
