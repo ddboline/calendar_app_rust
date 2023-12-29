@@ -58,16 +58,17 @@ function deleteEventList(gcal_id, event_id, calendar_name) {
     deleteEvent(gcal_id, event_id, () => listEvents(calendar_name));
 }
 function eventDetail(gcal_id, event_id) {
-    let url = "/calendar/event_detail";
-    let data = JSON.stringify({'gcal_id': gcal_id, 'event_id': event_id});
+    let gcal_id = encodeURIComponent(gcal_id);
+    let event_id = encodeURIComponent(event_id);
+    let url = `/calendar/event_detail?gcal_id=${gcal_id}&event_id=${event_id}`;
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onload = function f() {
         document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
         document.getElementById("garminconnectoutput").innerHTML = "done";
     }
-    xmlhttp.open("POST", url, true);
+    xmlhttp.open("GET", url, true);
     xmlhttp.setRequestHeader('Content-Type', 'application/json');
-    xmlhttp.send(data);
+    xmlhttp.send(null);
     document.getElementById("garminconnectoutput").innerHTML = "running";
 }
 function listCalendars() {
