@@ -58,9 +58,9 @@ function deleteEventList(gcal_id, event_id, calendar_name) {
     deleteEvent(gcal_id, event_id, () => listEvents(calendar_name));
 }
 function eventDetail(gcal_id, event_id) {
-    let gcal_id = encodeURIComponent(gcal_id);
-    let event_id = encodeURIComponent(event_id);
-    let url = `/calendar/event_detail?gcal_id=${gcal_id}&event_id=${event_id}`;
+    let gcal = encodeURIComponent(gcal_id);
+    let event = encodeURIComponent(event_id);
+    let url = `/calendar/event_detail?gcal_id=${gcal}&event_id=${event}`;
     let xmlhttp = new XMLHttpRequest();
     xmlhttp.onload = function f() {
         document.getElementById("sub_article").innerHTML = xmlhttp.responseText;
