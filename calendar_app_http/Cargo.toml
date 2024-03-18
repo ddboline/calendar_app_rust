@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.7.17"
+version = "0.7.18"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.9"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.12"}
 calendar_app_lib = {path = "../calendar_app_lib"}
 derive_more = "0.99"
 dioxus = "0.4"
@@ -34,11 +34,11 @@ stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", featur
 thiserror = "1.0"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
-tokio = {version="1.35", features=["time"]}
+tokio = {version="1.36", features=["time"]}
 url = "2.3"
 uuid = "1.0"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.9"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.9"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.12"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.12"}
 maplit = "1.0"
