@@ -15,6 +15,7 @@ use std::{borrow::Cow, convert::Infallible, fmt::Debug};
 use thiserror::Error;
 use time_tz::system::Error as TzError;
 use tokio::task::JoinError;
+use std::fmt::Error as FmtError;
 
 use crate::logged_user::{LOGIN_HTML, TRIGGER_DB_UPDATE};
 
@@ -36,6 +37,8 @@ pub enum ServiceError {
     TzError(#[from] TzError),
     #[error("PqError {0}")]
     PqError(#[from] PqError),
+    #[error("FmtError {0}")]
+    FmtError(#[from] FmtError),
 }
 
 impl Reject for ServiceError {}

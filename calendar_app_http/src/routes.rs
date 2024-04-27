@@ -42,7 +42,7 @@ struct IndexResponse(HtmlBase<String, Error>);
 pub async fn calendar_index(
     #[filter = "LoggedUser::filter"] _: LoggedUser,
 ) -> WarpResult<IndexResponse> {
-    let body = index_body();
+    let body = index_body()?;
     Ok(HtmlBase::new(body).into())
 }
 
@@ -75,7 +75,7 @@ async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
         .await?;
     let mut events = cal_sync.list_agenda(1, 2).await?;
     events.sort_by_key(|event| event.start_time);
-    let body = agenda_body(calendar_map, events, cal_sync.config.clone()).into();
+    let body = agenda_body(calendar_map, events, cal_sync.config.clone())?.into();
     Ok(body)
 }
 
@@ -186,7 +186,7 @@ async fn get_calendars_list(cal_sync: &CalendarSync) -> HttpResult<StackString> 
             .as_ref()
             .map_or_else(|| calendar.name.clone(), Clone::clone)
     });
-    let body = list_calendars_body(calendars).into();
+    let body = list_calendars_body(calendars)?.into();
     Ok(body)
 }
 
@@ -233,7 +233,7 @@ async fn get_events_list(
         .list_events(&calendar.gcal_id, min_time, max_time)
         .await?;
     events.sort_by_key(|event| event.start_time);
-    let body = list_events_body(calendar, events, cal_sync.config.clone()).into();
+    let body = list_events_body(calendar, events, cal_sync.config.clone())?.into();
     Ok(body)
 }
 
@@ -262,7 +262,7 @@ async fn get_event_detail(
             .await?
     {
         let event: Event = event.into();
-        event_detail_body(event, cal_sync.config.clone()).into()
+        event_detail_body(event, cal_sync.config.clone())?.into()
     } else {
         "".into()
     };
@@ -519,7 +519,7 @@ async fn build_calendar_event_body(
         },
         Into::into,
     );
-    let body = build_event_body(event).into();
+    let body = build_event_body(event)?.into();
     Ok(body)
 }
 

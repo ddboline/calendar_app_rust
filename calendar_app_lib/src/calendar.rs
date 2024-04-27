@@ -117,7 +117,7 @@ impl Calendar {
     }
 }
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Clone)]
 pub struct Event {
     pub gcal_id: StackString,
     pub event_id: StackString,

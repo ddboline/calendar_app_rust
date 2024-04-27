@@ -1,6 +1,6 @@
 use dioxus::prelude::{
-    component, dioxus_elements, rsx, Element, GlobalAttributes, IntoDynNode, Props, Scope,
-    VirtualDom,
+    component, dioxus_elements, rsx, Element, GlobalAttributes, Props,
+    VirtualDom, IntoDynNode,
 };
 use itertools::Itertools;
 use stack_string::{format_sstr, StackString};
@@ -14,15 +14,22 @@ use calendar_app_lib::{
     get_default_or_local_time,
 };
 
-pub fn index_body() -> String {
+use crate::errors::ServiceError as Error;
+
+/// # Errors
+/// Returns error if formatting fails
+pub fn index_body() -> Result<String, Error> {
     let mut app = VirtualDom::new(IndexElement);
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
-fn IndexElement(cx: Scope) -> Element {
-    cx.render(rsx! {
+fn IndexElement() -> Element {
+    rsx! {
         head {
             style {dangerous_inner_html: include_str!("../../templates/style.css")},
         },
@@ -66,14 +73,16 @@ fn IndexElement(cx: Scope) -> Element {
                 dangerous_inner_html: include_str!("../../templates/scripts.js"),
             }
         }
-    })
+    }
 }
 
+/// # Errors
+/// Returns error if formatting fails
 pub fn agenda_body(
     calendar_map: HashMap<StackString, Calendar>,
     events: Vec<Event>,
     config: Config,
-) -> String {
+) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         AgendaElement,
         AgendaElementProps {
@@ -82,18 +91,20 @@ pub fn agenda_body(
             config,
         },
     );
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
 fn AgendaElement(
-    cx: Scope,
     calendar_map: HashMap<StackString, Calendar>,
     events: Vec<Event>,
     config: Config,
 ) -> Element {
-    cx.render(rsx! {
+    rsx! {
         table {
             "border": "1",
             class: "dataframe",
@@ -103,7 +114,7 @@ fn AgendaElement(
                 th {"Start Time"},
             },
             tbody {
-                events.iter().enumerate().filter_map(|(idx, event)| {
+                {events.iter().enumerate().filter_map(|(idx, event)| {
                     let cal = calendar_map.get(&event.gcal_id)?;
                     let calendar_name = cal.gcal_name.as_ref().unwrap_or(&cal.name);
                     let delete = if cal.edit {
@@ -120,7 +131,7 @@ fn AgendaElement(
                     } else {
                         None
                     };
-                    let start_time = get_default_or_local_time(event.start_time.into(), config);
+                    let start_time = get_default_or_local_time(event.start_time.into(), &config);
                     let cal_name = &cal.name;
                     let gcal_id = &event.gcal_id;
                     let event_id = &event.event_id;
@@ -146,27 +157,32 @@ fn AgendaElement(
                                 }
                             },
                             td {"{start_time}"},
-                            td {delete},
+                            td { {delete} },
                         }
                     })
-                })
+                })}
             }
         }
-    })
+    }
 }
 
-pub fn list_calendars_body(calendars: Vec<Calendar>) -> String {
+/// # Errors
+/// Returns error if formatting fails
+pub fn list_calendars_body(calendars: Vec<Calendar>) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         ListCalendarsElement,
         ListCalendarsElementProps { calendars },
     );
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
-fn ListCalendarsElement(cx: Scope, calendars: Vec<Calendar>) -> Element {
-    cx.render(rsx! {
+fn ListCalendarsElement(calendars: Vec<Calendar>) -> Element {
+    rsx! {
         table {
             "border": "1",
             class: "dataframe",
@@ -184,7 +200,7 @@ fn ListCalendarsElement(cx: Scope, calendars: Vec<Calendar>) -> Element {
                 }
             },
             tbody {
-                calendars.iter().enumerate().map(|(idx, calendar)| {
+                {calendars.iter().enumerate().map(|(idx, calendar)| {
                     let gcal_id = &calendar.gcal_id;
                     let create_event = if calendar.edit {
                         Some(rsx! {
@@ -232,17 +248,19 @@ fn ListCalendarsElement(cx: Scope, calendars: Vec<Calendar>) -> Element {
                                 }
                             },
                             td {"{description}"},
-                            td {make_visible},
-                            td {create_event},
+                            td { {make_visible} },
+                            td { {create_event} },
                         }
                     }
-                })
+                })}
             }
         }
-    })
+    }
 }
 
-pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) -> String {
+/// # Errors
+/// Returns error if formatting fails
+pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         ListEventsElement,
         ListEventsElementProps {
@@ -251,14 +269,17 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
             config,
         },
     );
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
-fn ListEventsElement(cx: Scope, calendar: Calendar, events: Vec<Event>, config: Config) -> Element {
+fn ListEventsElement(calendar: Calendar, events: Vec<Event>, config: Config) -> Element {
     let gcal_id = &calendar.gcal_id;
-    cx.render(rsx! {
+    rsx! {
         table {
             "border": "1",
             class: "dataframe",
@@ -276,7 +297,7 @@ fn ListEventsElement(cx: Scope, calendar: Calendar, events: Vec<Event>, config: 
                 }
             },
             tbody {
-                events.iter().enumerate().map(|(idx, event)| {
+                {events.iter().enumerate().map(|(idx, event)| {
 
                     let delete = if calendar.edit {
                         let gcal_id = &event.gcal_id;
@@ -293,8 +314,8 @@ fn ListEventsElement(cx: Scope, calendar: Calendar, events: Vec<Event>, config: 
                     } else {
                         None
                     };
-                    let start_time = get_default_or_local_time(event.start_time.into(), config);
-                    let end_time = get_default_or_local_time(event.end_time.into(), config);
+                    let start_time = get_default_or_local_time(event.start_time.into(), &config);
+                    let end_time = get_default_or_local_time(event.end_time.into(), &config);
                     let name = &event.name;
                     let gcal_id = &event.gcal_id;
                     let event_id = &event.event_id;
@@ -313,26 +334,31 @@ fn ListEventsElement(cx: Scope, calendar: Calendar, events: Vec<Event>, config: 
                             },
                             td {"{start_time}"},
                             td {"{end_time}"},
-                            td {delete},
+                            td { {delete} },
                         }
                     }
-                })
+                })}
             }
         }
-    })
+    }
 }
 
-pub fn event_detail_body(event: Event, config: Config) -> String {
+/// # Errors
+/// Returns error if formatting fails
+pub fn event_detail_body(event: Event, config: Config) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         EventDetailElement,
         EventDetailElementProps { event, config },
     );
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
-fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
+fn EventDetailElement(event: Event, config: Config) -> Element {
     let name = &event.name;
     let description = event.description.as_ref().map(|description| {
         let description = description
@@ -363,9 +389,9 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
             .join("");
         rsx! {div {dangerous_inner_html: "{description}"}}
     });
-    let start_time = get_default_or_local_time(event.start_time.into(), config);
-    let end_time = get_default_or_local_time(event.end_time.into(), config);
-    cx.render(rsx! {
+    let start_time = get_default_or_local_time(event.start_time.into(), &config);
+    let end_time = get_default_or_local_time(event.end_time.into(), &config);
+    rsx! {
         table {
             "border": "1",
             class: "dataframe",
@@ -380,9 +406,9 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
                 tr {
                     "text-style": "center",
                     td {"Description"},
-                    td {description},
+                    td { {description} },
                 },
-                event.url.as_ref().map(|url| {
+                {event.url.as_ref().map(|url| {
                     rsx! {
                         tr {
                             "text-style": "center",
@@ -395,8 +421,8 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
                             }
                         }
                     }
-                }),
-                event.location.as_ref().map(|location| {
+                })},
+                {event.location.as_ref().map(|location| {
                     let name = &location.name;
                     rsx! {
                         tr {
@@ -404,7 +430,7 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
                             td {"Location"},
                             td {"{name}"},
                         },
-                        location.lat_lon.as_ref().map(|(lat, lon)| {
+                        {location.lat_lon.as_ref().map(|(lat, lon)| {
                             rsx! {
                                 tr {
                                     "text-style": "center",
@@ -412,9 +438,9 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
                                     td {"{lat},{lon}"},
                                 }
                             }
-                        }),
+                        })},
                     }
-                }),
+                })},
                 tr {
                     "text-style": "center",
                     td {"Start Time"},
@@ -427,20 +453,25 @@ fn EventDetailElement(cx: Scope, event: Event, config: Config) -> Element {
                 }
             }
         }
-    })
+    }
 }
 
-pub fn build_event_body(event: Event) -> String {
+/// # Errors
+/// Returns error if formatting fails
+pub fn build_event_body(event: Event) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         BuildCalendarEventElement,
         BuildCalendarEventElementProps { event },
     );
-    drop(app.rebuild());
-    dioxus_ssr::render(&app)
+    app.rebuild_in_place();
+    let mut renderer = dioxus_ssr::Renderer::default();
+    let mut buffer = String::new();
+    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    Ok(buffer)
 }
 
 #[component]
-fn BuildCalendarEventElement(cx: Scope, event: Event) -> Element {
+fn BuildCalendarEventElement(event: Event) -> Element {
     let gcal_id = &event.gcal_id;
     let event_id = &event.event_id;
     let start_date = event.start_time.date();
@@ -459,7 +490,7 @@ fn BuildCalendarEventElement(cx: Scope, event: Event) -> Element {
     let event_location_name = event.location.as_ref().map_or("", |l| l.name.as_str());
     let event_description = event.description.as_ref().map_or("", StackString::as_str);
 
-    cx.render(rsx! {
+    rsx! {
         form {
             action: "javascript:createCalendarEvent();",
             table {
@@ -589,5 +620,5 @@ fn BuildCalendarEventElement(cx: Scope, event: Event) -> Element {
                 }
             }
         }
-    })
+    }
 }
