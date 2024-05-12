@@ -1,6 +1,5 @@
 use dioxus::prelude::{
-    component, dioxus_elements, rsx, Element, GlobalAttributes, Props,
-    VirtualDom, IntoDynNode,
+    component, dioxus_elements, rsx, Element, GlobalAttributes, IntoDynNode, Props, VirtualDom,
 };
 use itertools::Itertools;
 use stack_string::{format_sstr, StackString};
@@ -23,7 +22,9 @@ pub fn index_body() -> Result<String, Error> {
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
@@ -94,7 +95,9 @@ pub fn agenda_body(
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
@@ -176,7 +179,9 @@ pub fn list_calendars_body(calendars: Vec<Calendar>) -> Result<String, Error> {
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
@@ -260,7 +265,11 @@ fn ListCalendarsElement(calendars: Vec<Calendar>) -> Element {
 
 /// # Errors
 /// Returns error if formatting fails
-pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) -> Result<String, Error> {
+pub fn list_events_body(
+    calendar: Calendar,
+    events: Vec<Event>,
+    config: Config,
+) -> Result<String, Error> {
     let mut app = VirtualDom::new_with_props(
         ListEventsElement,
         ListEventsElementProps {
@@ -272,7 +281,9 @@ pub fn list_events_body(calendar: Calendar, events: Vec<Event>, config: Config) 
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
@@ -353,7 +364,9 @@ pub fn event_detail_body(event: Event, config: Config) -> Result<String, Error> 
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
@@ -466,7 +479,9 @@ pub fn build_event_body(event: Event) -> Result<String, Error> {
     app.rebuild_in_place();
     let mut renderer = dioxus_ssr::Renderer::default();
     let mut buffer = String::new();
-    renderer.render_to(&mut buffer, &app).map_err(Into::<Error>::into)?;
+    renderer
+        .render_to(&mut buffer, &app)
+        .map_err(Into::<Error>::into)?;
     Ok(buffer)
 }
 
