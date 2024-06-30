@@ -40,8 +40,9 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
             }
         }
         for date in race.find(Class("_date")) {
+            let dt = date.text();
             let dt = Date::parse(
-                &date.text(),
+                dt.trim(),
                 format_description!(
                     "[weekday repr:long], [month repr:long] [day padding:none], [year]"
                 ),
