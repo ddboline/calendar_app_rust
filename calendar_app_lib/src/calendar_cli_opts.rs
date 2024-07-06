@@ -95,7 +95,7 @@ impl CalendarCliOpts {
         let action = opts.action.unwrap_or(CalendarActions::PrintAgenda);
 
         let config = Config::init_config()?;
-        let pool = PgPool::new(&config.database_url);
+        let pool = PgPool::new(&config.database_url)?;
         let cal_sync = CalendarSync::new(config, pool).await;
 
         match action {
