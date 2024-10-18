@@ -8,7 +8,7 @@ use rweb_helper::{
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
 use std::collections::HashMap;
-use time::{Duration, OffsetDateTime};
+use time::OffsetDateTime;
 use time_tz::OffsetDateTimeExt;
 
 use calendar_app_lib::{
@@ -269,9 +269,27 @@ async fn get_event_detail(
     Ok(body)
 }
 
+#[derive(Debug, Serialize, Deserialize, Schema)]
+#[schema(component = "Pagination")]
+struct Pagination {
+    #[schema(description = "Number of Entries Returned")]
+    limit: usize,
+    #[schema(description = "Number of Entries to Skip")]
+    offset: usize,
+    #[schema(description = "Total Number of Entries")]
+    total: usize,
+}
+
+#[derive(Debug, Serialize, Deserialize, Schema)]
+#[schema(component = "PaginatedCalendarList")]
+struct PaginatedCalendarList {
+    pagination: Pagination,
+    data: Vec<CalendarListWrapper>,
+}
+
 #[derive(RwebResponse)]
 #[response(description = "Calendar List")]
-struct CalendarListResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
+struct CalendarListResponse(JsonBase<PaginatedCalendarList, Error>);
 
 #[get("/calendar/calendar_list")]
 #[openapi(description = "List Calendars")]
@@ -281,23 +299,29 @@ pub async fn calendar_list(
     #[data] data: AppState,
 ) -> WarpResult<CalendarListResponse> {
     let query = query.into_inner();
-    let calendar_list = calendar_list_object(query, &data.cal_sync).await?;
-    Ok(JsonBase::new(calendar_list).into())
+    let result = calendar_list_object(&query, &data.cal_sync).await?;
+    Ok(JsonBase::new(result).into())
 }
 
 async fn calendar_list_object(
-    query: MinModifiedQuery,
+    query: &MinModifiedQuery,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<CalendarListWrapper>> {
-    let min_modified = query
-        .min_modified
-        .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
-    let cal_list = CalendarList::get_recent(min_modified, &cal_sync.pool)
+) -> HttpResult<PaginatedCalendarList> {
+    let min_modified = query.min_modified.map(Into::into);
+    let total = CalendarList::get_total(&cal_sync.pool, min_modified).await?;
+    let limit = query.limit.unwrap_or(10);
+    let offset = query.offset.unwrap_or(0);
+    let pagination = Pagination {
+        limit,
+        offset,
+        total,
+    };
+    let data = CalendarList::get_recent(&cal_sync.pool, min_modified, Some(offset), Some(limit))
         .await?
         .map_ok(Into::into)
         .try_collect()
         .await?;
-    Ok(cal_list)
+    Ok(PaginatedCalendarList { pagination, data })
 }
 
 #[derive(Serialize, Deserialize, Schema)]
@@ -342,9 +366,16 @@ async fn calendar_list_update_object(
     futures.try_collect().await
 }
 
+#[derive(Debug, Serialize, Deserialize, Schema)]
+#[schema(component = "PaginatedCalendarCache")]
+struct PaginatedCalendarCache {
+    pagination: Pagination,
+    data: Vec<CalendarCacheWrapper>,
+}
+
 #[derive(RwebResponse)]
 #[response(description = "Calendar Cache")]
-struct CalendarCacheResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
+struct CalendarCacheResponse(JsonBase<PaginatedCalendarCache, Error>);
 
 #[get("/calendar/calendar_cache")]
 #[openapi(description = "List Recent Calendar Events")]
@@ -354,26 +385,29 @@ pub async fn calendar_cache(
     #[data] data: AppState,
 ) -> WarpResult<CalendarCacheResponse> {
     let query = query.into_inner();
-    let events = calendar_cache_events(query, &data.cal_sync)
-        .await?
-        .into_iter()
-        .map(Into::into)
-        .collect();
-    Ok(JsonBase::new(events).into())
+    let result = calendar_cache_events(&query, &data.cal_sync).await?;
+    Ok(JsonBase::new(result).into())
 }
 
 async fn calendar_cache_events(
-    query: MinModifiedQuery,
+    query: &MinModifiedQuery,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<CalendarCache>> {
-    let min_modified = query
-        .min_modified
-        .map_or_else(|| OffsetDateTime::now_utc() - Duration::days(7), Into::into);
-    CalendarCache::get_recent(min_modified, &cal_sync.pool)
+) -> HttpResult<PaginatedCalendarCache> {
+    let min_modified = query.min_modified.map(Into::into);
+    let total = CalendarCache::get_total(&cal_sync.pool, min_modified).await?;
+    let limit = query.limit.unwrap_or(10);
+    let offset = query.offset.unwrap_or(0);
+    let pagination = Pagination {
+        limit,
+        offset,
+        total,
+    };
+    let data = CalendarCache::get_recent(&cal_sync.pool, min_modified, Some(offset), Some(limit))
         .await?
+        .map_ok(Into::into)
         .try_collect()
-        .await
-        .map_err(Into::<Error>::into)
+        .await?;
+    Ok(PaginatedCalendarCache { pagination, data })
 }
 
 #[derive(Serialize, Deserialize, Schema)]
