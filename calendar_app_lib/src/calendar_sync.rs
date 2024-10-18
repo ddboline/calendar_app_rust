@@ -371,3 +371,26 @@ impl CalendarSync {
         Ok(events)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use anyhow::Error;
+    use futures::TryStreamExt;
+
+    use crate::{calendar_sync::CalendarSync, config::Config, pgpool::PgPool};
+
+    #[tokio::test]
+    async fn test_list_events() -> Result<(), Error> {
+        let config = Config::init_config()?;
+        let pool = PgPool::new(&config.database_url)?;
+
+        let cal_sync = CalendarSync::new(config, pool).await;
+
+        let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
+        println!("{}", calendars.len());
+        assert!(calendars.len() > 0);
+        assert!(false);
+
+        Ok(())
+    }
+}
