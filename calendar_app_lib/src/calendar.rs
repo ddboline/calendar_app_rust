@@ -29,7 +29,7 @@ pub struct Location {
     pub lat_lon: Option<(Latitude, Longitude)>,
 }
 
-#[derive(Serialize, Deserialize, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, PartialEq, Debug)]
 pub struct Calendar {
     pub name: StackString,
     pub gcal_id: StackString,
