@@ -91,6 +91,8 @@ struct _CalendarCacheWrapper {
 #[derive(Serialize, Deserialize)]
 pub struct MinModifiedQuery {
     pub min_modified: Option<DateTimeWrapper>,
+    pub offset: Option<usize>,
+    pub limit: Option<usize>,
 }
 
 derive_rweb_schema!(MinModifiedQuery, _MinModifiedQuery);
@@ -100,6 +102,10 @@ derive_rweb_schema!(MinModifiedQuery, _MinModifiedQuery);
 struct _MinModifiedQuery {
     #[schema(description = "Min Modified Date")]
     min_modified: Option<DateTimeType>,
+    #[schema(description = "Offset")]
+    offset: Option<usize>,
+    #[schema(description = "Limit")]
+    limit: Option<usize>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
