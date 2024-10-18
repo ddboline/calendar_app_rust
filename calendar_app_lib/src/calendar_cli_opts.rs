@@ -214,20 +214,28 @@ impl CalendarCliOpts {
                 match table.as_str() {
                     "calendar_list" => {
                         let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
-                        let calendars: Vec<_> =
-                            CalendarList::get_recent(max_modified, &cal_sync.pool)
-                                .await?
-                                .try_collect()
-                                .await?;
+                        let calendars: Vec<_> = CalendarList::get_recent(
+                            &cal_sync.pool,
+                            Some(max_modified),
+                            None,
+                            None,
+                        )
+                        .await?
+                        .try_collect()
+                        .await?;
                         file.write_all(&serde_json::to_vec(&calendars)?).await?;
                     }
                     "calendar_cache" => {
                         let max_modified = OffsetDateTime::now_utc() - Duration::days(7);
-                        let events: Vec<_> =
-                            CalendarCache::get_recent(max_modified, &cal_sync.pool)
-                                .await?
-                                .try_collect()
-                                .await?;
+                        let events: Vec<_> = CalendarCache::get_recent(
+                            &cal_sync.pool,
+                            Some(max_modified),
+                            None,
+                            None,
+                        )
+                        .await?
+                        .try_collect()
+                        .await?;
                         file.write_all(&serde_json::to_vec(&events)?).await?;
                     }
                     _ => {}
