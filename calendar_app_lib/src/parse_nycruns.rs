@@ -35,7 +35,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                     event_url.replace(url);
                 }
             }
-            if let Some(text) = a.text().trim().split('\n').next() {
+            if let Some(text) = a.text().lines().next() {
                 name.replace(text.trim().into());
             }
         }
