@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_rust"
-version = "0.7.22"
+version = "0.7.23"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -19,7 +19,7 @@ anyhow = "1.0"
 calendar_app_bot = {path="calendar_app_bot"}
 calendar_app_http = {path="calendar_app_http"}
 calendar_app_lib = {path="calendar_app_lib"}
-env_logger = {version="0.11", features=["color", "humantime", "regex"], default_features = false}
+env_logger = {version="0.11", features=["color", "humantime", "regex"], default-features = false}
 gcal_lib = {path="gcal_lib"}
 log = "0.4"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}

@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.7.22"
+version = "0.7.23"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -11,7 +11,7 @@ anyhow = "1.0"
 async-trait = "0.1"
 authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.15"}
 calendar_app_lib = {path = "../calendar_app_lib"}
-derive_more = "0.99"
+derive_more = {version="1.0", features=["full"]}
 dioxus = "0.5"
 dioxus-core = "0.5"
 dioxus-ssr = "0.5"
@@ -24,7 +24,7 @@ maplit = "1.0"
 parking_lot = "0.12"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
 rayon = "1.5"
-reqwest = {version="0.12", default_features = false, features=["cookies", "json", "rustls-tls", "stream"]}
+reqwest = {version="0.12", default-features = false, features=["cookies", "json", "rustls-tls", "stream"]}
 rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi", "chrono"], default-features=false, tag="0.15.2"}
 rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.5.3" }
 serde = "1.0"
