@@ -389,7 +389,6 @@ mod tests {
         let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
         println!("{}", calendars.len());
         assert!(calendars.len() > 0);
-        assert!(false);
 
         Ok(())
     }

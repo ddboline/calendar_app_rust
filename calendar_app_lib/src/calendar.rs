@@ -378,6 +378,7 @@ mod tests {
     #[tokio::test]
     async fn test_insert_delete_gcal_event() -> Result<(), Error> {
         let config = Config::init_config()?;
+        debug!("{:?} {:?}", config.gcal_token_path, config.gcal_secret_file);
         let gcal = GCalendarInstance::new(
             &config.gcal_token_path,
             &config.gcal_secret_file,
