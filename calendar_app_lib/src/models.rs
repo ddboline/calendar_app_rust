@@ -3,6 +3,7 @@ use derive_more::Into;
 use futures::Stream;
 use postgres_query::{
     client::GenericClient, query, query_dyn, Error as PqError, FromSqlRow, Parameter,
+    Query
 };
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
@@ -54,6 +55,39 @@ impl CalendarList {
         query.fetch_streaming(&conn).await.map_err(Into::into)
     }
 
+    fn get_calendar_list_query<'a>(
+        select_str: &'a str,
+        modified: &'a Option<OffsetDateTime>,
+        offset: Option<usize>,
+        limit: Option<usize>,
+    ) -> Result<Query<'a>, PqError> {
+        let mut bindings = Vec::new();
+        let mut constraints = Vec::new();
+        if let Some(modified) = modified {
+            constraints.push(format_sstr!("last_modified > $modified"));
+            bindings.push(("modified", modified as Parameter));
+        }
+        let where_str = if constraints.is_empty() {
+            "".into()
+        } else {
+            format_sstr!("WHERE {}", constraints.join(" AND "))
+        };
+        let mut query = format_sstr!(
+            r#"
+                SELECT {select_str} FROM calendar_list
+                {where_str}
+                ORDER BY calendar_name
+            "#
+        );
+        if let Some(offset) = offset {
+            query.push_str(&format_sstr!(" OFFSET {offset}"));
+        }
+        if let Some(limit) = limit {
+            query.push_str(&format_sstr!(" LIMIT {limit}"));
+        }
+        query_dyn!(&query, ..bindings)
+    }
+
     /// # Errors
     /// Returns error if db query fails
     pub async fn get_total(
@@ -65,20 +99,8 @@ impl CalendarList {
             count: i64,
         }
 
-        let mut bindings = Vec::new();
-        let mut constraints = Vec::new();
-        if let Some(modified) = &modified {
-            constraints.push(format_sstr!("last_modified > $modified"));
-            bindings.push(("modified", modified as Parameter));
-        }
-        let where_str = if constraints.is_empty() {
-            "".into()
-        } else {
-            format_sstr!("WHERE {}", constraints.join(" AND "))
-        };
-        let query = format_sstr!("SELECT count(*) FROM calendar_list {where_str}");
+        let query = Self::get_calendar_list_query("count(*)", &modified, None, None)?;
 
-        let query = query_dyn!(&query, ..bindings)?;
         let conn = pool.get().await?;
         let count: Count = query.fetch_one(&conn).await?;
         Ok(count.count.try_into()?)
@@ -180,31 +202,8 @@ impl CalendarList {
         offset: Option<usize>,
         limit: Option<usize>,
     ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
-        let mut bindings = Vec::new();
-        let mut constraints = Vec::new();
-        if let Some(modified) = &modified {
-            constraints.push(format_sstr!("last_modified > $modified"));
-            bindings.push(("modified", modified as Parameter));
-        }
-        let where_str = if constraints.is_empty() {
-            "".into()
-        } else {
-            format_sstr!("WHERE {}", constraints.join(" AND "))
-        };
-        let mut query = format_sstr!(
-            r#"
-                SELECT * FROM calendar_list
-                {where_str}
-                ORDER BY calendar_name
-            "#
-        );
-        if let Some(offset) = &offset {
-            query.push_str(&format_sstr!(" OFFSET {offset}"));
-        }
-        if let Some(limit) = &limit {
-            query.push_str(&format_sstr!(" LIMIT {limit}"));
-        }
-        let query = query_dyn!(&query, ..bindings)?;
+        let query = Self::get_calendar_list_query("*", &modified, offset, limit)?;
+
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
     }
@@ -433,17 +432,15 @@ impl CalendarCache {
         Ok(result.map(Into::into))
     }
 
-    /// # Errors
-    /// Returns error if db query fails
-    pub async fn get_recent(
-        pool: &PgPool,
-        modified: Option<OffsetDateTime>,
+    fn get_calendar_cache_query<'a>(
+        select_str: &'a str,
+        modified: &'a Option<OffsetDateTime>,
         offset: Option<usize>,
         limit: Option<usize>,
-    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
+    ) -> Result<Query<'a>, PqError> {
         let mut bindings = Vec::new();
         let mut constraints = Vec::new();
-        if let Some(modified) = &modified {
+        if let Some(modified) = modified {
             constraints.push(format_sstr!("last_modified > $modified"));
             bindings.push(("modified", modified as Parameter));
         }
@@ -455,7 +452,7 @@ impl CalendarCache {
 
         let mut query = format_sstr!(
             r#"
-                SELECT * FROM calendar_cache
+                SELECT {select_str} FROM calendar_cache
                 {where_str}
                 ORDER BY event_start_time
             "#
@@ -466,7 +463,19 @@ impl CalendarCache {
         if let Some(limit) = &limit {
             query.push_str(&format_sstr!(" LIMIT {limit}"));
         }
-        let query = query_dyn!(&query, ..bindings)?;
+        query_dyn!(&query, ..bindings)
+    }
+
+    /// # Errors
+    /// Returns error if db query fails
+    pub async fn get_recent(
+        pool: &PgPool,
+        modified: Option<OffsetDateTime>,
+        offset: Option<usize>,
+        limit: Option<usize>,
+    ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
+        let query = Self::get_calendar_cache_query("*", &modified, offset, limit)?;
+
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
     }
@@ -482,20 +491,8 @@ impl CalendarCache {
             count: i64,
         }
 
-        let mut bindings = Vec::new();
-        let mut constraints = Vec::new();
-        if let Some(modified) = &modified {
-            constraints.push(format_sstr!("last_modified > $modified"));
-            bindings.push(("modified", modified as Parameter));
-        }
-        let where_str = if constraints.is_empty() {
-            "".into()
-        } else {
-            format_sstr!("WHERE {}", constraints.join(" AND "))
-        };
-        let query = format_sstr!("SELECT count(*) FROM calendar_cache {where_str}");
+        let query = Self::get_calendar_cache_query("count(*)", &modified, None, None)?;
 
-        let query = query_dyn!(&query, ..bindings)?;
         let conn = pool.get().await?;
         let count: Count = query.fetch_one(&conn).await?;
         Ok(count.count.try_into()?)
