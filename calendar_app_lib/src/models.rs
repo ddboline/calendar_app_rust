@@ -2,8 +2,7 @@ use anyhow::{format_err, Error};
 use derive_more::Into;
 use futures::Stream;
 use postgres_query::{
-    client::GenericClient, query, query_dyn, Error as PqError, FromSqlRow, Parameter,
-    Query
+    client::GenericClient, query, query_dyn, Error as PqError, FromSqlRow, Parameter, Query,
 };
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
