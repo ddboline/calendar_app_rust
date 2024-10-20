@@ -56,6 +56,7 @@ impl CalendarList {
 
     fn get_calendar_list_query<'a>(
         select_str: &'a str,
+        order_str: &'a str,
         modified: &'a Option<OffsetDateTime>,
         offset: Option<usize>,
         limit: Option<usize>,
@@ -75,7 +76,7 @@ impl CalendarList {
             r#"
                 SELECT {select_str} FROM calendar_list
                 {where_str}
-                ORDER BY calendar_name
+                {order_str}
             "#
         );
         if let Some(offset) = offset {
@@ -98,7 +99,7 @@ impl CalendarList {
             count: i64,
         }
 
-        let query = Self::get_calendar_list_query("count(*)", &modified, None, None)?;
+        let query = Self::get_calendar_list_query("count(*)", "", &modified, None, None)?;
 
         let conn = pool.get().await?;
         let count: Count = query.fetch_one(&conn).await?;
@@ -201,7 +202,8 @@ impl CalendarList {
         offset: Option<usize>,
         limit: Option<usize>,
     ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
-        let query = Self::get_calendar_list_query("*", &modified, offset, limit)?;
+        let query =
+            Self::get_calendar_list_query("*", "ORDER BY calendar_name", &modified, offset, limit)?;
 
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
