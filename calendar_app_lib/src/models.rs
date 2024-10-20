@@ -435,6 +435,7 @@ impl CalendarCache {
 
     fn get_calendar_cache_query<'a>(
         select_str: &'a str,
+        order_str: &'a str,
         modified: &'a Option<OffsetDateTime>,
         offset: Option<usize>,
         limit: Option<usize>,
@@ -455,7 +456,7 @@ impl CalendarCache {
             r#"
                 SELECT {select_str} FROM calendar_cache
                 {where_str}
-                ORDER BY event_start_time
+                {order_str}
             "#
         );
         if let Some(offset) = &offset {
@@ -475,7 +476,13 @@ impl CalendarCache {
         offset: Option<usize>,
         limit: Option<usize>,
     ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
-        let query = Self::get_calendar_cache_query("*", &modified, offset, limit)?;
+        let query = Self::get_calendar_cache_query(
+            "*",
+            "ORDER BY event_start_time",
+            &modified,
+            offset,
+            limit,
+        )?;
 
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
@@ -492,7 +499,7 @@ impl CalendarCache {
             count: i64,
         }
 
-        let query = Self::get_calendar_cache_query("count(*)", &modified, None, None)?;
+        let query = Self::get_calendar_cache_query("count(*)", "", &modified, None, None)?;
 
         let conn = pool.get().await?;
         let count: Count = query.fetch_one(&conn).await?;
