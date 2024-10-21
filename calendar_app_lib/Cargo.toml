@@ -15,7 +15,7 @@ deadpool = { version = "0.12", features=["serde", "rt_tokio_1"] }
 deadpool-postgres = { version = "0.14", features=["serde"] }
 deadqueue = "0.2"
 dirs = "5.0"
-dotenv = "0.15"
+dotenvy = "0.15"
 envy = "0.4"
 futures = "0.3"
 gcal_lib = {path="../gcal_lib"}
