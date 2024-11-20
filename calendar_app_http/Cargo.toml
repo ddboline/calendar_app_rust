@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.7.25"
+version = "0.8.0"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.15"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
 calendar_app_lib = {path = "../calendar_app_lib"}
 derive_more = {version="1.0", features=["full"]}
 dioxus = "0.5"
@@ -31,8 +31,8 @@ serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_yaml = "0.9"
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", features=["postgres_types", "rweb-openapi"], tag="0.9.3" }
-thiserror = "1.0"
+stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", features=["postgres_types", "rweb-openapi"], tag="1.0.2" }
+thiserror = "2.0"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
 tokio = {version="1.38", features=["time"]}
@@ -40,6 +40,6 @@ url = "2.3"
 uuid = "1.0"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.15"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.11.15"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
 maplit = "1.0"

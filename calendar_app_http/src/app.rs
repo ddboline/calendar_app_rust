@@ -13,7 +13,7 @@ use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPo
 
 use crate::{
     errors::error_response,
-    logged_user::{fill_from_db, get_secrets, TRIGGER_DB_UPDATE},
+    logged_user::{fill_from_db, get_secrets},
     routes::{
         agenda, build_calendar_event, calendar_cache, calendar_cache_update, calendar_index,
         calendar_list, calendar_list_update, create_calendar_event, delete_event, edit_calendar,
@@ -94,7 +94,6 @@ async fn run_app(config: &Config) -> Result<(), Error> {
             i.tick().await;
         }
     }
-    TRIGGER_DB_UPDATE.set();
     let pool = PgPool::new(&config.database_url)?;
     let cal_sync = CalendarSync::new(config.clone(), pool).await;
     let shortened_urls = Arc::new(RwLock::new(HashMap::new()));
