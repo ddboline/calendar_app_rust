@@ -1,6 +1,6 @@
 pub use authorized_users::{
-    get_random_key, get_secrets, token::Token, AuthorizedUser, AUTHORIZED_USERS, JWT_SECRET,
-    KEY_LENGTH, LOGIN_HTML, SECRET_KEY, AuthorizedUser as ExternalUser,
+    get_random_key, get_secrets, token::Token, AuthorizedUser, AuthorizedUser as ExternalUser,
+    AUTHORIZED_USERS, JWT_SECRET, KEY_LENGTH, LOGIN_HTML, SECRET_KEY,
 };
 use futures::TryStreamExt;
 use log::debug;
@@ -10,13 +10,13 @@ use rweb_helper::UuidWrapper;
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use std::{
+    collections::HashMap,
     convert::{TryFrom, TryInto},
     env,
     str::FromStr,
 };
-use uuid::Uuid;
-use std::collections::HashMap;
 use time::OffsetDateTime;
+use uuid::Uuid;
 
 use calendar_app_lib::{models::AuthorizedUsers as AuthorizedUsersDB, pgpool::PgPool};
 
@@ -93,7 +93,14 @@ impl FromStr for LoggedUser {
 /// Return error if `get_authorized_users` fails
 pub async fn fill_from_db(pool: &PgPool) -> Result<(), Error> {
     if let Ok("true") = env::var("TESTENV").as_ref().map(String::as_str) {
-        AUTHORIZED_USERS.update_users(hashmap! {"user@test".into() => ExternalUser {email: "user@test".into(), session: Uuid::new_v4(), secret_key: Default::default(), created_at: Some(OffsetDateTime::now_utc())}});
+        AUTHORIZED_USERS.update_users(hashmap! {
+            "user@test".into() => ExternalUser {
+                email: "user@test".into(),
+                session: Uuid::new_v4(),
+                secret_key: StackString::default(),
+                created_at: Some(OffsetDateTime::now_utc())
+            }
+        });
         return Ok(());
     }
     let (created_at, deleted_at) = AuthorizedUsersDB::get_most_recent(pool).await?;
@@ -101,11 +108,28 @@ pub async fn fill_from_db(pool: &PgPool) -> Result<(), Error> {
     let existing_users = AUTHORIZED_USERS.get_users();
     let most_recent_user = existing_users.values().map(|i| i.created_at).max();
     debug!("most_recent_user_db {most_recent_user_db:?} most_recent_user {most_recent_user:?}");
-    if most_recent_user_db.is_some() && most_recent_user.is_some() && most_recent_user_db <= most_recent_user {
+    if most_recent_user_db.is_some()
+        && most_recent_user.is_some()
+        && most_recent_user_db <= most_recent_user
+    {
         return Ok(());
     }
 
-    let result: Result<HashMap<StackString, _>, _>  = AuthorizedUsersDB::get_authorized_users(pool).await?.map_ok(|u| (u.email.clone(), ExternalUser {email: u.email, session: Uuid::new_v4(), secret_key: Default::default(), created_at: Some(u.created_at)})).try_collect().await;
+    let result: Result<HashMap<StackString, _>, _> = AuthorizedUsersDB::get_authorized_users(pool)
+        .await?
+        .map_ok(|u| {
+            (
+                u.email.clone(),
+                ExternalUser {
+                    email: u.email,
+                    session: Uuid::new_v4(),
+                    secret_key: StackString::default(),
+                    created_at: Some(u.created_at),
+                },
+            )
+        })
+        .try_collect()
+        .await;
     let users = result?;
     AUTHORIZED_USERS.update_users(users);
     debug!("AUTHORIZED_USERS {:?}", *AUTHORIZED_USERS);
