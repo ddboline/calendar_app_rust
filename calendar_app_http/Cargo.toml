@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.8.0"
+version = "0.8.1"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2018"
 
@@ -9,7 +9,7 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.1"}
 calendar_app_lib = {path = "../calendar_app_lib"}
 derive_more = {version="1.0", features=["full"]}
 dioxus = "0.5"
@@ -40,6 +40,6 @@ url = "2.3"
 uuid = "1.0"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.0"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.1"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.1"}
 maplit = "1.0"
