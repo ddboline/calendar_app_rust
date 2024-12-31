@@ -87,7 +87,7 @@ fn get_calendar_path(app: &AppState) -> BoxedFilter<(impl Reply,)> {
 }
 
 async fn run_app(config: &Config) -> Result<(), Error> {
-    async fn _update_db(pool: PgPool) {
+    async fn update_db(pool: PgPool) {
         let mut i = interval(Duration::from_secs(60));
         loop {
             fill_from_db(&pool).await.unwrap_or(());
@@ -98,7 +98,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
     let cal_sync = CalendarSync::new(config.clone(), pool).await;
     let shortened_urls = Arc::new(RwLock::new(HashMap::new()));
 
-    tokio::task::spawn(_update_db(cal_sync.pool.clone()));
+    tokio::task::spawn(update_db(cal_sync.pool.clone()));
 
     let app = AppState {
         cal_sync,

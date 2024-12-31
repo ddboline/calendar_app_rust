@@ -209,14 +209,14 @@ impl TelegramBot {
     }
 
     async fn update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
-        match self._update_telegram_chat_id(userid, chatid).await {
+        match self.update_telegram_chat_id_impl(userid, chatid).await {
             Ok(()) => FAILURE_COUNT.reset()?,
             Err(_) => FAILURE_COUNT.increment()?,
         }
         Ok(())
     }
 
-    async fn _update_telegram_chat_id(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
+    async fn update_telegram_chat_id_impl(&self, userid: UserId, chatid: ChatId) -> Result<(), Error> {
         let authorized_users: Vec<_> = AuthorizedUsers::get_authorized_users(&self.pool)
             .await?
             .try_filter(|user| future::ready(user.telegram_userid == Some(userid.into())))
