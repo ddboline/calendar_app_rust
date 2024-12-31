@@ -202,8 +202,13 @@ impl CalendarList {
         offset: Option<usize>,
         limit: Option<usize>,
     ) -> Result<impl Stream<Item = Result<Self, PqError>>, Error> {
-        let query =
-            Self::get_calendar_list_query("*", "ORDER BY calendar_name", modified.as_ref(), offset, limit)?;
+        let query = Self::get_calendar_list_query(
+            "*",
+            "ORDER BY calendar_name",
+            modified.as_ref(),
+            offset,
+            limit,
+        )?;
 
         let conn = pool.get().await?;
         query.fetch_streaming(&conn).await.map_err(Into::into)
