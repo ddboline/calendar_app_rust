@@ -115,7 +115,10 @@ impl CalendarSync {
     ) -> Result<Vec<GCalEvent>, Error> {
         let event_map: HashMap<_, _> = calendar_events
             .into_iter()
-            .filter_map(|item| item.id.as_ref().map(|event_id| (event_id.as_str(), item)))
+            .filter_map(|item| {
+                let event_id: StackString = item.id.as_ref()?.into();
+                Some((event_id, item))
+            })
             .collect();
         let event_map = Arc::new(event_map);
 
@@ -311,7 +314,7 @@ impl CalendarSync {
             .try_filter_map(|event| {
                 let display_map = display_map.clone();
                 async move {
-                    if display_map.get(&event.gcal_id).map_or(false, |x| *x) {
+                    if display_map.get(&event.gcal_id).is_some_and(|x| *x) {
                         let event: Event = event.into();
                         Ok(Some(event))
                     } else {

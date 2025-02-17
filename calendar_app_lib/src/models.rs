@@ -73,11 +73,11 @@ impl CalendarList {
             format_sstr!("WHERE {}", constraints.join(" AND "))
         };
         let mut query = format_sstr!(
-            r#"
+            r"
                 SELECT {select_str} FROM calendar_list
                 {where_str}
                 {order_str}
-            "#
+            "
         );
         if let Some(offset) = offset {
             query.push_str(&format_sstr!(" OFFSET {offset}"));
@@ -458,11 +458,11 @@ impl CalendarCache {
         };
 
         let mut query = format_sstr!(
-            r#"
+            r"
                 SELECT {select_str} FROM calendar_cache
                 {where_str}
                 {order_str}
-            "#
+            "
         );
         if let Some(offset) = &offset {
             query.push_str(&format_sstr!(" OFFSET {offset}"));
@@ -771,7 +771,7 @@ fn write_hex_output(mut output: blake3::OutputReader, mut len: u64) -> StackStri
 }
 
 fn copy_wide(mut reader: impl io::Read, hasher: &mut blake3::Hasher) -> Result<u64, Error> {
-    let mut buffer = [0; 65536];
+    let mut buffer: Vec<u8> = Vec::with_capacity(65536);
     let mut total = 0;
     loop {
         match reader.read(&mut buffer) {
