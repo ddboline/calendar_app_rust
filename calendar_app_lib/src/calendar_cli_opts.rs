@@ -183,7 +183,7 @@ impl CalendarCliOpts {
                         let calendars: Vec<CalendarList> = serde_json::from_slice(&data)?;
                         let futures = calendars.into_iter().map(|calendar| {
                             let pool = cal_sync.pool.clone();
-                            async move { calendar.upsert(&pool).await.map_err(Into::into) }
+                            async move { calendar.upsert(&pool).await }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
                         cal_sync
@@ -194,7 +194,7 @@ impl CalendarCliOpts {
                         let events: Vec<CalendarCache> = serde_json::from_slice(&data)?;
                         let futures = events.into_iter().map(|event| {
                             let pool = cal_sync.pool.clone();
-                            async move { event.upsert(&pool).await.map_err(Into::into) }
+                            async move { event.upsert(&pool).await }
                         });
                         let results: Result<Vec<_>, Error> = try_join_all(futures).await;
                         cal_sync

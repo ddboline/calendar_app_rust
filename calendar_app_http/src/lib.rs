@@ -6,6 +6,7 @@
 #![allow(clippy::unused_async)]
 #![allow(clippy::implicit_hasher)]
 #![allow(clippy::ignored_unit_patterns)]
+#![allow(clippy::similar_names)]
 
 pub mod app;
 pub mod elements;
@@ -134,10 +135,10 @@ impl From<CalendarCacheRequest> for CalendarCache {
             event_id: item.event_id,
             event_start_time: event_start_time.into(),
             event_end_time: event_end_time.into(),
-            event_url: item.event_url.map(Into::into),
+            event_url: item.event_url,
             event_name: item.event_name,
-            event_description: item.event_description.map(Into::into),
-            event_location_name: item.event_location_name.map(Into::into),
+            event_description: item.event_description,
+            event_location_name: item.event_location_name,
             event_location_lat: item.event_location_lat,
             event_location_lon: item.event_location_lon,
             last_modified: last_modified.into(),

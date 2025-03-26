@@ -56,9 +56,15 @@ pub enum ServiceError {
     #[error("TzError {0}")]
     TzError(#[from] TzError),
     #[error("PqError {0}")]
-    PqError(#[from] PqError),
+    PqError(Box<PqError>),
     #[error("FmtError {0}")]
     FmtError(#[from] FmtError),
+}
+
+impl From<PqError> for ServiceError {
+    fn from(value: PqError) -> Self {
+        Self::PqError(value.into())
+    }
 }
 
 #[derive(Serialize, ToSchema)]
@@ -78,8 +84,8 @@ impl IntoResponse for ServiceError {
             Self::Unauthorized | Self::InvalidHeaderName(_) => {
                 (StatusCode::OK, LOGIN_HTML).into_response()
             }
-            Self::BadRequest(s) => {
-                (StatusCode::BAD_REQUEST, ErrorMessage { message: s.into() }).into_response()
+            Self::BadRequest(message) => {
+                (StatusCode::BAD_REQUEST, ErrorMessage { message }).into_response()
             }
             e => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -149,6 +155,6 @@ mod test {
         println!("PqError {}", std::mem::size_of::<PqError>());
         println!("FmtError {}", std::mem::size_of::<FmtError>());
 
-        assert_eq!(std::mem::size_of::<Error>(), 40);
+        assert_eq!(std::mem::size_of::<Error>(), 32);
     }
 }

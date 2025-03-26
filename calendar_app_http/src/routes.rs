@@ -49,7 +49,8 @@ async fn calendar_index(_: LoggedUser) -> WarpResult<IndexResponse> {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Agenda", content = "text/html")]
-struct AgendaResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct AgendaResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(get, path = "/calendar/agenda", responses(AgendaResponse, Error))]
 // Calendar Agenda Page")]
@@ -79,7 +80,8 @@ async fn get_agenda(cal_sync: &CalendarSync) -> WarpResult<StackString> {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Sync Output", content = "text/html")]
-struct SyncResponse(HtmlBase<String>);
+#[rustfmt::skip]
+struct SyncResponse(HtmlBase::<String>);
 
 #[utoipa::path(
     post,
@@ -125,7 +127,8 @@ struct GcalEventID {
     content = "text/html",
     status = "NO_CONTENT"
 )]
-struct DeleteEventResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct DeleteEventResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     delete,
@@ -168,7 +171,8 @@ async fn delete_event_body(
 
 #[derive(UtoipaResponse)]
 #[response(description = "List Calendars", content = "text/html")]
-struct ListCalendarsResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct ListCalendarsResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     get,
@@ -213,7 +217,8 @@ struct ListEventsRequest {
 
 #[derive(UtoipaResponse)]
 #[response(description = "List Events", content = "text/html")]
-struct ListEventsResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct ListEventsResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     get,
@@ -242,8 +247,8 @@ async fn get_events_list(
     else {
         return Ok("".into());
     };
-    let min_time = query.min_time.map(Into::into);
-    let max_time = query.max_time.map(Into::into);
+    let min_time = query.min_time;
+    let max_time = query.max_time;
     let mut events = cal_sync
         .list_events(&calendar.gcal_id, min_time, max_time)
         .await?;
@@ -258,7 +263,8 @@ async fn get_events_list(
     content = "text/html",
     status = "CREATED"
 )]
-struct EventDetailResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct EventDetailResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     get,
@@ -312,7 +318,8 @@ struct PaginatedCalendarList {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Calendar List")]
-struct CalendarListResponse(JsonBase<PaginatedCalendarList>);
+#[rustfmt::skip]
+struct CalendarListResponse(JsonBase::<PaginatedCalendarList>);
 
 #[utoipa::path(
     get,
@@ -363,7 +370,8 @@ struct CalendarListInner(Vec<CalendarListWrapper>);
 
 #[derive(UtoipaResponse)]
 #[response(description = "Calendar List Update", status = "CREATED")]
-struct CalendarListUpdateResponse(JsonBase<CalendarListInner>);
+#[rustfmt::skip]
+struct CalendarListUpdateResponse(JsonBase::<CalendarListInner>);
 
 #[utoipa::path(
     post,
@@ -409,7 +417,8 @@ struct PaginatedCalendarCache {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Calendar Cache")]
-struct CalendarCacheResponse(JsonBase<PaginatedCalendarCache>);
+#[rustfmt::skip]
+struct CalendarCacheResponse(JsonBase::<PaginatedCalendarCache>);
 
 #[utoipa::path(
     get,
@@ -460,7 +469,8 @@ struct CalendarCacheInner(Vec<CalendarCacheWrapper>);
 
 #[derive(UtoipaResponse)]
 #[response(description = "Calendar Cache Update", status = "CREATED")]
-struct CalendarCacheUpdateResponse(JsonBase<CalendarCacheInner>);
+#[rustfmt::skip]
+struct CalendarCacheUpdateResponse(JsonBase::<CalendarCacheInner>);
 
 #[utoipa::path(
     post,
@@ -499,7 +509,8 @@ async fn calendar_cache_update_events(
 
 #[derive(UtoipaResponse)]
 #[response(description = "Logged in User")]
-struct UserResponse(JsonBase<LoggedUser>);
+#[rustfmt::skip]
+struct UserResponse(JsonBase::<LoggedUser>);
 
 #[utoipa::path(get, path = "/calendar/user", responses(UserResponse, Error))]
 async fn user(user: LoggedUser) -> WarpResult<UserResponse> {
@@ -508,7 +519,8 @@ async fn user(user: LoggedUser) -> WarpResult<UserResponse> {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Shortened Link", content = "text/html")]
-struct ShortenedLinkResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct ShortenedLinkResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     get,
@@ -569,7 +581,8 @@ struct BuildEventRequest {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Build Calendar Event", content = "text/html")]
-struct BuildCalendarEventResponse(HtmlBase<StackString>);
+#[rustfmt::skip]
+struct BuildCalendarEventResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(
     get,
@@ -617,7 +630,8 @@ async fn build_calendar_event_body(
     content = "text/html",
     status = "CREATED"
 )]
-struct CreateCalendarEventResponse(HtmlBase<String>);
+#[rustfmt::skip]
+struct CreateCalendarEventResponse(HtmlBase::<String>);
 
 #[utoipa::path(
     post,
@@ -651,7 +665,7 @@ async fn create_calendar_event_body(
         event_url: payload.event_url,
         event_name: payload.event_name,
         event_description: payload.event_description,
-        event_location_name: payload.event_location_name.map(Into::into),
+        event_location_name: payload.event_location_name,
         event_location_lat: None,
         event_location_lon: None,
         last_modified: OffsetDateTime::now_utc().into(),
@@ -690,7 +704,8 @@ struct EditCalendarRequest {
 
 #[derive(UtoipaResponse)]
 #[response(description = "Edit Calendar Event")]
-struct EditCalendarResponse(JsonBase<CalendarListWrapper>);
+#[rustfmt::skip]
+struct EditCalendarResponse(JsonBase::<CalendarListWrapper>);
 
 #[utoipa::path(
     post,

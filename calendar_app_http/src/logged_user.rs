@@ -66,9 +66,9 @@ impl From<AuthorizedUser> for LoggedUser {
     fn from(user: AuthorizedUser) -> Self {
         Self {
             email: user.email,
-            session: user.session.into(),
+            session: user.session,
             secret_key: user.secret_key,
-            created_at: user.created_at.into(),
+            created_at: user.created_at,
         }
     }
 }

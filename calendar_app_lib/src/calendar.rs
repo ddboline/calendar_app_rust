@@ -62,8 +62,8 @@ impl From<CalendarList> for Calendar {
         Self {
             name: item.calendar_name,
             gcal_id: item.gcal_id,
-            gcal_name: item.gcal_name.map(Into::into),
-            description: item.gcal_description.map(Into::into),
+            gcal_name: item.gcal_name,
+            description: item.gcal_description,
             location: item.gcal_location.map(|l| Location {
                 name: l,
                 ..Location::default()
@@ -197,7 +197,7 @@ impl From<Event> for CalendarCache {
             event_end_time: item.end_time,
             event_url: item.url.map(Into::<String>::into).map(Into::into),
             event_name: item.name,
-            event_description: item.description.map(Into::into),
+            event_description: item.description,
             event_location_lat: item
                 .location
                 .as_ref()

@@ -110,9 +110,7 @@ impl CalendarList {
     /// Returns error if db query fails
     pub async fn get_by_gcal_id(gcal_id: &str, pool: &PgPool) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
-        Self::get_by_gcal_id_conn(gcal_id, &conn)
-            .await
-            .map_err(Into::into)
+        Self::get_by_gcal_id_conn(gcal_id, &conn).await
     }
 
     /// # Errors
@@ -298,9 +296,7 @@ impl CalendarCache {
         pool: &PgPool,
     ) -> Result<Option<CalendarCache>, Error> {
         let conn = pool.get().await?;
-        Self::get_by_gcal_id_event_id_conn(gcal_id, event_id, &conn)
-            .await
-            .map_err(Into::into)
+        Self::get_by_gcal_id_event_id_conn(gcal_id, event_id, &conn).await
     }
 
     async fn get_by_gcal_id_event_id_conn<C>(
@@ -646,9 +642,7 @@ impl ShortenedLinks {
         pool: &PgPool,
     ) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
-        Self::get_latest_original_url_conn(original_url, &conn)
-            .await
-            .map_err(Into::into)
+        Self::get_latest_original_url_conn(original_url, &conn).await
     }
 
     async fn get_latest_original_url_conn<C>(
@@ -673,9 +667,7 @@ impl ShortenedLinks {
         pool: &PgPool,
     ) -> Result<Option<Self>, Error> {
         let conn = pool.get().await?;
-        Self::get_by_shortened_url_conn(shortened_url, &conn)
-            .await
-            .map_err(Into::into)
+        Self::get_by_shortened_url_conn(shortened_url, &conn).await
     }
 
     async fn get_by_shortened_url_conn<C>(
