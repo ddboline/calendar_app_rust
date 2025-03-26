@@ -14,11 +14,11 @@ pub mod logged_user;
 pub mod routes;
 
 use derive_more::{From, Into};
-use rweb::Schema;
-use rweb_helper::{derive_rweb_schema, DateTimeType};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use time::OffsetDateTime;
+use utoipa::ToSchema;
+use utoipa_helper::derive_utoipa_schema;
 
 use gcal_lib::date_time_wrapper::DateTimeWrapper;
 
@@ -27,65 +27,66 @@ use calendar_app_lib::models::{CalendarCache, CalendarList};
 #[derive(Clone, Debug, Serialize, Deserialize, Into, From)]
 pub struct CalendarListWrapper(CalendarList);
 
-derive_rweb_schema!(CalendarListWrapper, _CalendarListWrapper);
+derive_utoipa_schema!(CalendarListWrapper, _CalendarListWrapper);
 
 #[allow(dead_code)]
-#[derive(Schema)]
-#[schema(component = "CalendarList")]
+#[derive(ToSchema)]
+// CalendarList
 struct _CalendarListWrapper {
-    #[schema(description = "Calendar Name")]
+    // Calendar Name
     calendar_name: StackString,
-    #[schema(description = "GCal Calendar ID")]
+    // GCal Calendar ID
     gcal_id: StackString,
-    #[schema(description = "GCal Calendar Name")]
+    // GCal Calendar Name
     gcal_name: Option<StackString>,
-    #[schema(description = "GCal Calendar Description")]
+    // GCal Calendar Description
     gcal_description: Option<StackString>,
-    #[schema(description = "GCal Calendar Location")]
+    // GCal Calendar Location
     gcal_location: Option<StackString>,
-    #[schema(description = "GCal Calendar Timezone")]
+    // GCal Calendar Timezone
     gcal_timezone: Option<StackString>,
-    #[schema(description = "Sync Flag")]
+    // Sync Flag
     sync: bool,
-    #[schema(description = "Last Modified")]
-    last_modified: DateTimeType,
-    #[schema(description = "Edit Flag")]
+    // Last Modified
+    last_modified: OffsetDateTime,
+    // Edit Flag
     edit: bool,
-    #[schema(description = "Display Flag")]
+    // Display Flag
     display: bool,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize, Into, From)]
 pub struct CalendarCacheWrapper(CalendarCache);
 
-derive_rweb_schema!(CalendarCacheWrapper, _CalendarCacheWrapper);
+derive_utoipa_schema!(CalendarCacheWrapper, _CalendarCacheWrapper);
 
 #[allow(dead_code)]
-#[derive(Schema)]
-#[schema(component = "CalendarCache")]
+#[derive(ToSchema)]
+// CalendarCache
+#[schema(as = CalendarCache)]
 struct _CalendarCacheWrapper {
-    #[schema(description = "Gcal Calendar ID")]
+    // Gcal Calendar ID
     gcal_id: StackString,
-    #[schema(description = "Calendar Event ID")]
+    // Calendar Event ID
     event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    event_start_time: DateTimeType,
-    #[schema(description = "Event End Time")]
-    event_end_time: DateTimeType,
-    #[schema(description = "Event URL")]
+    // Event Start Time
+    event_start_time: OffsetDateTime,
+    // Event End Time
+    event_end_time: OffsetDateTime,
+    // Event URL
     event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
+    // Event Name
     event_name: StackString,
-    #[schema(description = "Event Description")]
+    // Event Description
     event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
+    // Event Location Name
     event_location_name: Option<StackString>,
-    #[schema(description = "Event Location Latitude")]
+    // Event Location Latitude
     event_location_lat: Option<f64>,
-    #[schema(description = "Event Location Longitude")]
+    // Event Location Longitude
     event_location_lon: Option<f64>,
-    #[schema(description = "Last Modified")]
-    last_modified: DateTimeType,
+    // Last Modified
+    last_modified: OffsetDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -95,16 +96,16 @@ pub struct MinModifiedQuery {
     pub limit: Option<usize>,
 }
 
-derive_rweb_schema!(MinModifiedQuery, _MinModifiedQuery);
+derive_utoipa_schema!(MinModifiedQuery, _MinModifiedQuery);
 
 #[allow(dead_code)]
-#[derive(Schema)]
+#[derive(ToSchema)]
 struct _MinModifiedQuery {
-    #[schema(description = "Min Modified Date")]
-    min_modified: Option<DateTimeType>,
-    #[schema(description = "Offset")]
+    // Min Modified Date
+    min_modified: Option<OffsetDateTime>,
+    // Offset
     offset: Option<usize>,
-    #[schema(description = "Limit")]
+    // Limit
     limit: Option<usize>,
 }
 
@@ -144,34 +145,34 @@ impl From<CalendarCacheRequest> for CalendarCache {
     }
 }
 
-derive_rweb_schema!(CalendarCacheRequest, _CalendarCacheRequest);
+derive_utoipa_schema!(CalendarCacheRequest, _CalendarCacheRequest);
 
 #[allow(dead_code)]
-#[derive(Schema)]
-#[schema(component = "CalendarCacheRequest")]
+#[derive(ToSchema)]
+// CalendarCacheRequest
 struct _CalendarCacheRequest {
-    #[schema(description = "GCal Calendar ID")]
+    // GCal Calendar ID
     gcal_id: StackString,
-    #[schema(description = "Calendar Event ID")]
+    // Calendar Event ID
     event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    event_start_time: DateTimeType,
-    #[schema(description = "Event End Time")]
-    event_end_time: DateTimeType,
-    #[schema(description = "Event URL")]
+    // Event Start Time
+    event_start_time: OffsetDateTime,
+    // Event End Time
+    event_end_time: OffsetDateTime,
+    // Event URL
     event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
+    // Event Name
     event_name: StackString,
-    #[schema(description = "Event Description")]
+    // Event Description
     event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
+    // Event Location Name
     event_location_name: Option<StackString>,
-    #[schema(description = "Event Location Latitude")]
+    // Event Location Latitude
     event_location_lat: Option<f64>,
-    #[schema(description = "Event Location Longitude")]
+    // Event Location Longitude
     event_location_lon: Option<f64>,
-    #[schema(description = "Last Modified")]
-    last_modified: DateTimeType,
+    // Last Modified
+    last_modified: OffsetDateTime,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -186,33 +187,33 @@ pub struct CreateCalendarEventRequest {
     pub event_location_name: Option<StackString>,
 }
 
-derive_rweb_schema!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
+derive_utoipa_schema!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
 
 #[allow(dead_code)]
-#[derive(Schema)]
-#[schema(component = "CreateCalendarEventRequest")]
+#[derive(ToSchema)]
+// CreateCalendarEventRequest
 struct _CreateCalendarEventRequest {
-    #[schema(description = "GCal Calendar ID")]
+    // GCal Calendar ID
     gcal_id: StackString,
-    #[schema(description = "Event ID")]
+    // Event ID
     event_id: StackString,
-    #[schema(description = "Event Start Time")]
-    event_start_datetime: DateTimeType,
-    #[schema(description = "Event End Time")]
-    event_end_datetime: DateTimeType,
-    #[schema(description = "Event URL")]
+    // Event Start Time
+    event_start_datetime: OffsetDateTime,
+    // Event End Time
+    event_end_datetime: OffsetDateTime,
+    // Event URL
     event_url: Option<StackString>,
-    #[schema(description = "Event Name")]
+    // Event Name
     event_name: StackString,
-    #[schema(description = "Event Description")]
+    // Event Description
     event_description: Option<StackString>,
-    #[schema(description = "Event Location Name")]
+    // Event Location Name
     event_location_name: Option<StackString>,
 }
 
 #[cfg(test)]
 mod test {
-    use rweb_helper::derive_rweb_test;
+    use utoipa_helper::derive_utoipa_test;
 
     use crate::{
         CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper,
@@ -222,10 +223,10 @@ mod test {
 
     #[test]
     fn test_types() {
-        derive_rweb_test!(CalendarListWrapper, _CalendarListWrapper);
-        derive_rweb_test!(CalendarCacheWrapper, _CalendarCacheWrapper);
-        derive_rweb_test!(MinModifiedQuery, _MinModifiedQuery);
-        derive_rweb_test!(CalendarCacheRequest, _CalendarCacheRequest);
-        derive_rweb_test!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
+        derive_utoipa_test!(CalendarListWrapper, _CalendarListWrapper);
+        derive_utoipa_test!(CalendarCacheWrapper, _CalendarCacheWrapper);
+        derive_utoipa_test!(MinModifiedQuery, _MinModifiedQuery);
+        derive_utoipa_test!(CalendarCacheRequest, _CalendarCacheRequest);
+        derive_utoipa_test!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
     }
 }

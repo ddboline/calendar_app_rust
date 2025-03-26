@@ -1,8 +1,6 @@
 #![allow(clippy::semicolon_if_nothing_returned)]
 
-use anyhow::Error;
-
-use calendar_app_http::app::start_app;
+use calendar_app_http::{app::start_app, errors::ServiceError as Error};
 
 #[tokio::main]
 async fn main() -> Result<(), Error> {

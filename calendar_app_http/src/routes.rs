@@ -1,15 +1,18 @@
 use anyhow::format_err;
+use axum::extract::{Json, Path, Query, State};
+use derive_more::{From, Into};
 use futures::{future, stream::FuturesUnordered, TryStreamExt};
-use rweb::{delete, get, post, Json, Query, Rejection, Schema};
-use rweb_helper::{
-    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase, DateType,
-    RwebResponse,
-};
 use serde::{Deserialize, Serialize};
 use stack_string::{format_sstr, StackString};
-use std::collections::HashMap;
-use time::OffsetDateTime;
+use std::{collections::HashMap, sync::Arc};
+use time::{Date, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
+use utoipa::{OpenApi, PartialSchema, ToSchema};
+use utoipa_axum::{router::OpenApiRouter, routes};
+use utoipa_helper::{
+    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase,
+    UtoipaResponse,
+};
 
 use calendar_app_lib::{
     calendar::Event,
@@ -30,37 +33,32 @@ use crate::{
     MinModifiedQuery,
 };
 
-pub type WarpResult<T> = Result<T, Rejection>;
-pub type HttpResult<T> = Result<T, Error>;
+type WarpResult<T> = Result<T, Error>;
 
-#[derive(RwebResponse)]
-#[response(description = "Main Page", content = "html")]
-struct IndexResponse(HtmlBase<String, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "Main Page", content = "text/html")]
+#[rustfmt::skip]
+struct IndexResponse(HtmlBase::<String>);
 
-#[get("/calendar/index.html")]
-#[openapi(description = "Calendar App Main Page")]
-pub async fn calendar_index(
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-) -> WarpResult<IndexResponse> {
+#[utoipa::path(get, path = "/calendar/index.html", responses(IndexResponse, Error))]
+// Calendar App Main Page")]
+async fn calendar_index(_: LoggedUser) -> WarpResult<IndexResponse> {
     let body = index_body()?;
     Ok(HtmlBase::new(body).into())
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Agenda", content = "html")]
-struct AgendaResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "Agenda", content = "text/html")]
+struct AgendaResponse(HtmlBase<StackString>);
 
-#[get("/calendar/agenda")]
-#[openapi(description = "Calendar Agenda Page")]
-pub async fn agenda(
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
-) -> WarpResult<AgendaResponse> {
-    let body = get_agenda(data.cal_sync).await?;
+#[utoipa::path(get, path = "/calendar/agenda", responses(AgendaResponse, Error))]
+// Calendar Agenda Page")]
+async fn agenda(_: LoggedUser, data: State<Arc<AppState>>) -> WarpResult<AgendaResponse> {
+    let body = get_agenda(&data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
+async fn get_agenda(cal_sync: &CalendarSync) -> WarpResult<StackString> {
     let calendar_map: HashMap<_, _> = cal_sync
         .list_calendars()
         .await?
@@ -79,59 +77,68 @@ async fn get_agenda(cal_sync: CalendarSync) -> HttpResult<StackString> {
     Ok(body)
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Sync Output", content = "html")]
-struct SyncResponse(HtmlBase<String, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "Sync Output", content = "text/html")]
+struct SyncResponse(HtmlBase<String>);
 
-#[post("/calendar/sync_calendars")]
-#[openapi(description = "Sync Calendars")]
-pub async fn sync_calendars(
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
-) -> WarpResult<SyncResponse> {
+#[utoipa::path(
+    post,
+    path = "/calendar/sync_calendars",
+    responses(SyncResponse, Error)
+)]
+// Sync Calendars")]
+async fn sync_calendars(_: LoggedUser, data: State<Arc<AppState>>) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, false).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> HttpResult<String> {
+async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> WarpResult<String> {
     Ok(cal_sync.run_syncing(do_full).await?.join("<br>"))
 }
 
-#[post("/calendar/sync_calendars_full")]
-#[openapi(description = "Fully Sync All Calendars")]
-pub async fn sync_calendars_full(
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+#[utoipa::path(
+    post,
+    path = "/calendar/sync_calendars_full",
+    responses(SyncResponse, Error)
+)]
+// Fully Sync All Calendars")]
+async fn sync_calendars_full(
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, true).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-#[derive(Serialize, Deserialize, Debug, Schema)]
-#[schema(component = "GcalEventID")]
-pub struct GcalEventID {
-    #[schema(description = "GCal ID")]
-    pub gcal_id: StackString,
-    #[schema(description = "GCal Event ID")]
-    pub event_id: StackString,
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+// GcalEventID")]
+struct GcalEventID {
+    // GCal ID")]
+    gcal_id: StackString,
+    // GCal Event ID")]
+    event_id: StackString,
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(
     description = "Delete Event Output",
-    content = "html",
+    content = "text/html",
     status = "NO_CONTENT"
 )]
-struct DeleteEventResponse(HtmlBase<StackString, Error>);
+struct DeleteEventResponse(HtmlBase<StackString>);
 
-#[delete("/calendar/delete_event")]
-#[openapi(description = "Delete Calendar Event")]
-pub async fn delete_event(
+#[utoipa::path(
+    delete,
+    path = "/calendar/delete_event",
+    responses(DeleteEventResponse, Error)
+)]
+// Delete Calendar Event")]
+async fn delete_event(
+    data: State<Arc<AppState>>,
+    _: LoggedUser,
     payload: Json<GcalEventID>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
 ) -> WarpResult<DeleteEventResponse> {
-    let payload = payload.into_inner();
+    let Json(payload) = payload;
     let body = delete_event_body(payload, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -139,7 +146,7 @@ pub async fn delete_event(
 async fn delete_event_body(
     payload: GcalEventID,
     cal_sync: &CalendarSync,
-) -> HttpResult<StackString> {
+) -> WarpResult<StackString> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
@@ -159,21 +166,25 @@ async fn delete_event_body(
     Ok(body)
 }
 
-#[derive(RwebResponse)]
-#[response(description = "List Calendars", content = "html")]
-struct ListCalendarsResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "List Calendars", content = "text/html")]
+struct ListCalendarsResponse(HtmlBase<StackString>);
 
-#[get("/calendar/list_calendars")]
-#[openapi(description = "List Calendars")]
-pub async fn list_calendars(
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+#[utoipa::path(
+    get,
+    path = "/calendar/list_calendars",
+    responses(ListCalendarsResponse, Error)
+)]
+// List Calendars")]
+async fn list_calendars(
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<ListCalendarsResponse> {
     let body = get_calendars_list(&data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
 
-async fn get_calendars_list(cal_sync: &CalendarSync) -> HttpResult<StackString> {
+async fn get_calendars_list(cal_sync: &CalendarSync) -> WarpResult<StackString> {
     let mut calendars: Vec<_> = cal_sync
         .list_calendars()
         .await?
@@ -190,28 +201,32 @@ async fn get_calendars_list(cal_sync: &CalendarSync) -> HttpResult<StackString> 
     Ok(body)
 }
 
-#[derive(Serialize, Deserialize, Schema)]
-pub struct ListEventsRequest {
-    #[schema(description = "Calendar Name")]
-    pub calendar_name: StackString,
-    #[schema(description = "Earliest Date")]
-    pub min_time: Option<DateType>,
-    #[schema(description = "Latest Date")]
-    pub max_time: Option<DateType>,
+#[derive(Serialize, Deserialize, ToSchema)]
+struct ListEventsRequest {
+    // Calendar Name")]
+    calendar_name: StackString,
+    // Earliest Date")]
+    min_time: Option<Date>,
+    // Latest Date")]
+    max_time: Option<Date>,
 }
 
-#[derive(RwebResponse)]
-#[response(description = "List Events", content = "html")]
-struct ListEventsResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "List Events", content = "text/html")]
+struct ListEventsResponse(HtmlBase<StackString>);
 
-#[get("/calendar/list_events")]
-#[openapi(description = "List Events")]
-pub async fn list_events(
+#[utoipa::path(
+    get,
+    path = "/calendar/list_events",
+    responses(ListEventsResponse, Error)
+)]
+// List Events")]
+async fn list_events(
     query: Query<ListEventsRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<ListEventsResponse> {
-    let query = query.into_inner();
+    let Query(query) = query;
     let body = get_events_list(query, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -219,7 +234,7 @@ pub async fn list_events(
 async fn get_events_list(
     query: ListEventsRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<StackString> {
+) -> WarpResult<StackString> {
     let calendars: Vec<_> = cal_sync.list_calendars().await?.try_collect().await?;
     let Some(calendar) = calendars
         .into_iter()
@@ -237,18 +252,26 @@ async fn get_events_list(
     Ok(body)
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Event Details", content = "html", status = "CREATED")]
-struct EventDetailResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(
+    description = "Event Details",
+    content = "text/html",
+    status = "CREATED"
+)]
+struct EventDetailResponse(HtmlBase<StackString>);
 
-#[get("/calendar/event_detail")]
-#[openapi(description = "Get Calendar Event Detail")]
-pub async fn event_detail(
+#[utoipa::path(
+    get,
+    path = "/calendar/event_detail",
+    responses(EventDetailResponse, Error)
+)]
+// Get Calendar Event Detail")]
+async fn event_detail(
     payload: Query<GcalEventID>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<EventDetailResponse> {
-    let payload = payload.into_inner();
+    let Query(payload) = payload;
     let body = get_event_detail(payload, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -256,7 +279,7 @@ pub async fn event_detail(
 async fn get_event_detail(
     payload: GcalEventID,
     cal_sync: &CalendarSync,
-) -> HttpResult<StackString> {
+) -> WarpResult<StackString> {
     let body = if let Some(event) =
         CalendarCache::get_by_gcal_id_event_id(&payload.gcal_id, &payload.event_id, &cal_sync.pool)
             .await?
@@ -269,36 +292,40 @@ async fn get_event_detail(
     Ok(body)
 }
 
-#[derive(Debug, Serialize, Deserialize, Schema)]
-#[schema(component = "Pagination")]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+// Pagination")]
 struct Pagination {
-    #[schema(description = "Number of Entries Returned")]
+    // Number of Entries Returned")]
     limit: usize,
-    #[schema(description = "Number of Entries to Skip")]
+    // Number of Entries to Skip")]
     offset: usize,
-    #[schema(description = "Total Number of Entries")]
+    // Total Number of Entries")]
     total: usize,
 }
 
-#[derive(Debug, Serialize, Deserialize, Schema)]
-#[schema(component = "PaginatedCalendarList")]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+// PaginatedCalendarList")]
 struct PaginatedCalendarList {
     pagination: Pagination,
     data: Vec<CalendarListWrapper>,
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(description = "Calendar List")]
-struct CalendarListResponse(JsonBase<PaginatedCalendarList, Error>);
+struct CalendarListResponse(JsonBase<PaginatedCalendarList>);
 
-#[get("/calendar/calendar_list")]
-#[openapi(description = "List Calendars")]
-pub async fn calendar_list(
+#[utoipa::path(
+    get,
+    path = "/calendar/calendar_list",
+    responses(CalendarListResponse, Error)
+)]
+// List Calendars")]
+async fn calendar_list(
     query: Query<MinModifiedQuery>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<CalendarListResponse> {
-    let query = query.into_inner();
+    let Query(query) = query;
     let result = calendar_list_object(&query, &data.cal_sync).await?;
     Ok(JsonBase::new(result).into())
 }
@@ -306,7 +333,7 @@ pub async fn calendar_list(
 async fn calendar_list_object(
     query: &MinModifiedQuery,
     cal_sync: &CalendarSync,
-) -> HttpResult<PaginatedCalendarList> {
+) -> WarpResult<PaginatedCalendarList> {
     let min_modified = query.min_modified.map(Into::into);
     let total = CalendarList::get_total(&cal_sync.pool, min_modified).await?;
     let limit = query.limit.unwrap_or(10);
@@ -324,33 +351,40 @@ async fn calendar_list_object(
     Ok(PaginatedCalendarList { pagination, data })
 }
 
-#[derive(Serialize, Deserialize, Schema)]
-#[schema(component = "CalendarUpdateRequest")]
-pub struct CalendarUpdateRequest {
-    #[schema(description = "Calendar List Updates")]
-    pub updates: Vec<CalendarListWrapper>,
+#[derive(Serialize, Deserialize, ToSchema)]
+// CalendarUpdateRequest")]
+struct CalendarUpdateRequest {
+    // Calendar List Updates")]
+    updates: Vec<CalendarListWrapper>,
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Calendar List Update", status = "CREATED")]
-struct CalendarListUpdateResponse(JsonBase<Vec<CalendarListWrapper>, Error>);
+#[derive(Serialize, ToSchema, Into, From)]
+struct CalendarListInner(Vec<CalendarListWrapper>);
 
-#[post("/calendar/calendar_list")]
-#[openapi(description = "Update Calendars")]
-pub async fn calendar_list_update(
+#[derive(UtoipaResponse)]
+#[response(description = "Calendar List Update", status = "CREATED")]
+struct CalendarListUpdateResponse(JsonBase<CalendarListInner>);
+
+#[utoipa::path(
+    post,
+    path = "/calendar/calendar_list",
+    responses(CalendarListUpdateResponse, Error)
+)]
+// Update Calendars")]
+async fn calendar_list_update(
+    data: State<Arc<AppState>>,
+    _: LoggedUser,
     payload: Json<CalendarUpdateRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
 ) -> WarpResult<CalendarListUpdateResponse> {
-    let payload = payload.into_inner();
+    let Json(payload) = payload;
     let calendars = calendar_list_update_object(payload, &data.cal_sync).await?;
-    Ok(JsonBase::new(calendars).into())
+    Ok(JsonBase::new(calendars.into()).into())
 }
 
 async fn calendar_list_update_object(
     payload: CalendarUpdateRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<CalendarListWrapper>> {
+) -> WarpResult<Vec<CalendarListWrapper>> {
     let futures: FuturesUnordered<_> = payload
         .updates
         .into_iter()
@@ -366,25 +400,29 @@ async fn calendar_list_update_object(
     futures.try_collect().await
 }
 
-#[derive(Debug, Serialize, Deserialize, Schema)]
-#[schema(component = "PaginatedCalendarCache")]
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+// PaginatedCalendarCache")]
 struct PaginatedCalendarCache {
     pagination: Pagination,
     data: Vec<CalendarCacheWrapper>,
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(description = "Calendar Cache")]
-struct CalendarCacheResponse(JsonBase<PaginatedCalendarCache, Error>);
+struct CalendarCacheResponse(JsonBase<PaginatedCalendarCache>);
 
-#[get("/calendar/calendar_cache")]
-#[openapi(description = "List Recent Calendar Events")]
-pub async fn calendar_cache(
+#[utoipa::path(
+    get,
+    path = "/calendar/calendar_cache",
+    responses(CalendarCacheResponse, Error)
+)]
+// List Recent Calendar Events")]
+async fn calendar_cache(
     query: Query<MinModifiedQuery>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<CalendarCacheResponse> {
-    let query = query.into_inner();
+    let Query(query) = query;
     let result = calendar_cache_events(&query, &data.cal_sync).await?;
     Ok(JsonBase::new(result).into())
 }
@@ -392,7 +430,7 @@ pub async fn calendar_cache(
 async fn calendar_cache_events(
     query: &MinModifiedQuery,
     cal_sync: &CalendarSync,
-) -> HttpResult<PaginatedCalendarCache> {
+) -> WarpResult<PaginatedCalendarCache> {
     let min_modified = query.min_modified.map(Into::into);
     let total = CalendarCache::get_total(&cal_sync.pool, min_modified).await?;
     let limit = query.limit.unwrap_or(10);
@@ -410,33 +448,40 @@ async fn calendar_cache_events(
     Ok(PaginatedCalendarCache { pagination, data })
 }
 
-#[derive(Serialize, Deserialize, Schema)]
-#[schema(component = "CalendarCacheUpdateRequest")]
-pub struct CalendarCacheUpdateRequest {
-    #[schema(description = "Calendar Events Update")]
-    pub updates: Vec<CalendarCacheRequest>,
+#[derive(Serialize, Deserialize, ToSchema)]
+// CalendarCacheUpdateRequest")]
+struct CalendarCacheUpdateRequest {
+    // Calendar Events Update")]
+    updates: Vec<CalendarCacheRequest>,
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Calendar Cache Update", status = "CREATED")]
-struct CalendarCacheUpdateResponse(JsonBase<Vec<CalendarCacheWrapper>, Error>);
+#[derive(Serialize, ToSchema, Into, From)]
+struct CalendarCacheInner(Vec<CalendarCacheWrapper>);
 
-#[post("/calendar/calendar_cache")]
-#[openapi(description = "Update Calendar Events")]
-pub async fn calendar_cache_update(
+#[derive(UtoipaResponse)]
+#[response(description = "Calendar Cache Update", status = "CREATED")]
+struct CalendarCacheUpdateResponse(JsonBase<CalendarCacheInner>);
+
+#[utoipa::path(
+    post,
+    path = "/calendar/calendar_cache",
+    responses(CalendarCacheUpdateResponse, Error)
+)]
+// Update Calendar Events")]
+async fn calendar_cache_update(
+    data: State<Arc<AppState>>,
+    _: LoggedUser,
     payload: Json<CalendarCacheUpdateRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
 ) -> WarpResult<CalendarCacheUpdateResponse> {
-    let payload = payload.into_inner();
+    let Json(payload) = payload;
     let events = calendar_cache_update_events(payload, &data.cal_sync).await?;
-    Ok(JsonBase::new(events).into())
+    Ok(JsonBase::new(events.into()).into())
 }
 
 async fn calendar_cache_update_events(
     payload: CalendarCacheUpdateRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<Vec<CalendarCacheWrapper>> {
+) -> WarpResult<Vec<CalendarCacheWrapper>> {
     let futures: FuturesUnordered<_> = payload
         .updates
         .into_iter()
@@ -452,25 +497,30 @@ async fn calendar_cache_update_events(
     futures.try_collect().await
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(description = "Logged in User")]
-struct UserResponse(JsonBase<LoggedUser, Error>);
+struct UserResponse(JsonBase<LoggedUser>);
 
-#[get("/calendar/user")]
-pub async fn user(#[filter = "LoggedUser::filter"] user: LoggedUser) -> WarpResult<UserResponse> {
+#[utoipa::path(get, path = "/calendar/user", responses(UserResponse, Error))]
+async fn user(user: LoggedUser) -> WarpResult<UserResponse> {
     Ok(JsonBase::new(user).into())
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Shortened Link", content = "html")]
-struct ShortenedLinkResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "Shortened Link", content = "text/html")]
+struct ShortenedLinkResponse(HtmlBase<StackString>);
 
-#[get("/calendar/link/{link}")]
-#[openapi(description = "Get Full URL from Shortened URL")]
-pub async fn link_shortener(
-    link: StackString,
-    #[data] data: AppState,
+#[utoipa::path(
+    get,
+    path = "/calendar/link/{link}",
+    responses(ShortenedLinkResponse, Error)
+)]
+// Get Full URL from Shortened URL")]
+async fn link_shortener(
+    data: State<Arc<AppState>>,
+    link: Path<StackString>,
 ) -> WarpResult<ShortenedLinkResponse> {
+    let Path(link) = link;
     let body = link_shortener_body(&link, &data.cal_sync, &data.shortened_urls).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -479,7 +529,7 @@ async fn link_shortener_body(
     link: &str,
     cal_sync: &CalendarSync,
     shortened_urls: &UrlCache,
-) -> HttpResult<StackString> {
+) -> WarpResult<StackString> {
     let config = &cal_sync.config;
 
     if let Some(link) = shortened_urls.read().await.get(link) {
@@ -509,26 +559,30 @@ fn format_short_link(domain: &str, link: &str) -> StackString {
     )
 }
 
-#[derive(Serialize, Deserialize, Debug, Schema)]
-pub struct BuildEventRequest {
-    #[schema(description = "GCal Calendar ID")]
-    pub gcal_id: StackString,
-    #[schema(description = "Event ID")]
-    pub event_id: Option<StackString>,
+#[derive(Serialize, Deserialize, Debug, ToSchema)]
+struct BuildEventRequest {
+    // GCal Calendar ID")]
+    gcal_id: StackString,
+    // Event ID")]
+    event_id: Option<StackString>,
 }
 
-#[derive(RwebResponse)]
-#[response(description = "Build Calendar Event", content = "html")]
-struct BuildCalendarEventResponse(HtmlBase<StackString, Error>);
+#[derive(UtoipaResponse)]
+#[response(description = "Build Calendar Event", content = "text/html")]
+struct BuildCalendarEventResponse(HtmlBase<StackString>);
 
-#[get("/calendar/create_calendar_event")]
-#[openapi(description = "Get Calendar Event Creation Form")]
-pub async fn build_calendar_event(
+#[utoipa::path(
+    get,
+    path = "/calendar/create_calendar_event",
+    responses(BuildCalendarEventResponse, Error)
+)]
+// Get Calendar Event Creation Form")]
+async fn build_calendar_event(
     query: Query<BuildEventRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
+    _: LoggedUser,
+    data: State<Arc<AppState>>,
 ) -> WarpResult<BuildCalendarEventResponse> {
-    let query = query.into_inner();
+    let Query(query) = query;
     let body = build_calendar_event_body(query, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -536,7 +590,7 @@ pub async fn build_calendar_event(
 async fn build_calendar_event_body(
     query: BuildEventRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<StackString> {
+) -> WarpResult<StackString> {
     let event = if let Some(event_id) = &query.event_id {
         CalendarCache::get_by_gcal_id_event_id(&query.gcal_id, event_id, &cal_sync.pool).await?
     } else {
@@ -557,22 +611,26 @@ async fn build_calendar_event_body(
     Ok(body)
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(
     description = "Create Calendar Event",
-    content = "html",
+    content = "text/html",
     status = "CREATED"
 )]
-struct CreateCalendarEventResponse(HtmlBase<String, Error>);
+struct CreateCalendarEventResponse(HtmlBase<String>);
 
-#[post("/calendar/create_calendar_event")]
-#[openapi(description = "Create Calendar Event")]
-pub async fn create_calendar_event(
+#[utoipa::path(
+    post,
+    path = "/calendar/create_calendar_event",
+    responses(CreateCalendarEventResponse, Error)
+)]
+// Create Calendar Event")]
+async fn create_calendar_event(
+    data: State<Arc<AppState>>,
+    _: LoggedUser,
     payload: Json<CreateCalendarEventRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
 ) -> WarpResult<CreateCalendarEventResponse> {
-    let payload = payload.into_inner();
+    let Json(payload) = payload;
     let body = create_calendar_event_body(payload, &data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
 }
@@ -580,7 +638,7 @@ pub async fn create_calendar_event(
 async fn create_calendar_event_body(
     payload: CreateCalendarEventRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<String> {
+) -> WarpResult<String> {
     let local = TimeZone::local().into();
     let start_datetime = payload.event_start_datetime.to_timezone(local);
     let end_datetime = payload.event_end_datetime.to_timezone(local);
@@ -618,31 +676,36 @@ async fn create_calendar_event_body(
     Ok("Event Inserted".to_string())
 }
 
-#[derive(Serialize, Deserialize, Schema)]
-pub struct EditCalendarRequest {
-    #[schema(description = "Calendar Name")]
-    pub calendar_name: Option<StackString>,
-    #[schema(description = "Sync Flag")]
-    pub sync: Option<bool>,
-    #[schema(description = "Edit Flag")]
-    pub edit: Option<bool>,
-    #[schema(description = "Display Flag")]
-    pub display: Option<bool>,
+#[derive(Serialize, Deserialize, ToSchema)]
+struct EditCalendarRequest {
+    // Calendar Name")]
+    calendar_name: Option<StackString>,
+    // Sync Flag")]
+    sync: Option<bool>,
+    // Edit Flag")]
+    edit: Option<bool>,
+    // Display Flag")]
+    display: Option<bool>,
 }
 
-#[derive(RwebResponse)]
+#[derive(UtoipaResponse)]
 #[response(description = "Edit Calendar Event")]
-struct EditCalendarResponse(JsonBase<CalendarListWrapper, Error>);
+struct EditCalendarResponse(JsonBase<CalendarListWrapper>);
 
-#[post("/calendar/edit_calendar/{gcal_id}")]
-#[openapi(description = "Edit Google Calendar Event")]
-pub async fn edit_calendar(
-    gcal_id: StackString,
+#[utoipa::path(
+    post,
+    path = "/calendar/edit_calendar/{gcal_id}",
+    responses(EditCalendarResponse, Error)
+)]
+// Edit Google Calendar Event")]
+async fn edit_calendar(
+    data: State<Arc<AppState>>,
+    gcal_id: Path<StackString>,
+    _: LoggedUser,
     query: Json<EditCalendarRequest>,
-    #[filter = "LoggedUser::filter"] _: LoggedUser,
-    #[data] data: AppState,
 ) -> WarpResult<EditCalendarResponse> {
-    let query = query.into_inner();
+    let Json(query) = query;
+    let Path(gcal_id) = gcal_id;
     let calendar_list = edit_calendar_list(&gcal_id, query, &data.cal_sync).await?;
     Ok(JsonBase::new(calendar_list).into())
 }
@@ -651,7 +714,7 @@ async fn edit_calendar_list(
     gcal_id: &str,
     query: EditCalendarRequest,
     cal_sync: &CalendarSync,
-) -> HttpResult<CalendarListWrapper> {
+) -> WarpResult<CalendarListWrapper> {
     let Some(mut calendar) = CalendarList::get_by_gcal_id(gcal_id, &cal_sync.pool).await? else {
         return Err(format_err!("No such calendar {gcal_id}").into());
     };
@@ -674,3 +737,37 @@ async fn edit_calendar_list(
     calendar.update(&cal_sync.pool).await?;
     Ok(calendar.into())
 }
+
+pub fn get_calendar_path(app: &AppState) -> OpenApiRouter {
+    let app = Arc::new(app.clone());
+
+    OpenApiRouter::new()
+        .routes(routes!(calendar_index))
+        .routes(routes!(agenda))
+        .routes(routes!(sync_calendars))
+        .routes(routes!(sync_calendars_full))
+        .routes(routes!(delete_event))
+        .routes(routes!(list_calendars))
+        .routes(routes!(list_events))
+        .routes(routes!(event_detail))
+        .routes(routes!(calendar_list))
+        .routes(routes!(calendar_list_update))
+        .routes(routes!(calendar_cache))
+        .routes(routes!(calendar_cache_update))
+        .routes(routes!(user))
+        .routes(routes!(link_shortener))
+        .routes(routes!(build_calendar_event))
+        .routes(routes!(create_calendar_event))
+        .routes(routes!(edit_calendar))
+        .with_state(app)
+}
+
+#[derive(OpenApi)]
+#[openapi(
+    info(
+        title = "Calendar Web App",
+        description = "Web App to Display Calendar, Sync with GCal",
+    ),
+    components(schemas(LoggedUser, CalendarCacheWrapper, Pagination))
+)]
+pub struct ApiDoc;

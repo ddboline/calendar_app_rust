@@ -9,7 +9,9 @@ edition = "2018"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.5"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.0"}
+axum = { version = "0.8", features = ["multipart"] }
+axum-extra = {version="0.10", features=["cookie"]}
 calendar_app_lib = {path = "../calendar_app_lib"}
 derive_more = {version="2.0", features=["full"]}
 dioxus = "0.6"
@@ -25,21 +27,23 @@ parking_lot = "0.12"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
 rayon = "1.10"
 reqwest = {version="0.12", default-features = false, features=["cookies", "json", "rustls-tls", "stream"]}
-rweb = {git = "https://github.com/ddboline/rweb.git", features=["openapi", "chrono"], default-features=false, tag="0.15.2"}
-rweb-helper = { git = "https://github.com/ddboline/rweb_helper.git", tag="0.5.3" }
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
 serde_yml = "0.0.12"
-stack-string = { git = "https://github.com/ddboline/stack-string-rs.git", features=["postgres_types", "rweb-openapi"], tag="1.0.2" }
+stack-string = { version="1.1", features=["postgres_types", "utoipa_types", "axum_types"] }
 thiserror = "2.0"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
 tokio = {version="1.43", features=["time"]}
+tower-http = {version="0.6", features=["cors"]}
 url = "2.5"
+utoipa = { version = "5.3", features = ["axum_extras", "yaml", "time", "uuid", "smallvec", "url", "openapi_extensions", "decimal"] }
+utoipa-helper = "0.1"
+utoipa-axum = { version = "0.2" }
 uuid = "1.13"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.5"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.12.5"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.0"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.0"}
 maplit = "1.0"
