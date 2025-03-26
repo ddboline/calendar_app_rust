@@ -6,7 +6,8 @@ info:
     name: Daniel Boline
     email: ddboline@gmail.com
   license:
-    name: ''
+    name: MIT
+    identifier: MIT
   version: '0.9.0'
 paths:
   /calendar/agenda:
