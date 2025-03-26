@@ -1,11 +1,11 @@
-use anyhow::{format_err, Error};
+use anyhow::{Error, format_err};
 use derive_more::Into;
 use futures::Stream;
 use postgres_query::{
-    client::GenericClient, query, query_dyn, Error as PqError, FromSqlRow, Parameter, Query,
+    Error as PqError, FromSqlRow, Parameter, Query, client::GenericClient, query, query_dyn,
 };
 use serde::{Deserialize, Serialize};
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{cmp, convert::TryInto, io};
 use time::OffsetDateTime;
 

@@ -1,6 +1,6 @@
 use itertools::Itertools;
 use serde::{Deserialize, Serialize};
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{convert::TryInto, fmt};
 use time::{Date, OffsetDateTime};
 use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt, TimeZone as TzTimeZone};
@@ -13,6 +13,7 @@ use gcal_lib::{
 };
 
 use crate::{
+    DateType,
     config::Config,
     get_default_or_local_time,
     latitude::Latitude,
@@ -20,7 +21,6 @@ use crate::{
     models::{CalendarCache, CalendarList, ShortenedLinks},
     pgpool::PgPool,
     timezone::TimeZone,
-    DateType,
 };
 
 #[derive(Default, Debug, PartialEq, Serialize, Deserialize, Clone)]

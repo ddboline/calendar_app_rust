@@ -1,11 +1,11 @@
-use anyhow::{format_err, Error};
-use futures::{future::try_join_all, TryStreamExt};
+use anyhow::{Error, format_err};
+use futures::{TryStreamExt, future::try_join_all};
 use select::{document::Document, predicate::Name};
 use smallvec::SmallVec;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{collections::HashMap, sync::Arc};
-use time::{macros::format_description, Duration, PrimitiveDateTime};
-use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt, PrimitiveDateTimeExt};
+use time::{Duration, PrimitiveDateTime, macros::format_description};
+use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt, timezones::db::america::NEW_YORK};
 
 use crate::{
     calendar::{Event, Location},

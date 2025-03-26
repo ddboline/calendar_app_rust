@@ -1,6 +1,6 @@
 use axum::http::{Method, StatusCode};
 use log::debug;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{collections::HashMap, convert::TryInto, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, sync::RwLock, time::interval};
 use tower_http::cors::{Any, CorsLayer};
@@ -12,7 +12,7 @@ use calendar_app_lib::{calendar_sync::CalendarSync, config::Config, pgpool::PgPo
 use crate::{
     errors::ServiceError as Error,
     logged_user::{fill_from_db, get_secrets},
-    routes::{get_calendar_path, ApiDoc},
+    routes::{ApiDoc, get_calendar_path},
 };
 
 pub type UrlCache = RwLock<HashMap<StackString, StackString>>;
@@ -106,19 +106,23 @@ mod tests {
 
     use crate::{
         app::run_app,
-        logged_user::{get_random_key, JWT_SECRET, KEY_LENGTH, SECRET_KEY},
+        logged_user::{JWT_SECRET, KEY_LENGTH, SECRET_KEY, get_random_key},
     };
 
     #[tokio::test]
     async fn test_run_app() -> Result<(), Error> {
-        set_var("TESTENV", "true");
+        unsafe {
+            set_var("TESTENV", "true");
+        }
 
         let email = format_sstr!("{}@localhost", get_random_string(32));
         let password = get_random_string(32);
 
         let auth_port: u32 = 54321;
-        set_var("PORT", auth_port.to_string());
-        set_var("DOMAIN", "localhost");
+        unsafe {
+            set_var("PORT", auth_port.to_string());
+            set_var("DOMAIN", "localhost");
+        }
 
         let config = auth_server_lib::config::Config::init_config()?;
 
@@ -132,7 +136,9 @@ mod tests {
         tokio::task::spawn(async move { run_test_app(config).await.unwrap() });
 
         let test_port: u32 = 12345;
-        set_var("PORT", test_port.to_string());
+        unsafe {
+            set_var("PORT", test_port.to_string());
+        }
         let config = Config::init_config()?;
 
         tokio::task::spawn(async move { run_app(&config).await.unwrap() });
@@ -177,7 +183,9 @@ mod tests {
 
         std::fs::write("../scripts/openapi.yaml", &spec_yaml)?;
 
-        remove_var("TESTENV");
+        unsafe {
+            remove_var("TESTENV");
+        }
         Ok(())
     }
 }

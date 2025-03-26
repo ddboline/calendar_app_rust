@@ -1,12 +1,12 @@
 use anyhow::Error;
-use futures::{future::try_join_all, TryStreamExt};
+use futures::{TryStreamExt, future::try_join_all};
 use log::debug;
 use select::{document::Document, predicate::Class};
 use smallvec::SmallVec;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{collections::HashMap, sync::Arc};
-use time::{macros::format_description, Date, Duration, PrimitiveDateTime, Time};
-use time_tz::{timezones::db::america::NEW_YORK, OffsetDateTimeExt, PrimitiveDateTimeExt};
+use time::{Date, Duration, PrimitiveDateTime, Time, macros::format_description};
+use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt, timezones::db::america::NEW_YORK};
 use url::Url;
 
 use crate::{

@@ -2,14 +2,14 @@
 name = "calendar_app_lib"
 version = "0.9.0"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
-edition = "2018"
+edition = "2024"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0"
-blake3 = {version="1.0", features=["rayon"]}
-clap = {version="4.0", features=["derive"]}
+blake3 = {version="1.7", features=["rayon"]}
+clap = {version="4.5", features=["derive"]}
 derive_more = {version="2.0", features=["full"]}
 deadpool = { version = "0.12", features=["serde", "rt_tokio_1"] }
 deadpool-postgres = { version = "0.14", features=["serde"] }
@@ -24,18 +24,18 @@ itertools = "0.14"
 log = "0.4"
 postgres-types = "0.2"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
-rayon = "1.5"
+rayon = "1.10"
 refinery = {version="0.8", features=["tokio-postgres"]}
 reqwest = {version="0.12", default-features = false, features=["cookies", "json", "gzip", "rustls-tls"]}
 select = "0.6"
 serde = {version="1.0", features=["derive"]}
 serde_json = "1.0"
-smallvec = "1.6"
+smallvec = "1.14"
 stack-string = { version="1.1", features=["postgres_types"] }
 stdout-channel = "0.6"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting", "parsing"]}
 time-tz = {version="2.0", features=["system"]}
-tokio = {version="1.42", features=["rt", "macros", "rt-multi-thread"]}
+tokio = {version="1.44", features=["rt", "macros", "rt-multi-thread"]}
 tokio-postgres = {version = "0.7", features = ["with-time-0_3", "with-uuid-1", "with-serde_json-1"]}
-url = "2.3"
-uuid = {version="1.0", features=["v4"]}
+url = "2.5"
+uuid = {version="1.16", features=["v4"]}

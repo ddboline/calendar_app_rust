@@ -1,7 +1,7 @@
 use anyhow::Error as AnyhowError;
 use axum::{
     extract::Json,
-    http::{header::InvalidHeaderName, StatusCode},
+    http::{StatusCode, header::InvalidHeaderName},
     response::{IntoResponse, Response},
 };
 use log::error;
@@ -9,7 +9,7 @@ use postgres_query::Error as PqError;
 use serde::Serialize;
 use serde_json::Error as SerdeJsonError;
 use serde_yml::Error as SerdeYamlError;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{
     fmt::{Debug, Error as FmtError},
     net::AddrParseError,
@@ -18,11 +18,11 @@ use thiserror::Error;
 use time_tz::system::Error as TzError;
 use tokio::task::JoinError;
 use utoipa::{
+    IntoResponses, PartialSchema, ToSchema,
     openapi::{
         content::ContentBuilder,
         response::{ResponseBuilder, ResponsesBuilder},
     },
-    IntoResponses, PartialSchema, ToSchema,
 };
 
 use authorized_users::errors::AuthUsersError;

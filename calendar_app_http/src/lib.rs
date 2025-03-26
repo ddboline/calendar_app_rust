@@ -217,9 +217,9 @@ mod test {
     use utoipa_helper::derive_utoipa_test;
 
     use crate::{
-        CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper,
-        CreateCalendarEventRequest, MinModifiedQuery, _CalendarCacheRequest, _CalendarCacheWrapper,
-        _CalendarListWrapper, _CreateCalendarEventRequest, _MinModifiedQuery,
+        _CalendarCacheRequest, _CalendarCacheWrapper, _CalendarListWrapper,
+        _CreateCalendarEventRequest, _MinModifiedQuery, CalendarCacheRequest, CalendarCacheWrapper,
+        CalendarListWrapper, CreateCalendarEventRequest, MinModifiedQuery,
     };
 
     #[test]

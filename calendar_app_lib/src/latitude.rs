@@ -1,4 +1,4 @@
-use anyhow::{format_err, Error};
+use anyhow::{Error, format_err};
 use derive_more::{Display, FromStr, Into};
 use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;

@@ -23,7 +23,7 @@ use derive_more::{From, Into};
 use stack_string::StackString;
 use std::str::FromStr;
 use time::{
-    format_description::well_known::Rfc3339, macros::format_description, Date, OffsetDateTime,
+    Date, OffsetDateTime, format_description::well_known::Rfc3339, macros::format_description,
 };
 use time_tz::OffsetDateTimeExt;
 

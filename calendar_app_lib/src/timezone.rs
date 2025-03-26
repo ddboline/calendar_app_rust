@@ -1,10 +1,10 @@
-use anyhow::{format_err, Error};
+use anyhow::{Error, format_err};
 use derive_more::Into;
 use serde::{Deserialize, Serialize};
 use std::{convert::TryFrom, fmt, ops::Deref, str::FromStr};
 use time_tz::{
-    timezones::{db::UTC, get_by_name},
     TimeZone as TzTimeZone, Tz,
+    timezones::{db::UTC, get_by_name},
 };
 
 use stack_string::StackString;

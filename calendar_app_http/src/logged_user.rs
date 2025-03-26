@@ -1,6 +1,6 @@
 pub use authorized_users::{
-    get_random_key, get_secrets, token::Token, AuthorizedUser, AuthorizedUser as ExternalUser,
-    AUTHORIZED_USERS, JWT_SECRET, KEY_LENGTH, LOGIN_HTML, SECRET_KEY,
+    AUTHORIZED_USERS, AuthorizedUser, AuthorizedUser as ExternalUser, JWT_SECRET, KEY_LENGTH,
+    LOGIN_HTML, SECRET_KEY, get_random_key, get_secrets, token::Token,
 };
 use axum::{extract::FromRequestParts, http::request::Parts};
 use axum_extra::extract::CookieJar;

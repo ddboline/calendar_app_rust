@@ -1,17 +1,17 @@
 use anyhow::format_err;
 use axum::extract::{Json, Path, Query, State};
 use derive_more::{From, Into};
-use futures::{future, stream::FuturesUnordered, TryStreamExt};
+use futures::{TryStreamExt, future, stream::FuturesUnordered};
 use serde::{Deserialize, Serialize};
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{collections::HashMap, sync::Arc};
 use time::{Date, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
 use utoipa::{OpenApi, PartialSchema, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_helper::{
-    html_response::HtmlResponse as HtmlBase, json_response::JsonResponse as JsonBase,
-    UtoipaResponse,
+    UtoipaResponse, html_response::HtmlResponse as HtmlBase,
+    json_response::JsonResponse as JsonBase,
 };
 
 use calendar_app_lib::{
@@ -22,6 +22,8 @@ use calendar_app_lib::{
 };
 
 use crate::{
+    CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper, CreateCalendarEventRequest,
+    MinModifiedQuery,
     app::{AppState, UrlCache},
     elements::{
         agenda_body, build_event_body, event_detail_body, index_body, list_calendars_body,
@@ -29,8 +31,6 @@ use crate::{
     },
     errors::ServiceError as Error,
     logged_user::LoggedUser,
-    CalendarCacheRequest, CalendarCacheWrapper, CalendarListWrapper, CreateCalendarEventRequest,
-    MinModifiedQuery,
 };
 
 type WarpResult<T> = Result<T, Error>;

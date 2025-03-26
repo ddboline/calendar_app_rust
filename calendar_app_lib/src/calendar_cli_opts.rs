@@ -1,22 +1,22 @@
-use anyhow::{format_err, Error};
+use anyhow::{Error, format_err};
 use clap::Parser;
-use futures::{future::try_join_all, TryStreamExt};
+use futures::{TryStreamExt, future::try_join_all};
 use refinery::embed_migrations;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::path::PathBuf;
 use time::{Duration, OffsetDateTime};
 use tokio::{
-    fs::{read, File},
-    io::{stdin, stdout, AsyncReadExt, AsyncWrite, AsyncWriteExt},
+    fs::{File, read},
+    io::{AsyncReadExt, AsyncWrite, AsyncWriteExt, stdin, stdout},
 };
 
 use crate::{
+    DateType,
     calendar::Event,
     calendar_sync::CalendarSync,
     config::Config,
     models::{CalendarCache, CalendarList},
     pgpool::PgPool,
-    DateType,
 };
 
 embed_migrations!("../migrations");

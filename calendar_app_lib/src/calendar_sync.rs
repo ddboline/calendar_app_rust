@@ -1,8 +1,8 @@
-use anyhow::{format_err, Error};
-use futures::{future::try_join_all, Stream, TryStreamExt};
+use anyhow::{Error, format_err};
+use futures::{Stream, TryStreamExt, future::try_join_all};
 use log::debug;
 use postgres_query::Error as PqError;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -12,7 +12,7 @@ use time::{Date, Duration, OffsetDateTime, PrimitiveDateTime};
 use time_tz::{OffsetDateTimeExt, PrimitiveDateTimeExt};
 use tokio::try_join;
 
-use gcal_lib::gcal_instance::{compare_gcal_events, Event as GCalEvent, GCalendarInstance};
+use gcal_lib::gcal_instance::{Event as GCalEvent, GCalendarInstance, compare_gcal_events};
 
 use crate::{
     calendar::{Calendar, Event},

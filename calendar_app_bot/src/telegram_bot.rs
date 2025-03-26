@@ -1,14 +1,14 @@
 use anyhow::Error;
 use arc_swap::ArcSwap;
 use deadqueue::unlimited::Queue;
-use futures::{future, try_join, StreamExt, TryStreamExt};
+use futures::{StreamExt, TryStreamExt, future, try_join};
 use im::HashMap;
 use once_cell::sync::Lazy;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::{collections::VecDeque, sync::Arc};
 use telegram_bot::{
-    types::Update, Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind,
-    ToChatRef, UpdateKind, UserId,
+    Api, CanReplySendMessage, CanSendMessage, ChatId, ChatRef, MessageKind, ToChatRef, UpdateKind,
+    UserId, types::Update,
 };
 use time::{Duration, OffsetDateTime};
 use tokio::{

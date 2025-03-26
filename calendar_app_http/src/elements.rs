@@ -1,9 +1,9 @@
 use dioxus::prelude::{
-    component, dioxus_elements, rsx, Element, GlobalSignal, IntoDynNode, Props, Readable,
-    VirtualDom,
+    Element, GlobalSignal, IntoDynNode, Props, Readable, VirtualDom, component, dioxus_elements,
+    rsx,
 };
 use itertools::Itertools;
-use stack_string::{format_sstr, StackString};
+use stack_string::{StackString, format_sstr};
 use std::collections::HashMap;
 use time::macros::format_description;
 use url::Url;
