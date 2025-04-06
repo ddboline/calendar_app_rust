@@ -1,5 +1,5 @@
 use dioxus::prelude::{
-    Element, GlobalSignal, IntoDynNode, Props, Readable, VirtualDom, component, dioxus_elements,
+    Element, IntoDynNode, Props, VirtualDom, component, dioxus_elements,
     rsx,
 };
 use itertools::Itertools;
@@ -7,6 +7,10 @@ use stack_string::{StackString, format_sstr};
 use std::collections::HashMap;
 use time::macros::format_description;
 use url::Url;
+
+#[cfg(debug_assertions)]
+use dioxus::prelude::{GlobalSignal, Readable};
+
 
 use calendar_app_lib::{
     calendar::{Calendar, Event},
