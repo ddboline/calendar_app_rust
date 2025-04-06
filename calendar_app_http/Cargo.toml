@@ -24,6 +24,7 @@ gcal_lib = {path="../gcal_lib"}
 itertools = "0.14"
 log = "0.4"
 maplit = "1.0"
+mime = "0.3"
 parking_lot = "0.12"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
 rayon = "1.10"

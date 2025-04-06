@@ -1,7 +1,7 @@
-use axum::http::{Method, StatusCode};
+use axum::http::{Method, StatusCode, header::CONTENT_TYPE};
 use log::debug;
 use stack_string::{StackString, format_sstr};
-use std::{collections::HashMap, convert::TryInto, net::SocketAddr, sync::Arc, time::Duration};
+use std::{collections::HashMap, net::SocketAddr, sync::Arc, time::Duration};
 use tokio::{net::TcpListener, sync::RwLock, time::interval};
 use tower_http::cors::{Any, CorsLayer};
 use utoipa::OpenApi;
@@ -52,7 +52,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
 
     let cors = CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
-        .allow_headers(["content-type".try_into()?, "jwt".try_into()?])
+        .allow_headers([CONTENT_TYPE])
         .allow_origin(Any);
 
     let (router, api) = OpenApiRouter::with_openapi(ApiDoc::openapi())
@@ -68,7 +68,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
             axum::routing::get(|| async move {
                 (
                     StatusCode::OK,
-                    [("content-type", "application/json")],
+                    [(CONTENT_TYPE, mime::APPLICATION_JSON.essence_str())],
                     spec_json,
                 )
             }),
@@ -76,7 +76,7 @@ async fn run_app(config: &Config) -> Result<(), Error> {
         .route(
             "/calendar/openapi/yaml",
             axum::routing::get(|| async move {
-                (StatusCode::OK, [("content-type", "text/yaml")], spec_yaml)
+                (StatusCode::OK, [(CONTENT_TYPE, "text/yaml")], spec_yaml)
             }),
         )
         .layer(cors);
