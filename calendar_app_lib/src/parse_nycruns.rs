@@ -66,7 +66,7 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                     ) {
                         current_time.replace(time);
                     } else {
-                        debug!("{:?}", items);
+                        debug!("{items:?}",);
                     }
                 } else {
                     location.replace(text.trim().into());
@@ -121,7 +121,7 @@ pub async fn parse_nycruns(pool: &PgPool) -> Result<Vec<CalendarCache>, Error> {
                     || event.event_location_name != existing_event.event_location_name
                 {
                     event.event_id = existing_event.event_id.as_str().into();
-                    debug!("modifying event {:#?} {:#?}", event, existing_event);
+                    debug!("modifying event {event:#?} {existing_event:#?}",);
                     event.upsert(pool).await?;
                     Ok(Some(event))
                 } else {
