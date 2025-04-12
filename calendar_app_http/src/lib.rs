@@ -18,10 +18,8 @@ use derive_more::{From, Into};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use time::OffsetDateTime;
-use utoipa::IntoParams;
-use utoipa::ToSchema;
-use utoipa_helper::derive_utoipa_schema;
-use utoipa_helper::derive_utoipa_params;
+use utoipa::{IntoParams, ToSchema};
+use utoipa_helper::{derive_utoipa_params, derive_utoipa_schema};
 
 use gcal_lib::date_time_wrapper::DateTimeWrapper;
 
