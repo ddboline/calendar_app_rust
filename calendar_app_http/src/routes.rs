@@ -7,7 +7,7 @@ use stack_string::{StackString, format_sstr};
 use std::{collections::HashMap, sync::Arc};
 use time::{Date, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use utoipa::{OpenApi, PartialSchema, ToSchema};
+use utoipa::{IntoParams, OpenApi, PartialSchema, ToSchema};
 use utoipa_axum::{router::OpenApiRouter, routes};
 use utoipa_helper::{
     UtoipaResponse, html_response::HtmlResponse as HtmlBase,
@@ -41,7 +41,7 @@ type WarpResult<T> = Result<T, Error>;
 struct IndexResponse(HtmlBase::<String>);
 
 #[utoipa::path(get, path = "/calendar/index.html", responses(IndexResponse, Error))]
-// Calendar App Main Page")]
+// Calendar App Main Page
 async fn calendar_index(_: LoggedUser) -> WarpResult<IndexResponse> {
     let body = index_body()?;
     Ok(HtmlBase::new(body).into())
@@ -53,7 +53,7 @@ async fn calendar_index(_: LoggedUser) -> WarpResult<IndexResponse> {
 struct AgendaResponse(HtmlBase::<StackString>);
 
 #[utoipa::path(get, path = "/calendar/agenda", responses(AgendaResponse, Error))]
-// Calendar Agenda Page")]
+// Calendar Agenda Page
 async fn agenda(_: LoggedUser, data: State<Arc<AppState>>) -> WarpResult<AgendaResponse> {
     let body = get_agenda(&data.cal_sync).await?;
     Ok(HtmlBase::new(body).into())
@@ -88,7 +88,7 @@ struct SyncResponse(HtmlBase::<String>);
     path = "/calendar/sync_calendars",
     responses(SyncResponse, Error)
 )]
-// Sync Calendars")]
+// Sync Calendars
 async fn sync_calendars(_: LoggedUser, data: State<Arc<AppState>>) -> WarpResult<SyncResponse> {
     let body = sync_calendars_body(&data.cal_sync, false).await?;
     Ok(HtmlBase::new(body).into())
@@ -103,7 +103,7 @@ async fn sync_calendars_body(cal_sync: &CalendarSync, do_full: bool) -> WarpResu
     path = "/calendar/sync_calendars_full",
     responses(SyncResponse, Error)
 )]
-// Fully Sync All Calendars")]
+// Fully Sync All Calendars
 async fn sync_calendars_full(
     _: LoggedUser,
     data: State<Arc<AppState>>,
@@ -112,12 +112,16 @@ async fn sync_calendars_full(
     Ok(HtmlBase::new(body).into())
 }
 
-#[derive(Serialize, Deserialize, Debug, ToSchema)]
-// GcalEventID")]
+#[derive(Serialize, Deserialize, Debug, ToSchema, IntoParams)]
+// GcalEventID
 struct GcalEventID {
-    // GCal ID")]
+    // GCal ID
+    #[param(inline)]
+    #[schema(inline)]
     gcal_id: StackString,
-    // GCal Event ID")]
+    // GCal Event ID
+    #[param(inline)]
+    #[schema(inline)]
     event_id: StackString,
 }
 
@@ -133,9 +137,10 @@ struct DeleteEventResponse(HtmlBase::<StackString>);
 #[utoipa::path(
     delete,
     path = "/calendar/delete_event",
+    request_body = GcalEventID,
     responses(DeleteEventResponse, Error)
 )]
-// Delete Calendar Event")]
+// Delete Calendar Event
 async fn delete_event(
     data: State<Arc<AppState>>,
     _: LoggedUser,
@@ -179,7 +184,7 @@ struct ListCalendarsResponse(HtmlBase::<StackString>);
     path = "/calendar/list_calendars",
     responses(ListCalendarsResponse, Error)
 )]
-// List Calendars")]
+// List Calendars
 async fn list_calendars(
     _: LoggedUser,
     data: State<Arc<AppState>>,
@@ -205,13 +210,15 @@ async fn get_calendars_list(cal_sync: &CalendarSync) -> WarpResult<StackString> 
     Ok(body)
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, IntoParams)]
 struct ListEventsRequest {
-    // Calendar Name")]
+    // Calendar Name
+    #[schema(inline)]
+    #[param(inline)]
     calendar_name: StackString,
-    // Earliest Date")]
+    // Earliest Date
     min_time: Option<Date>,
-    // Latest Date")]
+    // Latest Date
     max_time: Option<Date>,
 }
 
@@ -223,9 +230,10 @@ struct ListEventsResponse(HtmlBase::<StackString>);
 #[utoipa::path(
     get,
     path = "/calendar/list_events",
+    params(ListEventsRequest),
     responses(ListEventsResponse, Error)
 )]
-// List Events")]
+// List Events
 async fn list_events(
     query: Query<ListEventsRequest>,
     _: LoggedUser,
@@ -269,9 +277,10 @@ struct EventDetailResponse(HtmlBase::<StackString>);
 #[utoipa::path(
     get,
     path = "/calendar/event_detail",
+    params(GcalEventID),
     responses(EventDetailResponse, Error)
 )]
-// Get Calendar Event Detail")]
+// Get Calendar Event Detail
 async fn event_detail(
     payload: Query<GcalEventID>,
     _: LoggedUser,
@@ -299,18 +308,18 @@ async fn get_event_detail(
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-// Pagination")]
+// Pagination
 struct Pagination {
-    // Number of Entries Returned")]
+    // Number of Entries Returned
     limit: usize,
-    // Number of Entries to Skip")]
+    // Number of Entries to Skip
     offset: usize,
-    // Total Number of Entries")]
+    // Total Number of Entries
     total: usize,
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-// PaginatedCalendarList")]
+// PaginatedCalendarList
 struct PaginatedCalendarList {
     pagination: Pagination,
     data: Vec<CalendarListWrapper>,
@@ -324,9 +333,10 @@ struct CalendarListResponse(JsonBase::<PaginatedCalendarList>);
 #[utoipa::path(
     get,
     path = "/calendar/calendar_list",
+    params(MinModifiedQuery),
     responses(CalendarListResponse, Error)
 )]
-// List Calendars")]
+// List Calendars
 async fn calendar_list(
     query: Query<MinModifiedQuery>,
     _: LoggedUser,
@@ -359,9 +369,9 @@ async fn calendar_list_object(
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
-// CalendarUpdateRequest")]
+// CalendarUpdateRequest
 struct CalendarUpdateRequest {
-    // Calendar List Updates")]
+    // Calendar List Updates
     updates: Vec<CalendarListWrapper>,
 }
 
@@ -376,9 +386,10 @@ struct CalendarListUpdateResponse(JsonBase::<CalendarListInner>);
 #[utoipa::path(
     post,
     path = "/calendar/calendar_list",
+    request_body = CalendarUpdateRequest,
     responses(CalendarListUpdateResponse, Error)
 )]
-// Update Calendars")]
+// Update Calendars
 async fn calendar_list_update(
     data: State<Arc<AppState>>,
     _: LoggedUser,
@@ -409,7 +420,7 @@ async fn calendar_list_update_object(
 }
 
 #[derive(Debug, Serialize, Deserialize, ToSchema)]
-// PaginatedCalendarCache")]
+// PaginatedCalendarCache
 struct PaginatedCalendarCache {
     pagination: Pagination,
     data: Vec<CalendarCacheWrapper>,
@@ -425,7 +436,7 @@ struct CalendarCacheResponse(JsonBase::<PaginatedCalendarCache>);
     path = "/calendar/calendar_cache",
     responses(CalendarCacheResponse, Error)
 )]
-// List Recent Calendar Events")]
+// List Recent Calendar Events
 async fn calendar_cache(
     query: Query<MinModifiedQuery>,
     _: LoggedUser,
@@ -458,9 +469,9 @@ async fn calendar_cache_events(
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
-// CalendarCacheUpdateRequest")]
+// CalendarCacheUpdateRequest
 struct CalendarCacheUpdateRequest {
-    // Calendar Events Update")]
+    // Calendar Events Update
     updates: Vec<CalendarCacheRequest>,
 }
 
@@ -475,9 +486,10 @@ struct CalendarCacheUpdateResponse(JsonBase::<CalendarCacheInner>);
 #[utoipa::path(
     post,
     path = "/calendar/calendar_cache",
+    request_body = CalendarCacheUpdateRequest,
     responses(CalendarCacheUpdateResponse, Error)
 )]
-// Update Calendar Events")]
+// Update Calendar Events
 async fn calendar_cache_update(
     data: State<Arc<AppState>>,
     _: LoggedUser,
@@ -525,9 +537,10 @@ struct ShortenedLinkResponse(HtmlBase::<StackString>);
 #[utoipa::path(
     get,
     path = "/calendar/link/{link}",
+    params(("link" = inline(StackString), description = "Shortened Link")),
     responses(ShortenedLinkResponse, Error)
 )]
-// Get Full URL from Shortened URL")]
+// Get Full URL from Shortened URL
 async fn link_shortener(
     data: State<Arc<AppState>>,
     link: Path<StackString>,
@@ -571,11 +584,15 @@ fn format_short_link(domain: &str, link: &str) -> StackString {
     )
 }
 
-#[derive(Serialize, Deserialize, Debug, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, ToSchema, IntoParams)]
 struct BuildEventRequest {
-    // GCal Calendar ID")]
+    // GCal Calendar ID
+    #[schema(inline)]
+    #[param(inline)]
     gcal_id: StackString,
-    // Event ID")]
+    // Event ID
+    #[schema(inline)]
+    #[param(inline)]
     event_id: Option<StackString>,
 }
 
@@ -587,9 +604,10 @@ struct BuildCalendarEventResponse(HtmlBase::<StackString>);
 #[utoipa::path(
     get,
     path = "/calendar/create_calendar_event",
+    params(BuildEventRequest),
     responses(BuildCalendarEventResponse, Error)
 )]
-// Get Calendar Event Creation Form")]
+// Get Calendar Event Creation Form
 async fn build_calendar_event(
     query: Query<BuildEventRequest>,
     _: LoggedUser,
@@ -636,9 +654,10 @@ struct CreateCalendarEventResponse(HtmlBase::<String>);
 #[utoipa::path(
     post,
     path = "/calendar/create_calendar_event",
+    request_body = CreateCalendarEventRequest,
     responses(CreateCalendarEventResponse, Error)
 )]
-// Create Calendar Event")]
+// Create Calendar Event
 async fn create_calendar_event(
     data: State<Arc<AppState>>,
     _: LoggedUser,
@@ -692,13 +711,14 @@ async fn create_calendar_event_body(
 
 #[derive(Serialize, Deserialize, ToSchema)]
 struct EditCalendarRequest {
-    // Calendar Name")]
+    // Calendar Name
+    #[schema(inline)]
     calendar_name: Option<StackString>,
-    // Sync Flag")]
+    // Sync Flag
     sync: Option<bool>,
-    // Edit Flag")]
+    // Edit Flag
     edit: Option<bool>,
-    // Display Flag")]
+    // Display Flag
     display: Option<bool>,
 }
 
@@ -710,9 +730,11 @@ struct EditCalendarResponse(JsonBase::<CalendarListWrapper>);
 #[utoipa::path(
     post,
     path = "/calendar/edit_calendar/{gcal_id}",
+    request_body = EditCalendarRequest,
+    params(("gcal_id" = inline(StackString), description = "Google Calendar ID")),
     responses(EditCalendarResponse, Error)
 )]
-// Edit Google Calendar Event")]
+// Edit Google Calendar Event
 async fn edit_calendar(
     data: State<Arc<AppState>>,
     gcal_id: Path<StackString>,

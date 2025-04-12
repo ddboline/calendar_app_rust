@@ -30,7 +30,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -47,7 +47,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/calendar_cache:
     get:
       operationId: calendar_cache
@@ -78,7 +78,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -95,7 +95,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
     post:
       operationId: calendar_cache_update
       requestBody:
@@ -123,7 +123,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -140,10 +140,35 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/calendar_list:
     get:
       operationId: calendar_list
+      parameters:
+      - name: min_modified
+        in: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+          format: date-time
+      - name: offset
+        in: query
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
+      - name: limit
+        in: query
+        required: false
+        schema:
+          type:
+          - integer
+          - 'null'
+          minimum: 0
       responses:
         '200':
           description: Calendar List
@@ -171,7 +196,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -188,7 +213,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
     post:
       operationId: calendar_list_update
       requestBody:
@@ -216,7 +241,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -233,10 +258,23 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/create_calendar_event:
     get:
       operationId: build_calendar_event
+      parameters:
+      - name: gcal_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: event_id
+        in: query
+        required: false
+        schema:
+          oneOf:
+          - type: 'null'
+          - type: string
       responses:
         '200':
           description: Build Calendar Event
@@ -254,7 +292,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -271,7 +309,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
     post:
       operationId: create_calendar_event
       requestBody:
@@ -297,7 +335,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -314,7 +352,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/delete_event:
     delete:
       operationId: delete_event
@@ -341,7 +379,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -358,10 +396,17 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/edit_calendar/{gcal_id}:
     post:
       operationId: edit_calendar
+      parameters:
+      - name: gcal_id
+        in: path
+        description: Google Calendar ID
+        required: true
+        schema:
+          type: string
       requestBody:
         content:
           application/json:
@@ -384,7 +429,7 @@ paths:
                 - display
                 properties:
                   calendar_name:
-                    $ref: '#/components/schemas/str'
+                    type: string
                   display:
                     type: boolean
                   edit:
@@ -392,21 +437,21 @@ paths:
                   gcal_description:
                     oneOf:
                     - type: 'null'
-                    - $ref: '#/components/schemas/str'
+                    - type: string
                   gcal_id:
-                    $ref: '#/components/schemas/str'
+                    type: string
                   gcal_location:
                     oneOf:
                     - type: 'null'
-                    - $ref: '#/components/schemas/str'
+                    - type: string
                   gcal_name:
                     oneOf:
                     - type: 'null'
-                    - $ref: '#/components/schemas/str'
+                    - type: string
                   gcal_timezone:
                     oneOf:
                     - type: 'null'
-                    - $ref: '#/components/schemas/str'
+                    - type: string
                   last_modified:
                     type: string
                     format: date-time
@@ -422,7 +467,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -439,10 +484,21 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/event_detail:
     get:
       operationId: event_detail
+      parameters:
+      - name: gcal_id
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: event_id
+        in: query
+        required: true
+        schema:
+          type: string
       responses:
         '201':
           description: Event Details
@@ -460,7 +516,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -477,7 +533,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/index.html:
     get:
       operationId: calendar_index
@@ -498,7 +554,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -515,10 +571,17 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/link/{link}:
     get:
       operationId: link_shortener
+      parameters:
+      - name: link
+        in: path
+        description: Shortened Link
+        required: true
+        schema:
+          type: string
       responses:
         '200':
           description: Shortened Link
@@ -536,7 +599,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -553,7 +616,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/list_calendars:
     get:
       operationId: list_calendars
@@ -574,7 +637,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -591,10 +654,32 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/list_events:
     get:
       operationId: list_events
+      parameters:
+      - name: calendar_name
+        in: query
+        required: true
+        schema:
+          type: string
+      - name: min_time
+        in: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+          format: date
+      - name: max_time
+        in: query
+        required: false
+        schema:
+          type:
+          - string
+          - 'null'
+          format: date
       responses:
         '200':
           description: List Events
@@ -612,7 +697,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -629,7 +714,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/sync_calendars:
     post:
       operationId: sync_calendars
@@ -650,7 +735,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -667,7 +752,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/sync_calendars_full:
     post:
       operationId: sync_calendars_full
@@ -688,7 +773,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -705,7 +790,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
   /calendar/user:
     get:
       operationId: user
@@ -726,9 +811,9 @@ paths:
                     type: string
                     format: date-time
                   email:
-                    $ref: '#/components/schemas/str'
+                    type: string
                   secret_key:
-                    $ref: '#/components/schemas/str'
+                    type: string
                   session:
                     type: string
                     format: uuid
@@ -742,7 +827,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
         '401':
           description: Not Authorized
           content:
@@ -759,7 +844,7 @@ paths:
                 - message
                 properties:
                   message:
-                    $ref: '#/components/schemas/str'
+                    type: string
 components:
   schemas:
     CalendarCache:
@@ -775,12 +860,12 @@ components:
         event_description:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_end_time:
           type: string
           format: date-time
         event_id:
-          $ref: '#/components/schemas/str'
+          type: string
         event_location_lat:
           type:
           - number
@@ -794,18 +879,18 @@ components:
         event_location_name:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_name:
-          $ref: '#/components/schemas/str'
+          type: string
         event_start_time:
           type: string
           format: date-time
         event_url:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_id:
-          $ref: '#/components/schemas/str'
+          type: string
         last_modified:
           type: string
           format: date-time
@@ -833,7 +918,7 @@ components:
         calendar_name:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         display:
           type:
           - boolean
@@ -853,9 +938,9 @@ components:
       - event_id
       properties:
         event_id:
-          $ref: '#/components/schemas/str'
+          type: string
         gcal_id:
-          $ref: '#/components/schemas/str'
+          type: string
     LoggedUser:
       type: object
       required:
@@ -868,9 +953,9 @@ components:
           type: string
           format: date-time
         email:
-          $ref: '#/components/schemas/str'
+          type: string
         secret_key:
-          $ref: '#/components/schemas/str'
+          type: string
         session:
           type: string
           format: uuid
@@ -903,12 +988,12 @@ components:
         event_description:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_end_time:
           type: string
           format: date-time
         event_id:
-          $ref: '#/components/schemas/str'
+          type: string
         event_location_lat:
           type:
           - number
@@ -922,18 +1007,18 @@ components:
         event_location_name:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_name:
-          $ref: '#/components/schemas/str'
+          type: string
         event_start_time:
           type: string
           format: date-time
         event_url:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_id:
-          $ref: '#/components/schemas/str'
+          type: string
         last_modified:
           type: string
           format: date-time
@@ -948,7 +1033,7 @@ components:
       - display
       properties:
         calendar_name:
-          $ref: '#/components/schemas/str'
+          type: string
         display:
           type: boolean
         edit:
@@ -956,21 +1041,21 @@ components:
         gcal_description:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_id:
-          $ref: '#/components/schemas/str'
+          type: string
         gcal_location:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_name:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_timezone:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         last_modified:
           type: string
           format: date-time
@@ -988,26 +1073,24 @@ components:
         event_description:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_end_datetime:
           type: string
           format: date-time
         event_id:
-          $ref: '#/components/schemas/str'
+          type: string
         event_location_name:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         event_name:
-          $ref: '#/components/schemas/str'
+          type: string
         event_start_datetime:
           type: string
           format: date-time
         event_url:
           oneOf:
           - type: 'null'
-          - $ref: '#/components/schemas/str'
+          - type: string
         gcal_id:
-          $ref: '#/components/schemas/str'
-    str:
-      type: string
+          type: string

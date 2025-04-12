@@ -18,8 +18,10 @@ use derive_more::{From, Into};
 use serde::{Deserialize, Serialize};
 use stack_string::StackString;
 use time::OffsetDateTime;
+use utoipa::IntoParams;
 use utoipa::ToSchema;
 use utoipa_helper::derive_utoipa_schema;
+use utoipa_helper::derive_utoipa_params;
 
 use gcal_lib::date_time_wrapper::DateTimeWrapper;
 
@@ -35,16 +37,22 @@ derive_utoipa_schema!(CalendarListWrapper, _CalendarListWrapper);
 // CalendarList
 struct _CalendarListWrapper {
     // Calendar Name
+    #[schema(inline)]
     calendar_name: StackString,
     // GCal Calendar ID
+    #[schema(inline)]
     gcal_id: StackString,
     // GCal Calendar Name
+    #[schema(inline)]
     gcal_name: Option<StackString>,
     // GCal Calendar Description
+    #[schema(inline)]
     gcal_description: Option<StackString>,
     // GCal Calendar Location
+    #[schema(inline)]
     gcal_location: Option<StackString>,
     // GCal Calendar Timezone
+    #[schema(inline)]
     gcal_timezone: Option<StackString>,
     // Sync Flag
     sync: bool,
@@ -67,20 +75,26 @@ derive_utoipa_schema!(CalendarCacheWrapper, _CalendarCacheWrapper);
 #[schema(as = CalendarCache)]
 struct _CalendarCacheWrapper {
     // Gcal Calendar ID
+    #[schema(inline)]
     gcal_id: StackString,
     // Calendar Event ID
+    #[schema(inline)]
     event_id: StackString,
     // Event Start Time
     event_start_time: OffsetDateTime,
     // Event End Time
     event_end_time: OffsetDateTime,
     // Event URL
+    #[schema(inline)]
     event_url: Option<StackString>,
     // Event Name
+    #[schema(inline)]
     event_name: StackString,
     // Event Description
+    #[schema(inline)]
     event_description: Option<StackString>,
     // Event Location Name
+    #[schema(inline)]
     event_location_name: Option<StackString>,
     // Event Location Latitude
     event_location_lat: Option<f64>,
@@ -98,9 +112,10 @@ pub struct MinModifiedQuery {
 }
 
 derive_utoipa_schema!(MinModifiedQuery, _MinModifiedQuery);
+derive_utoipa_params!(MinModifiedQuery, _MinModifiedQuery);
 
 #[allow(dead_code)]
-#[derive(ToSchema)]
+#[derive(ToSchema, IntoParams)]
 struct _MinModifiedQuery {
     // Min Modified Date
     min_modified: Option<OffsetDateTime>,
@@ -153,20 +168,26 @@ derive_utoipa_schema!(CalendarCacheRequest, _CalendarCacheRequest);
 // CalendarCacheRequest
 struct _CalendarCacheRequest {
     // GCal Calendar ID
+    #[schema(inline)]
     gcal_id: StackString,
     // Calendar Event ID
+    #[schema(inline)]
     event_id: StackString,
     // Event Start Time
     event_start_time: OffsetDateTime,
     // Event End Time
     event_end_time: OffsetDateTime,
     // Event URL
+    #[schema(inline)]
     event_url: Option<StackString>,
     // Event Name
+    #[schema(inline)]
     event_name: StackString,
     // Event Description
+    #[schema(inline)]
     event_description: Option<StackString>,
     // Event Location Name
+    #[schema(inline)]
     event_location_name: Option<StackString>,
     // Event Location Latitude
     event_location_lat: Option<f64>,
@@ -195,20 +216,26 @@ derive_utoipa_schema!(CreateCalendarEventRequest, _CreateCalendarEventRequest);
 // CreateCalendarEventRequest
 struct _CreateCalendarEventRequest {
     // GCal Calendar ID
+    #[schema(inline)]
     gcal_id: StackString,
     // Event ID
+    #[schema(inline)]
     event_id: StackString,
     // Event Start Time
     event_start_datetime: OffsetDateTime,
     // Event End Time
     event_end_datetime: OffsetDateTime,
     // Event URL
+    #[schema(inline)]
     event_url: Option<StackString>,
     // Event Name
+    #[schema(inline)]
     event_name: StackString,
     // Event Description
+    #[schema(inline)]
     event_description: Option<StackString>,
     // Event Location Name
+    #[schema(inline)]
     event_location_name: Option<StackString>,
 }
 
