@@ -772,7 +772,7 @@ fn copy_wide(mut reader: impl io::Read, hasher: &mut blake3::Hasher) -> Result<u
                 hasher.update(&buffer[..n]);
                 total += n as u64;
             }
-            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => continue,
+            Err(ref e) if e.kind() == io::ErrorKind::Interrupted => (),
             Err(e) => return Err(e.into()),
         }
     }
