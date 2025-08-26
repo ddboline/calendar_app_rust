@@ -76,21 +76,21 @@ pub fn parse_hashnyc_text(body: &str) -> Result<Vec<Event>, Error> {
                     }
                 }
             }
-            if let Some(name) = name {
-                if let Some(start_time) = start_time {
-                    let end_time = start_time + Duration::hours(1);
-                    let mut event = Event::new(CALID, &name, start_time, end_time);
-                    if let Some(description) = description {
-                        event.description.replace(description.into());
-                    }
-                    if let Some(location) = location {
-                        event.location.replace(Location {
-                            name: location,
-                            ..Location::default()
-                        });
-                    }
-                    events.push(event);
+            if let Some(name) = name
+                && let Some(start_time) = start_time
+            {
+                let end_time = start_time + Duration::hours(1);
+                let mut event = Event::new(CALID, &name, start_time, end_time);
+                if let Some(description) = description {
+                    event.description.replace(description.into());
                 }
+                if let Some(location) = location {
+                    event.location.replace(Location {
+                        name: location,
+                        ..Location::default()
+                    });
+                }
+                events.push(event);
             }
         }
     }

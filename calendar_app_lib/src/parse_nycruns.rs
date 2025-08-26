@@ -30,11 +30,12 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
         let mut name: Option<StackString> = None;
         let mut event_url = None;
         for a in race.find(Class("_title")) {
-            if let Some(url) = a.attr("href") {
-                if let Ok(url) = format_sstr!("{BASE_URL}{url}").parse::<Url>() {
-                    event_url.replace(url);
-                }
+            if let Some(url) = a.attr("href")
+                && let Ok(url) = format_sstr!("{BASE_URL}{url}").parse::<Url>()
+            {
+                event_url.replace(url);
             }
+
             if let Some(text) = a.text().lines().next() {
                 name.replace(text.trim().into());
             }
@@ -73,23 +74,22 @@ pub fn parse_nycruns_text(body: &str) -> Result<Vec<Event>, Error> {
                 }
             }
         }
-        if let Some(name) = name {
-            if let Some(current_date) = current_date {
-                if let Some(current_time) = current_time {
-                    let current_datetime = PrimitiveDateTime::new(current_date, current_time);
-                    let start_time = current_datetime.assume_timezone(NEW_YORK).unwrap();
-                    let end_time = start_time + Duration::hours(1);
-                    let mut event = Event::new(CALID, &name, start_time, end_time);
-                    if let Some(location) = location {
-                        event.location.replace(Location {
-                            name: location,
-                            ..Location::default()
-                        });
-                    }
-                    event.url = event_url;
-                    events.push(event);
-                }
+        if let Some(name) = name
+            && let Some(current_date) = current_date
+            && let Some(current_time) = current_time
+        {
+            let current_datetime = PrimitiveDateTime::new(current_date, current_time);
+            let start_time = current_datetime.assume_timezone(NEW_YORK).unwrap();
+            let end_time = start_time + Duration::hours(1);
+            let mut event = Event::new(CALID, &name, start_time, end_time);
+            if let Some(location) = location {
+                event.location.replace(Location {
+                    name: location,
+                    ..Location::default()
+                });
             }
+            event.url = event_url;
+            events.push(event);
         }
     }
     Ok(events)

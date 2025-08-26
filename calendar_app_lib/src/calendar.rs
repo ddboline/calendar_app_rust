@@ -168,11 +168,12 @@ impl From<CalendarCache> for Event {
             };
             let latitude = item.event_location_lat.and_then(|l| l.try_into().ok());
             let longitude = item.event_location_lon.and_then(|l| l.try_into().ok());
-            if let Some(latitude) = latitude {
-                if let Some(longitude) = longitude {
-                    location.lat_lon.replace((latitude, longitude));
-                }
+            if let Some(latitude) = latitude
+                && let Some(longitude) = longitude
+            {
+                location.lat_lon.replace((latitude, longitude));
             }
+
             loc.replace(location);
         }
         Self {
@@ -327,14 +328,13 @@ impl Event {
                     url = result.shortened_url
                 ));
             }
-            if short_url.is_none() {
-                if let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await
-                {
-                    short_url.replace(format_sstr!(
-                        "https://{domain}/calendar/link/{url}",
-                        url = result.shortened_url
-                    ));
-                }
+            if short_url.is_none()
+                && let Ok(result) = ShortenedLinks::get_or_create(original_url.as_str(), pool).await
+            {
+                short_url.replace(format_sstr!(
+                    "https://{domain}/calendar/link/{url}",
+                    url = result.shortened_url
+                ));
             }
         }
 
