@@ -1,6 +1,6 @@
 [package]
 name = "calendar_app_http"
-version = "0.9.4"
+version = "0.9.5"
 authors = ["Daniel Boline <ddboline@gmail.com>"]
 edition = "2024"
 license = "MIT"
@@ -10,14 +10,15 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.3"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
 axum = { version = "0.8", features = ["multipart"] }
-axum-extra = {version="0.10", features=["cookie"]}
+axum-extra = {version="0.12", features=["cookie"]}
 calendar_app_lib = {path = "../calendar_app_lib"}
-derive_more = {version="2.0", features=["full"]}
-dioxus = "0.6"
-dioxus-core = "0.6"
-dioxus-ssr = "0.6"
+derive_more = {version="2.1", features=["full"]}
+dioxus = "0.7"
+dioxus-core = "0.7"
+dioxus-signals = "0.7"
+dioxus-ssr = "0.7"
 dirs = "6.0"
 futures = "0.3"
 gcal_lib = {path="../gcal_lib"}
@@ -27,25 +28,25 @@ maplit = "1.0"
 mime = "0.3"
 parking_lot = "0.12"
 postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
-rayon = "1.10"
-reqwest = {version="0.12", default-features = false, features=["cookies", "json", "rustls-tls", "stream"]}
+rayon = "1.11"
+reqwest = {version="0.13", features=["cookies", "json", "stream"]}
 serde = "1.0"
 serde_derive = "1.0"
 serde_json = "1.0"
-serde_yml = "0.0.12"
+serde_yaml_ng = "0.10"
 stack-string = { version="1.1", features=["postgres_types", "utoipa_types", "axum_types"] }
 thiserror = "2.0"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
-tokio = {version="1.47", features=["time"]}
+tokio = {version="1.48", features=["time"]}
 tower-http = {version="0.6", features=["cors"]}
 url = "2.5"
-utoipa = { version = "5.3", features = ["axum_extras", "yaml", "time", "uuid", "smallvec", "url", "openapi_extensions", "decimal"] }
+utoipa = { version = "5.4", features = ["axum_extras", "yaml", "time", "uuid", "smallvec", "url", "openapi_extensions", "decimal"] }
 utoipa-helper = "0.1"
 utoipa-axum = { version = "0.2" }
-uuid = "1.13"
+uuid = "1.19"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.3"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.3"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
 maplit = "1.0"

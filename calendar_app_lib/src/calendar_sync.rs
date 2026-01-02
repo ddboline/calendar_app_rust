@@ -348,7 +348,7 @@ impl CalendarSync {
     ) -> Result<Vec<Event>, Error> {
         let min_date = min_date
             .and_then(|d| d.with_hms(0, 0, 0).ok().map(PrimitiveDateTime::assume_utc))
-            .unwrap_or_else(|| (OffsetDateTime::now_utc() - Duration::weeks(1)));
+            .unwrap_or_else(|| OffsetDateTime::now_utc() - Duration::weeks(1));
         let max_date = max_date
             .and_then(|d| d.checked_add(Duration::days(1)))
             .and_then(|d| {
@@ -357,7 +357,7 @@ impl CalendarSync {
                     .map(|dt| dt.assume_timezone(TimeZone::local().into()))
             })
             .map_or_else(
-                || (OffsetDateTime::now_utc() + Duration::weeks(2)),
+                || OffsetDateTime::now_utc() + Duration::weeks(2),
                 |d| d.unwrap().to_timezone(TimeZone::utc().into()),
             );
         let mut events: Vec<Event> = CalendarCache::get_by_gcal_id_datetime(

@@ -7,11 +7,10 @@ use axum::{
     },
     response::{IntoResponse, Response},
 };
-use log::error;
 use postgres_query::Error as PqError;
 use serde::Serialize;
 use serde_json::Error as SerdeJsonError;
-use serde_yml::Error as SerdeYamlError;
+use serde_yaml_ng::Error as SerdeYamlError;
 use stack_string::{StackString, format_sstr};
 use std::{
     fmt::{Debug, Error as FmtError},
