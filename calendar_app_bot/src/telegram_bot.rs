@@ -59,7 +59,7 @@ impl TelegramBot {
         loop {
             FAILURE_COUNT.check()?;
             match Box::pin(timeout(
-                std::time::Duration::from_secs(3600),
+                std::time::Duration::from_hours(1),
                 self.bot_handler(),
             ))
             .await
@@ -178,7 +178,7 @@ impl TelegramBot {
                     }
                 }
             }
-            sleep(std::time::Duration::from_secs(60)).await;
+            sleep(std::time::Duration::from_mins(1)).await;
         }
     }
 
@@ -207,7 +207,7 @@ impl TelegramBot {
             } else {
                 FAILURE_COUNT.increment()?;
             }
-            sleep(std::time::Duration::from_secs(60)).await;
+            sleep(std::time::Duration::from_mins(1)).await;
         }
     }
 
