@@ -8,7 +8,7 @@ edition = "2024"
 
 [dependencies]
 anyhow = "1.0"
-arc-swap = "1.8"
+arc-swap = "1.9"
 calendar_app_lib = {path="../calendar_app_lib"}
 deadqueue = "0.2"
 futures = "0.3"
@@ -16,4 +16,4 @@ im = "15.1"
 stack-string = { version="1.1", features=["postgres_types"] }
 telegram-bot = {git = "https://github.com/ddboline/telegram-bot.git", tag="0.9.0-4", default-features=false}
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
-tokio = {version="1.48", features=["rt", "macros", "rt-multi-thread"]}
+tokio = {version="1.52", features=["rt", "macros", "rt-multi-thread"]}

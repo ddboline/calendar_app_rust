@@ -10,7 +10,7 @@ license = "MIT"
 [dependencies]
 anyhow = "1.0"
 async-trait = "0.1"
-authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
+authorized_users = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.9"}
 axum = { version = "0.8", features = ["multipart"] }
 axum-extra = {version="0.12", features=["cookie"]}
 calendar_app_lib = {path = "../calendar_app_lib"}
@@ -27,8 +27,8 @@ log = "0.4"
 maplit = "1.0"
 mime = "0.3"
 parking_lot = "0.12"
-postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.8", features=["deadpool"]}
-rayon = "1.11"
+postgres_query = {git = "https://github.com/ddboline/rust-postgres-query", tag = "0.3.9", features=["deadpool"]}
+rayon = "1.12"
 reqwest = {version="0.13", features=["cookies", "json", "stream"]}
 serde = "1.0"
 serde_derive = "1.0"
@@ -38,15 +38,15 @@ stack-string = { version="1.1", features=["postgres_types", "utoipa_types", "axu
 thiserror = "2.0"
 time = {version="0.3", features=["serde-human-readable", "macros", "formatting"]}
 time-tz = {version="2.0", features=["system"]}
-tokio = {version="1.48", features=["time"]}
+tokio = {version="1.52", features=["time"]}
 tower-http = {version="0.6", features=["cors"]}
 url = "2.5"
-utoipa = { version = "5.4", features = ["axum_extras", "yaml", "time", "uuid", "smallvec", "url", "openapi_extensions", "decimal"] }
+utoipa = { version = "5.5", features = ["axum_extras", "yaml", "time", "uuid", "smallvec", "url", "openapi_extensions", "decimal"] }
 utoipa-helper = "0.1"
 utoipa-axum = { version = "0.2" }
-uuid = "1.19"
+uuid = "1.23"
 
 [dev-dependencies]
-auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
-auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.5"}
+auth_server_http = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.9"}
+auth_server_lib = { git = "https://github.com/ddboline/auth_server_rust.git", tag="0.13.9"}
 maplit = "1.0"
