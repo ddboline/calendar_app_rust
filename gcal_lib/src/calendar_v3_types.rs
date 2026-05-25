@@ -3978,7 +3978,7 @@ impl ColorsService {
 
     /// Returns the color definitions for calendars and events.
     pub async fn get(&self, params: &ColorsGetParams) -> Result<Colors> {
-        let rel_path = format!("colors",);
+        let rel_path = format!("colors");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4080,7 +4080,7 @@ impl ChannelsService {
 
     /// Stop watching resources through this channel
     pub async fn stop(&self, params: &ChannelsStopParams, req: &Channel) -> Result<()> {
-        let rel_path = format!("channels/stop",);
+        let rel_path = format!("channels/stop");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4185,7 +4185,7 @@ impl CalendarsService {
 
     /// Creates a secondary calendar.
     pub async fn insert(&self, params: &CalendarsInsertParams, req: &Calendar) -> Result<Calendar> {
-        let rel_path = format!("calendars",);
+        let rel_path = format!("calendars");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4793,7 +4793,7 @@ impl CalendarListService {
 
     /// Returns the calendars on the user's calendar list.
     pub async fn list(&self, params: &CalendarListListParams) -> Result<CalendarList> {
-        let rel_path = format!("users/me/calendarList",);
+        let rel_path = format!("users/me/calendarList");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4826,7 +4826,7 @@ impl CalendarListService {
         params: &CalendarListInsertParams,
         req: &CalendarListEntry,
     ) -> Result<CalendarListEntry> {
-        let rel_path = format!("users/me/calendarList",);
+        let rel_path = format!("users/me/calendarList");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -4856,7 +4856,7 @@ impl CalendarListService {
 
     /// Watch for changes to CalendarList resources.
     pub async fn watch(&self, params: &CalendarListWatchParams, req: &Channel) -> Result<Channel> {
-        let rel_path = format!("users/me/calendarList/watch",);
+        let rel_path = format!("users/me/calendarList/watch");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -5144,7 +5144,7 @@ impl SettingsService {
 
     /// Watch for changes to Settings resources.
     pub async fn watch(&self, params: &SettingsWatchParams, req: &Channel) -> Result<Channel> {
-        let rel_path = format!("users/me/settings/watch",);
+        let rel_path = format!("users/me/settings/watch");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -5176,7 +5176,7 @@ impl SettingsService {
 
     /// Returns all user settings for the authenticated user.
     pub async fn list(&self, params: &SettingsListParams) -> Result<Settings> {
-        let rel_path = format!("users/me/settings",);
+        let rel_path = format!("users/me/settings");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
@@ -5754,7 +5754,7 @@ impl FreebusyService {
         params: &FreebusyQueryParams,
         req: &FreeBusyRequest,
     ) -> Result<FreeBusyResponse> {
-        let rel_path = format!("freeBusy",);
+        let rel_path = format!("freeBusy");
         let path = self.format_path(rel_path.as_str());
 
         let mut headers = vec![];
